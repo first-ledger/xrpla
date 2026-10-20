@@ -39,6 +39,8 @@ jobs:
           file: Dockerfile.core
           target: package
           outputs: type=local,dest=dist
+          # Only the packages: no build attestation file beside them.
+          provenance: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
       - name: Checksums
@@ -114,7 +116,7 @@ jobs:
             done
           fi
       - name: Build the repository
-        run: tools/build-apt-repo.sh debs site
+        run: bash tools/build-apt-repo.sh debs site
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site
