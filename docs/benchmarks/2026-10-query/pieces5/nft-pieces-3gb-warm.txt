@@ -1,0 +1,21 @@
+sampled 519 NFTs, 29 issuers, 208 accounts, 224 NFTs with offers
+method                n  median ms     p95 ms     max ms  errors
+account_nfts        421       0.66       4.66       6.73       0
+    slow: 6.7 ms {"account": "r9VHQ7vi374WcWNaPWbZsSrCmywENwxtJZ", "ledger_index": 91050000, "limit": 400}
+    slow: 6.1 ms {"account": "rfakxbdmroQpQzZBL9caDP9RYxmSKuNZj5", "ledger_index": 91050000, "limit": 400}
+nft_buy_offers      150       0.32       0.45       0.56     136
+    slow: 0.6 ms {"nft_id": "0008138890A4E6F0235290178C0BA3CB3026CE29886D8D8BD87AD56A04D5FBD0", "ledger_index": 91050000}
+    slow: 0.5 ms {"nft_id": "00081388C182B4F213B82CCFA4C6F59AD76F0AFCFBDF04D508A324A100000C46", "ledger_index": 91050000}
+nft_history         300       3.98       7.48      12.37       0
+    slow: 12.4 ms {"nft_id": "000813883CBABF8C1A71462BBDF8B69646CA97725E72DBDE761C138804C8BBEE", "limit": 100, "forward": true}
+    slow: 11.6 ms {"nft_id": "00080FA06F8B963680E287FFF0B75D11E2A81D529209B9447409C01100003175", "limit": 100, "forward": true}
+nft_info            300       0.55       1.03       1.40      50
+    slow: 1.4 ms {"nft_id": "00081F408C7B90C59F79474B72A72507E6BADAF9F2C35E97CA3A728204F500E8", "ledger_index": 91025000}
+    slow: 1.4 ms {"nft_id": "00081F408C7B90C59F79474B72A72507E6BADAF9F2C35E97CA3A728204F500E8", "ledger_index": 91050000}
+nft_sell_offers     150       0.33       0.44       0.69      88
+    slow: 0.7 ms {"nft_id": "00081388C182B4F213B82CCFA4C6F59AD76F0AFCFBDF04D508A324A100000C46", "ledger_index": 91050000}
+    slow: 0.5 ms {"nft_id": "000827102D192F0A3AAA1EDE5AC7F33892E95FBA16D22214E12B293200000798", "ledger_index": 91050000}
+nfts_by_issuer      127       3.72       6.40      10.95       0
+    slow: 11.0 ms {"issuer": "rNBoiDuQfDgr4HRrCErB7CPE2qrDt2836D", "ledger_index": 91050000, "limit": 100, "nft_taxon": 1}
+    slow: 8.0 ms {"issuer": "rNBoiDuQfDgr4HRrCErB7CPE2qrDt2836D", "ledger_index": 91050000, "limit": 50, "marker": "0008138890A4E6F0235290178C0BA3CB3026CE29886D8D8B07B558AE04D5F
+DONE

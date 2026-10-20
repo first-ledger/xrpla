@@ -1,0 +1,13 @@
+2026-10-06T20:29:52Z build c78f402b90c6e363; load 12.86 10.87 11.29
+2026-10-06T20:30:24Z parity pieces auto cold: 30 s; {"overlap": [8000001, 8300000], "ledgers": 42, "same": 3509, "different": 933, "timeouts": 0, "reference_errors": 0, "re
+2026-10-06T20:30:34Z parity pieces auto warm: 10 s; {"overlap": [8000001, 8300000], "ledgers": 42, "same": 3509, "different": 933, "timeouts": 0, "reference_errors": 0, "re
+2026-10-06T20:30:34Z cache stats auto: {"result":{"archives":{"bytes":1536953534,"entries":78,"hits":25483,"misses":83,"share":10102820040},"budget":{"total":16838033408,"used":1956750722},"dictionaries":{"loaded":83,"mean_bytes":19754505,"parse_ms":1174.403231,"read_ms":1498.647811},"load_ms":{"dictionary":2673.570235,"page_decode":9557
+2026-10-06T20:32:02Z nft pieces auto cold done
+2026-10-06T20:33:12Z nft pieces auto warm done
+2026-10-06T20:33:35Z parity pieces 3gb cold: 19 s; {"overlap": [8000001, 8300000], "ledgers": 42, "same": 3509, "different": 933, "timeouts": 0, "reference_errors": 0, "re
+2026-10-06T20:33:46Z parity pieces 3gb warm: 11 s; {"overlap": [8000001, 8300000], "ledgers": 42, "same": 3509, "different": 933, "timeouts": 0, "reference_errors": 0, "re
+2026-10-06T20:33:46Z cache stats 3gb: {"result":{"archives":{"bytes":1536953534,"entries":78,"hits":25483,"misses":83,"share":1932735282},"budget":{"total":3221225472,"used":1956750722},"dictionaries":{"loaded":83,"mean_bytes":19754505,"parse_ms":1389.432965,"read_ms":1514.937802},"load_ms":{"dictionary":2904.92909,"page_decode":9940.56
+2026-10-06T20:35:24Z nft pieces 3gb cold done
+2026-10-06T20:36:38Z nft pieces 3gb warm done
+2026-10-06T20:36:40Z latency
+2026-10-06T20:37:23Z DONE

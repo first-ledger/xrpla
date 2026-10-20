@@ -1,0 +1,1171 @@
+[
+ {
+  "method": "get_aggregate_price",
+  "params": {
+   "ledger_index": 28,
+   "base_asset": "XRP",
+   "quote_asset": "USD",
+   "oracles": [
+    {
+     "account": "r94rfc6hqrXdxa7WbWS5VELnegFNVcZ3LX",
+     "oracle_document_id": 1
+    },
+    {
+     "account": "r94rfc6hqrXdxa7WbWS5VELnegFNVcZ3LX",
+     "oracle_document_id": 2
+    }
+   ]
+  },
+  "result": {
+   "entire_set": {
+    "mean": "0.74",
+    "size": 1,
+    "standard_deviation": "0"
+   },
+   "ledger_hash": "75F38AA36E537AEBB313225EBB3F3B9FB1E1B2558ACE9677BB0DBB2C58D282B7",
+   "ledger_index": 28,
+   "median": "0.74",
+   "time": 1790722505,
+   "validated": true
+  }
+ },
+ {
+  "method": "get_aggregate_price",
+  "params": {
+   "ledger_index": 28,
+   "base_asset": "XRP",
+   "quote_asset": "USD",
+   "oracles": [
+    {
+     "account": "r94rfc6hqrXdxa7WbWS5VELnegFNVcZ3LX",
+     "oracle_document_id": 1
+    },
+    {
+     "account": "r94rfc6hqrXdxa7WbWS5VELnegFNVcZ3LX",
+     "oracle_document_id": 2
+    }
+   ],
+   "trim": 20
+  },
+  "result": {
+   "entire_set": {
+    "mean": "0.74",
+    "size": 1,
+    "standard_deviation": "0"
+   },
+   "ledger_hash": "75F38AA36E537AEBB313225EBB3F3B9FB1E1B2558ACE9677BB0DBB2C58D282B7",
+   "ledger_index": 28,
+   "median": "0.74",
+   "time": 1790722505,
+   "trimmed_set": {
+    "mean": "0.74",
+    "size": 1,
+    "standard_deviation": "0"
+   },
+   "validated": true
+  }
+ },
+ {
+  "method": "get_aggregate_price",
+  "params": {
+   "ledger_index": 28,
+   "base_asset": "XRP",
+   "quote_asset": "USD",
+   "oracles": [
+    {
+     "account": "r94rfc6hqrXdxa7WbWS5VELnegFNVcZ3LX",
+     "oracle_document_id": 1
+    },
+    {
+     "account": "r94rfc6hqrXdxa7WbWS5VELnegFNVcZ3LX",
+     "oracle_document_id": 2
+    }
+   ],
+   "time_threshold": 1
+  },
+  "result": {
+   "entire_set": {
+    "mean": "0.74",
+    "size": 1,
+    "standard_deviation": "0"
+   },
+   "ledger_hash": "75F38AA36E537AEBB313225EBB3F3B9FB1E1B2558ACE9677BB0DBB2C58D282B7",
+   "ledger_index": 28,
+   "median": "0.74",
+   "time": 1790722505,
+   "validated": true
+  }
+ },
+ {
+  "method": "get_aggregate_price",
+  "params": {
+   "ledger_index": 29,
+   "base_asset": "XRP",
+   "quote_asset": "USD",
+   "oracles": [
+    {
+     "account": "r94rfc6hqrXdxa7WbWS5VELnegFNVcZ3LX",
+     "oracle_document_id": 1
+    },
+    {
+     "account": "r94rfc6hqrXdxa7WbWS5VELnegFNVcZ3LX",
+     "oracle_document_id": 2
+    }
+   ]
+  },
+  "result": {
+   "entire_set": {
+    "mean": "0.7425",
+    "size": 2,
+    "standard_deviation": "0.003535533905932737622"
+   },
+   "ledger_hash": "87BD29A393CB3C01363E3E468A8745FB36A13471DCC2C4BA43C05C951D89DF6B",
+   "ledger_index": 29,
+   "median": "0.7425",
+   "time": 1790722507,
+   "validated": true
+  }
+ },
+ {
+  "method": "get_aggregate_price",
+  "params": {
+   "ledger_index": 29,
+   "base_asset": "XRP",
+   "quote_asset": "USD",
+   "oracles": [
+    {
+     "account": "r94rfc6hqrXdxa7WbWS5VELnegFNVcZ3LX",
+     "oracle_document_id": 1
+    },
+    {
+     "account": "r94rfc6hqrXdxa7WbWS5VELnegFNVcZ3LX",
+     "oracle_document_id": 2
+    }
+   ],
+   "trim": 20
+  },
+  "result": {
+   "entire_set": {
+    "mean": "0.7425",
+    "size": 2,
+    "standard_deviation": "0.003535533905932737622"
+   },
+   "ledger_hash": "87BD29A393CB3C01363E3E468A8745FB36A13471DCC2C4BA43C05C951D89DF6B",
+   "ledger_index": 29,
+   "median": "0.7425",
+   "time": 1790722507,
+   "trimmed_set": {
+    "mean": "0.7425",
+    "size": 2,
+    "standard_deviation": "0.003535533905932737622"
+   },
+   "validated": true
+  }
+ },
+ {
+  "method": "get_aggregate_price",
+  "params": {
+   "ledger_index": 29,
+   "base_asset": "XRP",
+   "quote_asset": "USD",
+   "oracles": [
+    {
+     "account": "r94rfc6hqrXdxa7WbWS5VELnegFNVcZ3LX",
+     "oracle_document_id": 1
+    },
+    {
+     "account": "r94rfc6hqrXdxa7WbWS5VELnegFNVcZ3LX",
+     "oracle_document_id": 2
+    }
+   ],
+   "time_threshold": 1
+  },
+  "result": {
+   "entire_set": {
+    "mean": "0.745",
+    "size": 1,
+    "standard_deviation": "0"
+   },
+   "ledger_hash": "87BD29A393CB3C01363E3E468A8745FB36A13471DCC2C4BA43C05C951D89DF6B",
+   "ledger_index": 29,
+   "median": "0.745",
+   "time": 1790722507,
+   "validated": true
+  }
+ },
+ {
+  "method": "get_aggregate_price",
+  "params": {
+   "ledger_index": 30,
+   "base_asset": "XRP",
+   "quote_asset": "USD",
+   "oracles": [
+    {
+     "account": "r94rfc6hqrXdxa7WbWS5VELnegFNVcZ3LX",
+     "oracle_document_id": 1
+    },
+    {
+     "account": "r94rfc6hqrXdxa7WbWS5VELnegFNVcZ3LX",
+     "oracle_document_id": 2
+    }
+   ]
+  },
+  "result": {
+   "entire_set": {
+    "mean": "0.74375",
+    "size": 2,
+    "standard_deviation": "0.001767766952966368811"
+   },
+   "ledger_hash": "8A05A0108CE75B5AE3BF26F90AAF978B8AEB8B7C242C456B3087C30EEBF071F5",
+   "ledger_index": 30,
+   "median": "0.74375",
+   "time": 1790722509,
+   "validated": true
+  }
+ },
+ {
+  "method": "get_aggregate_price",
+  "params": {
+   "ledger_index": 30,
+   "base_asset": "XRP",
+   "quote_asset": "USD",
+   "oracles": [
+    {
+     "account": "r94rfc6hqrXdxa7WbWS5VELnegFNVcZ3LX",
+     "oracle_document_id": 1
+    },
+    {
+     "account": "r94rfc6hqrXdxa7WbWS5VELnegFNVcZ3LX",
+     "oracle_document_id": 2
+    }
+   ],
+   "trim": 20
+  },
+  "result": {
+   "entire_set": {
+    "mean": "0.74375",
+    "size": 2,
+    "standard_deviation": "0.001767766952966368811"
+   },
+   "ledger_hash": "8A05A0108CE75B5AE3BF26F90AAF978B8AEB8B7C242C456B3087C30EEBF071F5",
+   "ledger_index": 30,
+   "median": "0.74375",
+   "time": 1790722509,
+   "trimmed_set": {
+    "mean": "0.74375",
+    "size": 2,
+    "standard_deviation": "0.001767766952966368811"
+   },
+   "validated": true
+  }
+ },
+ {
+  "method": "get_aggregate_price",
+  "params": {
+   "ledger_index": 30,
+   "base_asset": "XRP",
+   "quote_asset": "USD",
+   "oracles": [
+    {
+     "account": "r94rfc6hqrXdxa7WbWS5VELnegFNVcZ3LX",
+     "oracle_document_id": 1
+    },
+    {
+     "account": "r94rfc6hqrXdxa7WbWS5VELnegFNVcZ3LX",
+     "oracle_document_id": 2
+    }
+   ],
+   "time_threshold": 1
+  },
+  "result": {
+   "entire_set": {
+    "mean": "0.7425",
+    "size": 1,
+    "standard_deviation": "0"
+   },
+   "ledger_hash": "8A05A0108CE75B5AE3BF26F90AAF978B8AEB8B7C242C456B3087C30EEBF071F5",
+   "ledger_index": 30,
+   "median": "0.7425",
+   "time": 1790722509,
+   "validated": true
+  }
+ },
+ {
+  "method": "get_aggregate_price",
+  "params": {
+   "ledger_index": 31,
+   "base_asset": "XRP",
+   "quote_asset": "USD",
+   "oracles": [
+    {
+     "account": "r94rfc6hqrXdxa7WbWS5VELnegFNVcZ3LX",
+     "oracle_document_id": 1
+    },
+    {
+     "account": "r94rfc6hqrXdxa7WbWS5VELnegFNVcZ3LX",
+     "oracle_document_id": 2
+    }
+   ]
+  },
+  "result": {
+   "entire_set": {
+    "mean": "0.742",
+    "size": 2,
+    "standard_deviation": "0.004242640687119285146"
+   },
+   "ledger_hash": "BBA0D93EB7D922FE4633F879DE13385A830D42055CE2C77DFFB3C82A9D5CD4B5",
+   "ledger_index": 31,
+   "median": "0.742",
+   "time": 1790722511,
+   "validated": true
+  }
+ },
+ {
+  "method": "get_aggregate_price",
+  "params": {
+   "ledger_index": 31,
+   "base_asset": "XRP",
+   "quote_asset": "USD",
+   "oracles": [
+    {
+     "account": "r94rfc6hqrXdxa7WbWS5VELnegFNVcZ3LX",
+     "oracle_document_id": 1
+    },
+    {
+     "account": "r94rfc6hqrXdxa7WbWS5VELnegFNVcZ3LX",
+     "oracle_document_id": 2
+    }
+   ],
+   "trim": 20
+  },
+  "result": {
+   "entire_set": {
+    "mean": "0.742",
+    "size": 2,
+    "standard_deviation": "0.004242640687119285146"
+   },
+   "ledger_hash": "BBA0D93EB7D922FE4633F879DE13385A830D42055CE2C77DFFB3C82A9D5CD4B5",
+   "ledger_index": 31,
+   "median": "0.742",
+   "time": 1790722511,
+   "trimmed_set": {
+    "mean": "0.742",
+    "size": 2,
+    "standard_deviation": "0.004242640687119285146"
+   },
+   "validated": true
+  }
+ },
+ {
+  "method": "get_aggregate_price",
+  "params": {
+   "ledger_index": 31,
+   "base_asset": "XRP",
+   "quote_asset": "USD",
+   "oracles": [
+    {
+     "account": "r94rfc6hqrXdxa7WbWS5VELnegFNVcZ3LX",
+     "oracle_document_id": 1
+    },
+    {
+     "account": "r94rfc6hqrXdxa7WbWS5VELnegFNVcZ3LX",
+     "oracle_document_id": 2
+    }
+   ],
+   "time_threshold": 1
+  },
+  "result": {
+   "entire_set": {
+    "mean": "0.739",
+    "size": 1,
+    "standard_deviation": "0"
+   },
+   "ledger_hash": "BBA0D93EB7D922FE4633F879DE13385A830D42055CE2C77DFFB3C82A9D5CD4B5",
+   "ledger_index": 31,
+   "median": "0.739",
+   "time": 1790722511,
+   "validated": true
+  }
+ },
+ {
+  "method": "get_aggregate_price",
+  "params": {
+   "ledger_index": 34,
+   "base_asset": "XRP",
+   "quote_asset": "USD",
+   "oracles": [
+    {
+     "account": "r94rfc6hqrXdxa7WbWS5VELnegFNVcZ3LX",
+     "oracle_document_id": 1
+    },
+    {
+     "account": "r94rfc6hqrXdxa7WbWS5VELnegFNVcZ3LX",
+     "oracle_document_id": 2
+    }
+   ]
+  },
+  "result": {
+   "entire_set": {
+    "mean": "0.742",
+    "size": 2,
+    "standard_deviation": "0.004242640687119285146"
+   },
+   "ledger_hash": "2B332C9665C3F1C007675527F4B524293701AAF8F445B45655D2F2BFBED77A2B",
+   "ledger_index": 34,
+   "median": "0.742",
+   "time": 1790722511,
+   "validated": true
+  }
+ },
+ {
+  "method": "get_aggregate_price",
+  "params": {
+   "ledger_index": 34,
+   "base_asset": "XRP",
+   "quote_asset": "USD",
+   "oracles": [
+    {
+     "account": "r94rfc6hqrXdxa7WbWS5VELnegFNVcZ3LX",
+     "oracle_document_id": 1
+    },
+    {
+     "account": "r94rfc6hqrXdxa7WbWS5VELnegFNVcZ3LX",
+     "oracle_document_id": 2
+    }
+   ],
+   "trim": 20
+  },
+  "result": {
+   "entire_set": {
+    "mean": "0.742",
+    "size": 2,
+    "standard_deviation": "0.004242640687119285146"
+   },
+   "ledger_hash": "2B332C9665C3F1C007675527F4B524293701AAF8F445B45655D2F2BFBED77A2B",
+   "ledger_index": 34,
+   "median": "0.742",
+   "time": 1790722511,
+   "trimmed_set": {
+    "mean": "0.742",
+    "size": 2,
+    "standard_deviation": "0.004242640687119285146"
+   },
+   "validated": true
+  }
+ },
+ {
+  "method": "get_aggregate_price",
+  "params": {
+   "ledger_index": 34,
+   "base_asset": "XRP",
+   "quote_asset": "USD",
+   "oracles": [
+    {
+     "account": "r94rfc6hqrXdxa7WbWS5VELnegFNVcZ3LX",
+     "oracle_document_id": 1
+    },
+    {
+     "account": "r94rfc6hqrXdxa7WbWS5VELnegFNVcZ3LX",
+     "oracle_document_id": 2
+    }
+   ],
+   "time_threshold": 1
+  },
+  "result": {
+   "entire_set": {
+    "mean": "0.739",
+    "size": 1,
+    "standard_deviation": "0"
+   },
+   "ledger_hash": "2B332C9665C3F1C007675527F4B524293701AAF8F445B45655D2F2BFBED77A2B",
+   "ledger_index": 34,
+   "median": "0.739",
+   "time": 1790722511,
+   "validated": true
+  }
+ },
+ {
+  "method": "get_aggregate_price",
+  "params": {
+   "ledger_index": 34,
+   "base_asset": "XRP",
+   "quote_asset": "EUR",
+   "oracles": [
+    {
+     "account": "r94rfc6hqrXdxa7WbWS5VELnegFNVcZ3LX",
+     "oracle_document_id": 1
+    },
+    {
+     "account": "r94rfc6hqrXdxa7WbWS5VELnegFNVcZ3LX",
+     "oracle_document_id": 2
+    }
+   ]
+  },
+  "result": {
+   "error": "objectNotFound",
+   "error_code": 92,
+   "error_message": "The requested object was not found.",
+   "ledger_hash": "2B332C9665C3F1C007675527F4B524293701AAF8F445B45655D2F2BFBED77A2B",
+   "ledger_index": 34,
+   "validated": true
+  }
+ },
+ {
+  "method": "get_aggregate_price",
+  "params": {
+   "ledger_index": 34,
+   "base_asset": "XRP",
+   "quote_asset": "USD",
+   "oracles": [
+    {
+     "account": "r94rfc6hqrXdxa7WbWS5VELnegFNVcZ3LX",
+     "oracle_document_id": 1
+    },
+    {
+     "account": "r94rfc6hqrXdxa7WbWS5VELnegFNVcZ3LX",
+     "oracle_document_id": 2
+    }
+   ],
+   "trim": 0
+  },
+  "result": {
+   "error": "invalidParams",
+   "error_code": 31,
+   "error_message": "Invalid parameters."
+  }
+ },
+ {
+  "method": "vault_info",
+  "params": {
+   "ledger_index": 34,
+   "vault_id": "98E2423C5E3D45131BDD5B347534FF11A521E465F2B02B26278BA1EBB429B097"
+  },
+  "result": {
+   "ledger_hash": "2B332C9665C3F1C007675527F4B524293701AAF8F445B45655D2F2BFBED77A2B",
+   "ledger_index": 34,
+   "validated": true,
+   "vault": {
+    "Account": "rDxVsXFFPKFUjmXYzWYoENyytFMuGLmgSK",
+    "Asset": {
+     "currency": "XRP"
+    },
+    "AssetsAvailable": "5000000",
+    "AssetsTotal": "5000000",
+    "Flags": 0,
+    "LedgerEntryType": "Vault",
+    "Owner": "rUrP8zScmC1Uyhv3oyWeYNErF4uuzvtgdL",
+    "OwnerNode": "0",
+    "PreviousTxnID": "3EC1C38AD11079EF0A54E8CBDD5E517E230AB923F8CF1A0D30342A7AC1E75293",
+    "PreviousTxnLgrSeq": 33,
+    "Sequence": 9,
+    "ShareMPTID": "000000018E1FCC0597D15E4BEABC88C1EDB60CE9C3301057",
+    "WithdrawalPolicy": 1,
+    "index": "98E2423C5E3D45131BDD5B347534FF11A521E465F2B02B26278BA1EBB429B097",
+    "shares": {
+     "Flags": 56,
+     "Issuer": "rDxVsXFFPKFUjmXYzWYoENyytFMuGLmgSK",
+     "LedgerEntryType": "MPTokenIssuance",
+     "OutstandingAmount": "5000000",
+     "OwnerNode": "0",
+     "PreviousTxnID": "3EC1C38AD11079EF0A54E8CBDD5E517E230AB923F8CF1A0D30342A7AC1E75293",
+     "PreviousTxnLgrSeq": 33,
+     "Sequence": 1,
+     "index": "2570F0C63272BB4D79DA7AC83A0C394E2443E8FEA8CD8A3B7E69B6196A14E0B7",
+     "mpt_issuance_id": "000000018E1FCC0597D15E4BEABC88C1EDB60CE9C3301057"
+    }
+   }
+  }
+ },
+ {
+  "method": "vault_info",
+  "params": {
+   "ledger_index": 34,
+   "owner": "rUrP8zScmC1Uyhv3oyWeYNErF4uuzvtgdL",
+   "seq": 9
+  },
+  "result": {
+   "ledger_hash": "2B332C9665C3F1C007675527F4B524293701AAF8F445B45655D2F2BFBED77A2B",
+   "ledger_index": 34,
+   "validated": true,
+   "vault": {
+    "Account": "rDxVsXFFPKFUjmXYzWYoENyytFMuGLmgSK",
+    "Asset": {
+     "currency": "XRP"
+    },
+    "AssetsAvailable": "5000000",
+    "AssetsTotal": "5000000",
+    "Flags": 0,
+    "LedgerEntryType": "Vault",
+    "Owner": "rUrP8zScmC1Uyhv3oyWeYNErF4uuzvtgdL",
+    "OwnerNode": "0",
+    "PreviousTxnID": "3EC1C38AD11079EF0A54E8CBDD5E517E230AB923F8CF1A0D30342A7AC1E75293",
+    "PreviousTxnLgrSeq": 33,
+    "Sequence": 9,
+    "ShareMPTID": "000000018E1FCC0597D15E4BEABC88C1EDB60CE9C3301057",
+    "WithdrawalPolicy": 1,
+    "index": "98E2423C5E3D45131BDD5B347534FF11A521E465F2B02B26278BA1EBB429B097",
+    "shares": {
+     "Flags": 56,
+     "Issuer": "rDxVsXFFPKFUjmXYzWYoENyytFMuGLmgSK",
+     "LedgerEntryType": "MPTokenIssuance",
+     "OutstandingAmount": "5000000",
+     "OwnerNode": "0",
+     "PreviousTxnID": "3EC1C38AD11079EF0A54E8CBDD5E517E230AB923F8CF1A0D30342A7AC1E75293",
+     "PreviousTxnLgrSeq": 33,
+     "Sequence": 1,
+     "index": "2570F0C63272BB4D79DA7AC83A0C394E2443E8FEA8CD8A3B7E69B6196A14E0B7",
+     "mpt_issuance_id": "000000018E1FCC0597D15E4BEABC88C1EDB60CE9C3301057"
+    }
+   }
+  }
+ },
+ {
+  "method": "vault_info",
+  "params": {
+   "ledger_index": 34,
+   "vault_id": "1111111111111111111111111111111111111111111111111111111111111111"
+  },
+  "result": {
+   "error": "entryNotFound",
+   "error_code": 98,
+   "error_message": "Entry not found.",
+   "ledger_hash": "2B332C9665C3F1C007675527F4B524293701AAF8F445B45655D2F2BFBED77A2B",
+   "ledger_index": 34,
+   "validated": true
+  }
+ },
+ {
+  "method": "vault_info",
+  "params": {
+   "ledger_index": 34,
+   "vault_id": "98E2423C5E3D45131BDD5B347534FF11A521E465F2B02B26278BA1EBB429B097",
+   "seq": 9
+  },
+  "result": {
+   "error": "invalidParams",
+   "error_code": 31,
+   "error_message": "Must specify either 'vault_id' or both 'owner' and 'seq'.",
+   "ledger_hash": "2B332C9665C3F1C007675527F4B524293701AAF8F445B45655D2F2BFBED77A2B",
+   "ledger_index": 34,
+   "validated": true
+  }
+ },
+ {
+  "method": "ledger_entry",
+  "params": {
+   "ledger_index": 34,
+   "vault": "98E2423C5E3D45131BDD5B347534FF11A521E465F2B02B26278BA1EBB429B097"
+  },
+  "result": {
+   "index": "98E2423C5E3D45131BDD5B347534FF11A521E465F2B02B26278BA1EBB429B097",
+   "ledger_hash": "2B332C9665C3F1C007675527F4B524293701AAF8F445B45655D2F2BFBED77A2B",
+   "ledger_index": 34,
+   "node": {
+    "Account": "rDxVsXFFPKFUjmXYzWYoENyytFMuGLmgSK",
+    "Asset": {
+     "currency": "XRP"
+    },
+    "AssetsAvailable": "5000000",
+    "AssetsTotal": "5000000",
+    "Flags": 0,
+    "LedgerEntryType": "Vault",
+    "Owner": "rUrP8zScmC1Uyhv3oyWeYNErF4uuzvtgdL",
+    "OwnerNode": "0",
+    "PreviousTxnID": "3EC1C38AD11079EF0A54E8CBDD5E517E230AB923F8CF1A0D30342A7AC1E75293",
+    "PreviousTxnLgrSeq": 33,
+    "Sequence": 9,
+    "ShareMPTID": "000000018E1FCC0597D15E4BEABC88C1EDB60CE9C3301057",
+    "WithdrawalPolicy": 1,
+    "index": "98E2423C5E3D45131BDD5B347534FF11A521E465F2B02B26278BA1EBB429B097"
+   },
+   "validated": true
+  }
+ },
+ {
+  "method": "ledger_entry",
+  "params": {
+   "ledger_index": 34,
+   "vault": {
+    "owner": "rUrP8zScmC1Uyhv3oyWeYNErF4uuzvtgdL",
+    "seq": 9
+   }
+  },
+  "result": {
+   "index": "98E2423C5E3D45131BDD5B347534FF11A521E465F2B02B26278BA1EBB429B097",
+   "ledger_hash": "2B332C9665C3F1C007675527F4B524293701AAF8F445B45655D2F2BFBED77A2B",
+   "ledger_index": 34,
+   "node": {
+    "Account": "rDxVsXFFPKFUjmXYzWYoENyytFMuGLmgSK",
+    "Asset": {
+     "currency": "XRP"
+    },
+    "AssetsAvailable": "5000000",
+    "AssetsTotal": "5000000",
+    "Flags": 0,
+    "LedgerEntryType": "Vault",
+    "Owner": "rUrP8zScmC1Uyhv3oyWeYNErF4uuzvtgdL",
+    "OwnerNode": "0",
+    "PreviousTxnID": "3EC1C38AD11079EF0A54E8CBDD5E517E230AB923F8CF1A0D30342A7AC1E75293",
+    "PreviousTxnLgrSeq": 33,
+    "Sequence": 9,
+    "ShareMPTID": "000000018E1FCC0597D15E4BEABC88C1EDB60CE9C3301057",
+    "WithdrawalPolicy": 1,
+    "index": "98E2423C5E3D45131BDD5B347534FF11A521E465F2B02B26278BA1EBB429B097"
+   },
+   "validated": true
+  }
+ },
+ {
+  "method": "ledger_entry",
+  "params": {
+   "ledger_index": 34,
+   "oracle": {
+    "account": "r94rfc6hqrXdxa7WbWS5VELnegFNVcZ3LX",
+    "oracle_document_id": 1
+   }
+  },
+  "result": {
+   "index": "F3951C36DDA73ACF85591B1C7477EA9302F0F12FB84014881BEA301BD119C95B",
+   "ledger_hash": "2B332C9665C3F1C007675527F4B524293701AAF8F445B45655D2F2BFBED77A2B",
+   "ledger_index": 34,
+   "node": {
+    "AssetClass": "63757272656E6379",
+    "Flags": 0,
+    "LastUpdateTime": 1790722511,
+    "LedgerEntryType": "Oracle",
+    "Owner": "r94rfc6hqrXdxa7WbWS5VELnegFNVcZ3LX",
+    "OwnerNode": "0",
+    "PreviousTxnID": "F88AAB7CF77C2630D79D46797F2BDF3E35EB11813153AD37F64E5792A003C757",
+    "PreviousTxnLgrSeq": 31,
+    "PriceDataSeries": [
+     {
+      "PriceData": {
+       "AssetPrice": "120ac",
+       "BaseAsset": "XRP",
+       "QuoteAsset": "USD",
+       "Scale": 5
+      }
+     }
+    ],
+    "Provider": "70726F7669646572",
+    "index": "F3951C36DDA73ACF85591B1C7477EA9302F0F12FB84014881BEA301BD119C95B"
+   },
+   "validated": true
+  }
+ },
+ {
+  "method": "ledger_entry",
+  "params": {
+   "ledger_index": 28,
+   "oracle": {
+    "account": "r94rfc6hqrXdxa7WbWS5VELnegFNVcZ3LX",
+    "oracle_document_id": 1
+   }
+  },
+  "result": {
+   "index": "F3951C36DDA73ACF85591B1C7477EA9302F0F12FB84014881BEA301BD119C95B",
+   "ledger_hash": "75F38AA36E537AEBB313225EBB3F3B9FB1E1B2558ACE9677BB0DBB2C58D282B7",
+   "ledger_index": 28,
+   "node": {
+    "AssetClass": "63757272656E6379",
+    "Flags": 0,
+    "LastUpdateTime": 1790722505,
+    "LedgerEntryType": "Oracle",
+    "Owner": "r94rfc6hqrXdxa7WbWS5VELnegFNVcZ3LX",
+    "OwnerNode": "0",
+    "PreviousTxnID": "BD52AAC1A8D8A98C85A71024ED0289A01B2008EE0CF9433BE35078E3BB24AB49",
+    "PreviousTxnLgrSeq": 28,
+    "PriceDataSeries": [
+     {
+      "PriceData": {
+       "AssetPrice": "12110",
+       "BaseAsset": "XRP",
+       "QuoteAsset": "USD",
+       "Scale": 5
+      }
+     }
+    ],
+    "Provider": "70726F7669646572",
+    "index": "F3951C36DDA73ACF85591B1C7477EA9302F0F12FB84014881BEA301BD119C95B"
+   },
+   "validated": true
+  }
+ },
+ {
+  "method": "ledger_entry",
+  "params": {
+   "ledger_index": 34,
+   "mpt_issuance": "0000000480A11652701D3C5A759CE6FD1328CD31B06BBC89"
+  },
+  "result": {
+   "index": "2C2B9F7B1C993D89B18BB18B9306A612F65CD48F2A1BFFBC3645AE96DB6956CA",
+   "ledger_hash": "2B332C9665C3F1C007675527F4B524293701AAF8F445B45655D2F2BFBED77A2B",
+   "ledger_index": 34,
+   "node": {
+    "AssetScale": 2,
+    "Flags": 102,
+    "Issuer": "rUj37a9tSJseex3ZHi1zZZpsbpzG36YdAr",
+    "LedgerEntryType": "MPTokenIssuance",
+    "MPTokenMetadata": "5852504C4120746F6B656E73",
+    "MaximumAmount": "1000000",
+    "OutstandingAmount": "950",
+    "OwnerNode": "0",
+    "PreviousTxnID": "250EC22A13C1A00131E0616417DBCB4AA1B2605C3B65379D51C377C24871875F",
+    "PreviousTxnLgrSeq": 20,
+    "Sequence": 4,
+    "index": "2C2B9F7B1C993D89B18BB18B9306A612F65CD48F2A1BFFBC3645AE96DB6956CA",
+    "mpt_issuance_id": "0000000480A11652701D3C5A759CE6FD1328CD31B06BBC89"
+   },
+   "validated": true
+  }
+ },
+ {
+  "method": "ledger_entry",
+  "params": {
+   "ledger_index": 34,
+   "mptoken": {
+    "mpt_issuance_id": "0000000480A11652701D3C5A759CE6FD1328CD31B06BBC89",
+    "account": "rndT6ThEBdKFN2ZeLEreiQRpGVSmYmVcxa"
+   }
+  },
+  "result": {
+   "index": "E3EA5584044578770073497CAE22648FCF5602AA7300F67FDAD5148A561A80A9",
+   "ledger_hash": "2B332C9665C3F1C007675527F4B524293701AAF8F445B45655D2F2BFBED77A2B",
+   "ledger_index": 34,
+   "node": {
+    "Account": "rndT6ThEBdKFN2ZeLEreiQRpGVSmYmVcxa",
+    "Flags": 2,
+    "LedgerEntryType": "MPToken",
+    "MPTAmount": "750",
+    "MPTokenIssuanceID": "0000000480A11652701D3C5A759CE6FD1328CD31B06BBC89",
+    "OwnerNode": "0",
+    "PreviousTxnID": "0CE4FA693CBCCE48AA830C5D33E68F173DD44D172DDFA7DE7B1B1F61648C9F18",
+    "PreviousTxnLgrSeq": 19,
+    "index": "E3EA5584044578770073497CAE22648FCF5602AA7300F67FDAD5148A561A80A9"
+   },
+   "validated": true
+  }
+ },
+ {
+  "method": "ledger_entry",
+  "params": {
+   "ledger_index": 26,
+   "mptoken": {
+    "mpt_issuance_id": "0000000480A11652701D3C5A759CE6FD1328CD31B06BBC89",
+    "account": "rndT6ThEBdKFN2ZeLEreiQRpGVSmYmVcxa"
+   }
+  },
+  "result": {
+   "index": "E3EA5584044578770073497CAE22648FCF5602AA7300F67FDAD5148A561A80A9",
+   "ledger_hash": "79D600F3356F1D7F6930F5B3AC52336478BEA343F0953610E01ABE1977777E2C",
+   "ledger_index": 26,
+   "node": {
+    "Account": "rndT6ThEBdKFN2ZeLEreiQRpGVSmYmVcxa",
+    "Flags": 2,
+    "LedgerEntryType": "MPToken",
+    "MPTAmount": "750",
+    "MPTokenIssuanceID": "0000000480A11652701D3C5A759CE6FD1328CD31B06BBC89",
+    "OwnerNode": "0",
+    "PreviousTxnID": "0CE4FA693CBCCE48AA830C5D33E68F173DD44D172DDFA7DE7B1B1F61648C9F18",
+    "PreviousTxnLgrSeq": 19,
+    "index": "E3EA5584044578770073497CAE22648FCF5602AA7300F67FDAD5148A561A80A9"
+   },
+   "validated": true
+  }
+ },
+ {
+  "method": "ledger_entry",
+  "params": {
+   "ledger_index": 34,
+   "mptoken": {
+    "mpt_issuance_id": "0000000480A11652701D3C5A759CE6FD1328CD31B06BBC89",
+    "account": "rnLwLe68AdFD6L8s6ZtusRfVNF1kJom9tA"
+   }
+  },
+  "result": {
+   "index": "A17963D28C37A95546110B5A812B3BF5BF6523EC64733EE6524748CBDF762BA9",
+   "ledger_hash": "2B332C9665C3F1C007675527F4B524293701AAF8F445B45655D2F2BFBED77A2B",
+   "ledger_index": 34,
+   "node": {
+    "Account": "rnLwLe68AdFD6L8s6ZtusRfVNF1kJom9tA",
+    "Flags": 2,
+    "LedgerEntryType": "MPToken",
+    "MPTAmount": "200",
+    "MPTokenIssuanceID": "0000000480A11652701D3C5A759CE6FD1328CD31B06BBC89",
+    "OwnerNode": "0",
+    "PreviousTxnID": "250EC22A13C1A00131E0616417DBCB4AA1B2605C3B65379D51C377C24871875F",
+    "PreviousTxnLgrSeq": 20,
+    "index": "A17963D28C37A95546110B5A812B3BF5BF6523EC64733EE6524748CBDF762BA9"
+   },
+   "validated": true
+  }
+ },
+ {
+  "method": "ledger_entry",
+  "params": {
+   "ledger_index": 26,
+   "mptoken": {
+    "mpt_issuance_id": "0000000480A11652701D3C5A759CE6FD1328CD31B06BBC89",
+    "account": "rnLwLe68AdFD6L8s6ZtusRfVNF1kJom9tA"
+   }
+  },
+  "result": {
+   "index": "A17963D28C37A95546110B5A812B3BF5BF6523EC64733EE6524748CBDF762BA9",
+   "ledger_hash": "79D600F3356F1D7F6930F5B3AC52336478BEA343F0953610E01ABE1977777E2C",
+   "ledger_index": 26,
+   "node": {
+    "Account": "rnLwLe68AdFD6L8s6ZtusRfVNF1kJom9tA",
+    "Flags": 2,
+    "LedgerEntryType": "MPToken",
+    "MPTAmount": "200",
+    "MPTokenIssuanceID": "0000000480A11652701D3C5A759CE6FD1328CD31B06BBC89",
+    "OwnerNode": "0",
+    "PreviousTxnID": "250EC22A13C1A00131E0616417DBCB4AA1B2605C3B65379D51C377C24871875F",
+    "PreviousTxnLgrSeq": 20,
+    "index": "A17963D28C37A95546110B5A812B3BF5BF6523EC64733EE6524748CBDF762BA9"
+   },
+   "validated": true
+  }
+ },
+ {
+  "method": "ledger_entry",
+  "params": {
+   "ledger_index": 34,
+   "mptoken": {
+    "mpt_issuance_id": "0000000480A11652701D3C5A759CE6FD1328CD31B06BBC89",
+    "account": "rLUQ21aJnYZyeXfX4Mt5zSLJv6a7RmciGE"
+   }
+  },
+  "result": {
+   "error": "entryNotFound",
+   "error_code": 98,
+   "error_message": "Entry not found.",
+   "index": "708367C03D7164F13B05DB88802EA5E129E4B0FDF4951E98F1D6A77662BF1BE2",
+   "ledger_hash": "2B332C9665C3F1C007675527F4B524293701AAF8F445B45655D2F2BFBED77A2B",
+   "ledger_index": 34,
+   "validated": true
+  }
+ },
+ {
+  "method": "ledger_entry",
+  "params": {
+   "ledger_index": 26,
+   "mptoken": {
+    "mpt_issuance_id": "0000000480A11652701D3C5A759CE6FD1328CD31B06BBC89",
+    "account": "rLUQ21aJnYZyeXfX4Mt5zSLJv6a7RmciGE"
+   }
+  },
+  "result": {
+   "error": "entryNotFound",
+   "error_code": 98,
+   "error_message": "Entry not found.",
+   "index": "708367C03D7164F13B05DB88802EA5E129E4B0FDF4951E98F1D6A77662BF1BE2",
+   "ledger_hash": "79D600F3356F1D7F6930F5B3AC52336478BEA343F0953610E01ABE1977777E2C",
+   "ledger_index": 26,
+   "validated": true
+  }
+ },
+ {
+  "method": "ledger_entry",
+  "params": {
+   "ledger_index": 34,
+   "mpt_issuance": "0000000B80A11652701D3C5A759CE6FD1328CD31B06BBC89"
+  },
+  "result": {
+   "index": "B39A10D54BADD093CBA4B138F86A9459C90E6558C1396751EC89109CFD4D6F4F",
+   "ledger_hash": "2B332C9665C3F1C007675527F4B524293701AAF8F445B45655D2F2BFBED77A2B",
+   "ledger_index": 34,
+   "node": {
+    "Flags": 32,
+    "Issuer": "rUj37a9tSJseex3ZHi1zZZpsbpzG36YdAr",
+    "LedgerEntryType": "MPTokenIssuance",
+    "OutstandingAmount": "0",
+    "OwnerNode": "0",
+    "PreviousTxnID": "6F53E0DB98188D74D5E1895A9F0E3B4A33A624587CD97AE30933A88223ADFBBA",
+    "PreviousTxnLgrSeq": 26,
+    "Sequence": 11,
+    "TransferFee": 100,
+    "index": "B39A10D54BADD093CBA4B138F86A9459C90E6558C1396751EC89109CFD4D6F4F",
+    "mpt_issuance_id": "0000000B80A11652701D3C5A759CE6FD1328CD31B06BBC89"
+   },
+   "validated": true
+  }
+ },
+ {
+  "method": "ledger_entry",
+  "params": {
+   "ledger_index": 34,
+   "mptoken": {
+    "mpt_issuance_id": "0000000B80A11652701D3C5A759CE6FD1328CD31B06BBC89",
+    "account": "rndT6ThEBdKFN2ZeLEreiQRpGVSmYmVcxa"
+   }
+  },
+  "result": {
+   "index": "8B2838CD7097D23F3D2937A0111FBB26893D12E43E76D4B4D1E8CAA431292A53",
+   "ledger_hash": "2B332C9665C3F1C007675527F4B524293701AAF8F445B45655D2F2BFBED77A2B",
+   "ledger_index": 34,
+   "node": {
+    "Account": "rndT6ThEBdKFN2ZeLEreiQRpGVSmYmVcxa",
+    "Flags": 0,
+    "LedgerEntryType": "MPToken",
+    "MPTokenIssuanceID": "0000000B80A11652701D3C5A759CE6FD1328CD31B06BBC89",
+    "OwnerNode": "0",
+    "PreviousTxnID": "6C2E5C2486F84A64C95479F72808617E200AE6C05A0156DD732F0DAFC8BA5DDB",
+    "PreviousTxnLgrSeq": 23,
+    "index": "8B2838CD7097D23F3D2937A0111FBB26893D12E43E76D4B4D1E8CAA431292A53"
+   },
+   "validated": true
+  }
+ },
+ {
+  "method": "ledger_entry",
+  "params": {
+   "ledger_index": 26,
+   "mptoken": {
+    "mpt_issuance_id": "0000000B80A11652701D3C5A759CE6FD1328CD31B06BBC89",
+    "account": "rndT6ThEBdKFN2ZeLEreiQRpGVSmYmVcxa"
+   }
+  },
+  "result": {
+   "index": "8B2838CD7097D23F3D2937A0111FBB26893D12E43E76D4B4D1E8CAA431292A53",
+   "ledger_hash": "79D600F3356F1D7F6930F5B3AC52336478BEA343F0953610E01ABE1977777E2C",
+   "ledger_index": 26,
+   "node": {
+    "Account": "rndT6ThEBdKFN2ZeLEreiQRpGVSmYmVcxa",
+    "Flags": 0,
+    "LedgerEntryType": "MPToken",
+    "MPTokenIssuanceID": "0000000B80A11652701D3C5A759CE6FD1328CD31B06BBC89",
+    "OwnerNode": "0",
+    "PreviousTxnID": "6C2E5C2486F84A64C95479F72808617E200AE6C05A0156DD732F0DAFC8BA5DDB",
+    "PreviousTxnLgrSeq": 23,
+    "index": "8B2838CD7097D23F3D2937A0111FBB26893D12E43E76D4B4D1E8CAA431292A53"
+   },
+   "validated": true
+  }
+ },
+ {
+  "method": "ledger_entry",
+  "params": {
+   "ledger_index": 34,
+   "mptoken": {
+    "mpt_issuance_id": "0000000B80A11652701D3C5A759CE6FD1328CD31B06BBC89",
+    "account": "rnLwLe68AdFD6L8s6ZtusRfVNF1kJom9tA"
+   }
+  },
+  "result": {
+   "index": "0337134F4D072BF150DEC444F0A24060C00646EC710EF4BB9F73B0600479D524",
+   "ledger_hash": "2B332C9665C3F1C007675527F4B524293701AAF8F445B45655D2F2BFBED77A2B",
+   "ledger_index": 34,
+   "node": {
+    "Account": "rnLwLe68AdFD6L8s6ZtusRfVNF1kJom9tA",
+    "Flags": 0,
+    "LedgerEntryType": "MPToken",
+    "MPTokenIssuanceID": "0000000B80A11652701D3C5A759CE6FD1328CD31B06BBC89",
+    "OwnerNode": "0",
+    "PreviousTxnID": "D3FE84F26B2287B71EB31D0DCF52D821DBF76EC281E8AA6EEB56D2670491485C",
+    "PreviousTxnLgrSeq": 24,
+    "index": "0337134F4D072BF150DEC444F0A24060C00646EC710EF4BB9F73B0600479D524"
+   },
+   "validated": true
+  }
+ },
+ {
+  "method": "ledger_entry",
+  "params": {
+   "ledger_index": 26,
+   "mptoken": {
+    "mpt_issuance_id": "0000000B80A11652701D3C5A759CE6FD1328CD31B06BBC89",
+    "account": "rnLwLe68AdFD6L8s6ZtusRfVNF1kJom9tA"
+   }
+  },
+  "result": {
+   "index": "0337134F4D072BF150DEC444F0A24060C00646EC710EF4BB9F73B0600479D524",
+   "ledger_hash": "79D600F3356F1D7F6930F5B3AC52336478BEA343F0953610E01ABE1977777E2C",
+   "ledger_index": 26,
+   "node": {
+    "Account": "rnLwLe68AdFD6L8s6ZtusRfVNF1kJom9tA",
+    "Flags": 0,
+    "LedgerEntryType": "MPToken",
+    "MPTokenIssuanceID": "0000000B80A11652701D3C5A759CE6FD1328CD31B06BBC89",
+    "OwnerNode": "0",
+    "PreviousTxnID": "D3FE84F26B2287B71EB31D0DCF52D821DBF76EC281E8AA6EEB56D2670491485C",
+    "PreviousTxnLgrSeq": 24,
+    "index": "0337134F4D072BF150DEC444F0A24060C00646EC710EF4BB9F73B0600479D524"
+   },
+   "validated": true
+  }
+ },
+ {
+  "method": "ledger_entry",
+  "params": {
+   "ledger_index": 34,
+   "mptoken": {
+    "mpt_issuance_id": "0000000B80A11652701D3C5A759CE6FD1328CD31B06BBC89",
+    "account": "rLUQ21aJnYZyeXfX4Mt5zSLJv6a7RmciGE"
+   }
+  },
+  "result": {
+   "error": "entryNotFound",
+   "error_code": 98,
+   "error_message": "Entry not found.",
+   "index": "8A53C8082118F3B9B052AEDE0C1ABFE1B5FED165C0EB1E70E554024B79963E56",
+   "ledger_hash": "2B332C9665C3F1C007675527F4B524293701AAF8F445B45655D2F2BFBED77A2B",
+   "ledger_index": 34,
+   "validated": true
+  }
+ },
+ {
+  "method": "ledger_entry",
+  "params": {
+   "ledger_index": 26,
+   "mptoken": {
+    "mpt_issuance_id": "0000000B80A11652701D3C5A759CE6FD1328CD31B06BBC89",
+    "account": "rLUQ21aJnYZyeXfX4Mt5zSLJv6a7RmciGE"
+   }
+  },
+  "result": {
+   "index": "8A53C8082118F3B9B052AEDE0C1ABFE1B5FED165C0EB1E70E554024B79963E56",
+   "ledger_hash": "79D600F3356F1D7F6930F5B3AC52336478BEA343F0953610E01ABE1977777E2C",
+   "ledger_index": 26,
+   "node": {
+    "Account": "rLUQ21aJnYZyeXfX4Mt5zSLJv6a7RmciGE",
+    "Flags": 0,
+    "LedgerEntryType": "MPToken",
+    "MPTokenIssuanceID": "0000000B80A11652701D3C5A759CE6FD1328CD31B06BBC89",
+    "OwnerNode": "0",
+    "PreviousTxnID": "6F53E0DB98188D74D5E1895A9F0E3B4A33A624587CD97AE30933A88223ADFBBA",
+    "PreviousTxnLgrSeq": 26,
+    "index": "8A53C8082118F3B9B052AEDE0C1ABFE1B5FED165C0EB1E70E554024B79963E56"
+   },
+   "validated": true
+  }
+ },
+ {
+  "method": "ledger_entry",
+  "params": {
+   "ledger_index": 34,
+   "mpt_issuance": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "result": {
+   "error": "malformedMPTokenIssuance",
+   "error_code": 31,
+   "error_message": "Invalid field 'mpt_issuance', not Hash192."
+  }
+ },
+ {
+  "method": "ledger_entry",
+  "params": {
+   "ledger_index": 34,
+   "offer": "98E2423C5E3D45131BDD5B347534FF11A521E465F2B02B26278BA1EBB429B097"
+  },
+  "result": {
+   "error": "unexpectedLedgerType",
+   "error_code": 99,
+   "error_message": "Unexpected ledger type.",
+   "index": "98E2423C5E3D45131BDD5B347534FF11A521E465F2B02B26278BA1EBB429B097",
+   "ledger_hash": "2B332C9665C3F1C007675527F4B524293701AAF8F445B45655D2F2BFBED77A2B",
+   "ledger_index": 34,
+   "validated": true
+  }
+ }
+]

@@ -1,0 +1,14 @@
+{"requests": {"tx": 2000, "ledger by hash": 500, "account_info": 289}}
+{"target": "pieces", "phase": "cold", "transport": "http", "request": "tx", "n": 2000, "median_ms": 1.015, "p95_ms": 26.669, "p99_ms": 94.954, "max_ms": 194.968}
+{"target": "pieces", "phase": "cold", "transport": "http", "request": "ledger by hash", "n": 500, "median_ms": 0.31, "p95_ms": 1.104, "p99_ms": 2.726, "max_ms": 3.37}
+{"target": "pieces", "phase": "cold", "transport": "http", "request": "account_info", "n": 289, "median_ms": 1.867, "p95_ms": 9.107, "p99_ms": 11.699, "max_ms": 39.851}
+{"target": "pieces", "phase": "cold", "transport": "ws", "request": "tx", "n": 2000, "median_ms": 0.612, "p95_ms": 41.853, "p99_ms": 42.979, "max_ms": 44.78, "per_second_16_in_flight": 690}
+{"target": "pieces", "phase": "cold", "transport": "ws", "request": "ledger by hash", "n": 500, "median_ms": 0.126, "p95_ms": 0.175, "p99_ms": 0.248, "max_ms": 0.391, "per_second_16_in_flight": 6734}
+{"target": "pieces", "phase": "cold", "transport": "ws", "request": "account_info", "n": 289, "median_ms": 0.153, "p95_ms": 0.271, "p99_ms": 0.439, "max_ms": 0.728, "per_second_16_in_flight": 4141}
+{"target": "pieces", "phase": "warm", "transport": "http", "request": "tx", "n": 2000, "median_ms": 0.644, "p95_ms": 1.319, "p99_ms": 2.001, "max_ms": 6.99}
+{"target": "pieces", "phase": "warm", "transport": "http", "request": "ledger by hash", "n": 500, "median_ms": 0.303, "p95_ms": 0.361, "p99_ms": 0.429, "max_ms": 0.508}
+{"target": "pieces", "phase": "warm", "transport": "http", "request": "account_info", "n": 289, "median_ms": 0.329, "p95_ms": 0.465, "p99_ms": 0.798, "max_ms": 1.133}
+{"target": "pieces", "phase": "warm", "transport": "ws", "request": "tx", "n": 2000, "median_ms": 0.528, "p95_ms": 41.711, "p99_ms": 42.94, "max_ms": 44.425, "per_second_16_in_flight": 704}
+{"target": "pieces", "phase": "warm", "transport": "ws", "request": "ledger by hash", "n": 500, "median_ms": 0.097, "p95_ms": 0.139, "p99_ms": 0.251, "max_ms": 0.539, "per_second_16_in_flight": 7296}
+{"target": "pieces", "phase": "warm", "transport": "ws", "request": "account_info", "n": 289, "median_ms": 0.155, "p95_ms": 0.299, "p99_ms": 0.492, "max_ms": 0.604, "per_second_16_in_flight": 4475}
+DONE

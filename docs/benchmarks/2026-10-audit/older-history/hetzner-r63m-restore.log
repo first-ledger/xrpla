@@ -1,0 +1,72 @@
+{
+  "baseline": 63000000,
+  "baseline_hash": "c5b2c827b5e829a7c920a03bfedaa22a248d0e70b34585805aa0f35384237983",
+  "bytes_read": 1685116597,
+  "config": "/home/ubuntu/parity-old/r63m/node/rippled.cfg",
+  "first": 63000001,
+  "format": "rippled-3.3.0-nudb",
+  "last": 63100000,
+  "last_hash": "81c3ab48bc08d32d71a0d4ee4ce3cbb4ae6472c075ce386008591ef97b9dc756",
+  "ledger_seconds": 49.605974766,
+  "ledgers_written": 100000,
+  "nodes": null,
+  "nudb": {
+    "buckets": 1015602,
+    "data_bytes": 33830291960,
+    "key_phase_seconds": {
+      "data_sync": 0.000434433,
+      "distribute": 1.103167103,
+      "final_sync": 3.222908435,
+      "sort_and_fill": 8.59470773
+    },
+    "key_seconds": 12.921217045,
+    "keys": 101779159,
+    "opened": true,
+    "regions": 4,
+    "repeated": 13491632
+  },
+  "nudb_data_size": 33830291960,
+  "nudb_entries": 115270791,
+  "phase_seconds": {
+    "commit": 5.216155954999999,
+    "commit_parts": {
+      "nodes_durable": 0.161853297,
+      "receipt": 0.027352715,
+      "sql_commit": 5.026933613,
+      "verified": 1.798199999999999e-05
+    },
+    "nodes": 0.0,
+    "read": 9.32923728200022,
+    "rows": 27.469120068,
+    "sql": 41.19216695100019,
+    "verify": 6.007888297999993
+  },
+  "seconds": 55.594242557,
+  "snapshot_nodes": {
+    "data_bytes": 1059257336,
+    "entries": 5754880,
+    "nodes": 5754880,
+    "value_bytes": 840571804
+  },
+  "snapshot_phase_seconds": {
+    "add": 0.664709351,
+    "finish": 0.509635124,
+    "read": 4.813763122
+  },
+  "snapshot_seconds": 5.988275178,
+  "source": "xrpla-pieces",
+  "sql_index_seconds": 12.921309856,
+  "sql_rowids": {
+    "accounts": 12412303,
+    "transactions": 6096259
+  },
+  "transactions": 6096259,
+  "verify_seconds": {
+    "changes": 17926037,
+    "ledgers": 100000,
+    "prepare": 59.763387492,
+    "root_checks": 0.355944074,
+    "state_updates": 211.767459607,
+    "submit_waiting": 5.692056773
+  }
+}

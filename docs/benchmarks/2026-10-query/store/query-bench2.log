@@ -1,0 +1,6 @@
+requests: 2000 tx, 500 ledgers, 289 accounts
+old: tx 9.93 ms median, 17.87 ms p99; ledger by hash 8.58 ms median, 11.30 ms p99; account_info 10.75 ms median, 14.73 ms p99
+new: tx 0.56 ms median, 1.29 ms p99; ledger by hash 0.40 ms median, 1.18 ms p99; account_info 1.89 ms median, 5.43 ms p99
+old: tx 9.22 ms median, 14.73 ms p99; ledger by hash 8.24 ms median, 11.07 ms p99; account_info 10.47 ms median, 27.89 ms p99
+new: tx 0.70 ms median, 1.51 ms p99; ledger by hash 0.33 ms median, 0.69 ms p99; account_info 0.41 ms median, 0.88 ms p99
+DONE

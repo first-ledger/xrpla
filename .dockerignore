@@ -1,0 +1,10 @@
+build*
+.git
+.venv
+.conan2
+.cache
+dist
+data
+__pycache__
+CMakeUserPresets.json
+docs

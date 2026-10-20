@@ -1,0 +1,437 @@
+# XRPLA configuration reference: every setting `xrpla run` reads, with its default and the
+# values it accepts.
+#
+# `xrpla setup` asks how a machine will use XRPLA and writes /etc/xrpla/xrpla.toml from this
+# file: the settings it chose are filled in, and every other one stays here as a commented
+# line (`#name = default`), so the file you run documents itself. To change a setting, remove
+# the `#` in front of it (and in front of its [section] line, if that is still commented) and
+# edit the value; then restart the service (`systemctl restart xrpla`) or run
+# `xrpla run --config /etc/xrpla/xrpla.toml` again.
+#
+# Values: text in "double quotes"; numbers without quotes; true or false; lists in [ ].
+# A setting that is left out (or commented) takes its default. Settings a profile does not use
+# are ignored, and so are names XRPLA does not know (a warning names them when the service
+# starts, as they are usually typing mistakes).
+#
+# The profile decides what the machine does; each setting below says which profiles read it.
+
+# ---------------------------------------------------------------------------------------------
+# profile: how this machine uses XRPLA. Required.
+#   "restore"     fill an xrpld (NuDB or RocksDB) or Clio database from published history once,
+#                 then exit ([publication], [history], [restore]).
+#   "mirror"      keep a local copy of published history, current with the publication, and
+#                 serve the XRPL JSON-RPC and WebSocket API from it ([publication], [history],
+#                 [storage], [serve], [mirror], [index], [cache], [network]).
+#   "connected"   follow your own (or a remote) xrpld a few seconds behind it, keep its history
+#                 compressed and serve it ([node], [connected], [storage], [serve], [index],
+#                 [cache], [network]; optionally [publication] and [validators]).
+#   "standalone"  no xrpld at all: history from a publication, the newest ledgers from the XRPL
+#                 peer network ([publication], [storage], [serve], [standalone], [peers],
+#                 [validators], [index], [cache], [network]).
+#   "publisher"   publish history to R2/S3. Not run by `xrpla run` in this release: run
+#                 tools/live_publisher.py (config/xrpla-publisher.service).
+#profile = "mirror"
+
+# ---------------------------------------------------------------------------------------------
+# [publication]: where published history comes from.
+# Read by: restore, mirror, standalone (required); connected (optional: with it, history comes
+# from the publication and the node supplies only the ledgers after it).
+#[publication]
+
+# A publication from the approved list installed with xrpla (/usr/share/xrpla/publications.toml;
+# `xrpla publications` lists them), by its name: its publisher key and mirrors come from the
+# list, so a package upgrade's list (new mirrors, say) applies. Instead of source and
+# publisher_key below; a source given as well replaces the listed mirrors, and a publisher_key
+# given as well must be the listed key (docs/reference/publications.md).
+#name = "xrpla-mainnet"
+
+# The publication: an HTTPS base URL (the directory holding catalog/current.json), or a local
+# bucket directory; or an array of them, mirrors of one publication, tried in order (one out of
+# reach, failing, or serving what does not check out is passed over for the next). Nothing else
+# is trusted: every object is checked against the catalog the publisher signed.
+#source = "https://history.example.com/mainnet"
+
+# The publisher's public key: a file holding 32 raw bytes or 64 hex characters, or the 64 hex
+# characters themselves (always the key: a key file named so is given with a path, ./NAME).
+# Pin it from a source you trust; `xrpla setup` writes a key given as hex to publisher.pub next
+# to this file.
+#publisher_key = "/etc/xrpla/publisher.pub"
+
+# ---------------------------------------------------------------------------------------------
+# [history]: which ledgers to keep.
+# Read by: restore and mirror (first and last); standalone and connected with a [publication]
+# (first only: they always follow the newest ledgers).
+#[history]
+
+# The first ledger: "earliest" (the publication's first) or a ledger sequence number. A restore
+# starting at N replays from the newest snapshot below N; ledgers before N are verified but
+# not written.
+#first = "earliest"
+
+# The last ledger: "tip" (the newest, and for mirror, whatever the publication gains) or a
+# ledger sequence number.
+#last = "tip"
+
+# ---------------------------------------------------------------------------------------------
+# [restore]: the database a restore fills. Read by: restore.
+#[restore]
+
+# What to fill:
+#   "nudb"     an xrpld node database (NuDB, xrpld's default backend) plus ledger.db and
+#              transaction.db, and a rippled.cfg pointing at them.
+#   "rocksdb"  the same with xrpld's RocksDB backend.
+#   "clio"     a Clio (Cassandra or ScyllaDB) database: its tables, loaded when clio_host is set
+#              (otherwise only the import plan is written).
+#   "store"    an XRPLA store, served with `xrpla serve --dir`.
+#target = "nudb"
+
+# The output directory. A restore interrupted here continues from its last committed window
+# when run again, and a restore to a later ledger extends an earlier one.
+#out = "/var/lib/xrpla/restore"
+
+# clio only: the Cassandra or ScyllaDB host to load into (empty: write the import plan only).
+# The password, if any, comes from the XRPLA_CQL_PASSWORD environment variable.
+#clio_host = "127.0.0.1"
+
+# clio only: its CQL port.
+#clio_port = 9042
+
+# clio only: the keyspace (created if missing).
+#clio_keyspace = "xrpla"
+
+# clio only: the user name (empty: no authentication).
+#clio_username = ""
+
+# clio only: true to connect with TLS.
+#clio_tls = false
+
+# ---------------------------------------------------------------------------------------------
+# [storage]: where this machine keeps its data.
+# Read by: mirror, connected, standalone.
+#[storage]
+
+# The data directory (required). mirror keeps its piece cache here; standalone and connected
+# keep cache/ (the piece cache), spool/ or follower/ (the newest ledgers), keys/ (this
+# machine's signing keys and peer identity) and, for connected without a publication, bucket/
+# (its own sealed history).
+#dir = "/var/lib/xrpla"
+
+# Memory for decoding compressed history, in MB (at least 256; 0: a quarter of the machine's
+# memory, between 3072 and 65536): 30% decoded pages, 60% open segments (each charged its
+# dictionary, about 45 MB; loading one is most of a cold read), 10% snapshot blocks. More
+# memory keeps more of the history decoded and answers faster. The process uses about a quarter
+# more than this under heavy load (requests in flight, lookup maps, the allocator's own), so
+# leave that room beside other services.
+#cache_mb = 0
+
+# ---------------------------------------------------------------------------------------------
+# [serve]: the XRPL API this machine answers.
+# Read by: mirror, connected, standalone.
+#[serve]
+
+# The JSON-RPC listener, HOST:PORT. Defaults: 127.0.0.1:5005 (mirror, standalone) and
+# 127.0.0.1:5105 (connected, as xrpld itself usually has 5005). Use 0.0.0.0:PORT to answer
+# other machines; XRPLA has no admin methods, but put public listeners behind a proxy that
+# limits requests.
+#http = "127.0.0.1:5005"
+
+# The WebSocket listener, HOST:PORT (subscribe: ledger, transactions, accounts and books
+# streams). Defaults: 127.0.0.1:6006 (mirror, standalone) and 127.0.0.1:6106 (connected).
+#ws = "127.0.0.1:6006"
+
+# TLS listeners, HOST:PORT, with tls_cert and tls_key: HTTPS JSON-RPC and WSS. Like the plain
+# ones, each answers both, so one port can serve https:// and wss://. Empty: none.
+#https = "0.0.0.0:51234"
+#wss = "0.0.0.0:51233"
+
+# The TLS certificate chain (leaf first) and its private key, PEM files: for example
+# certbot's fullchain.pem and privkey.pem, copied by a deploy hook to files this user reads.
+# Both are checked every minute and a renewed certificate is used for new connections without
+# a restart.
+#tls_cert = "/etc/xrpla/tls/fullchain.pem"
+#tls_key = "/etc/xrpla/tls/privkey.pem"
+
+# Threads answering requests (1-32). Heavy requests (book_offers, account_tx, account_lines and
+# the other account_ lists, ledger_data, a ledger with its transactions, Clio's methods) run
+# on this many; quick ones (server_info, ledger_range, tx, ledger_entry, account_info, a
+# ledger's header) on half as many (at least 2) of their own, so they never wait behind a
+# heavy one. Each set queues up to 16 requests per thread; more are answered tooBusy. A busy
+# public server wants about one per core.
+#threads = 4
+
+# An xrpld JSON-RPC URL (http:// or https://) for what history cannot answer: submit,
+# submit_multisigned, fee, ripple_path_find, ledger_current, server_state, server_definitions,
+# manifest, channel_authorize, channel_verify, simulate, and a request of the methods this node
+# answers for the "current" ledger. Nothing else is forwarded (not batch, whose elements xrpld
+# runs as requests of their own). Empty: those requests answer notSupported. Use a public
+# (non-admin) port of the upstream (here, one an xrpld on this machine opens without admin):
+# xrpld's stock localhost ports (5005, 6006) are admin ones, where anything forwarded would run
+# with admin rights. The server checks with get_counts, which xrpld refuses anyone but an admin
+# (HTTP 403), at every address the host has (the first 8; "localhost" is both 127.0.0.1 and ::1,
+# and xrpld gives each connection the role of the address it reaches), and sends requests only
+# to the addresses that refused it. An upstream that answers it at any address stops the server
+# at start, and one found so later is sent nothing (logged as forward_refused). A Clio upstream,
+# such as s1.ripple.com, has no get_counts and answers unknownCmd: it passes, but the role it
+# gives this server cannot be confirmed (logged once as forward_unverifiable). One that cannot be
+# asked at start (not running yet) is sent nothing either, its requests answered notReady, until
+# it is asked again (at most every 10 s, as requests come) and refuses. One that passed is asked
+# again every 5 minutes while requests go on, and within 10 s once a forwarded request cannot
+# reach it (restarting, say); no request waits for a probe. A probe that finds it an admin stops
+# forwarding (notReady) until a later one finds it public; one that gets no answer, or a busy one
+# (logged as forward_unchecked), keeps what was found before. So an upstream reconfigured to make
+# this server an admin is sent requests until the next probe, at most 5 minutes (about 10 s
+# after a failed request); forwarded requests are sanitised either way (no signing, no
+# credentials, public limits).
+#forward = "http://127.0.0.1:51234"
+
+# That upstream's WebSocket, for path_find, whose updates xrpld streams over WebSocket only:
+# a WebSocket client's path searches are relayed to it. Empty: path_find answers notSupported
+# (over HTTP it answers noEvents, as xrpld does). Forwarded requests carry the client's address
+# as X-Forwarded-For; list this machine in the upstream's secure_gateway so its limits apply
+# per client. A ws:// or wss:// URL, and a public (non-admin) port here too: an admin one runs
+# path searches without xrpld's limits. It is checked as forward is (get_counts, which xrpld
+# answers anyone but an admin with `forbidden`), and a path search is relayed to the addresses
+# checked. A search already open can still be closed or asked for its status while the check
+# does not pass. Ripple's public servers (s1, s2) turn off path_find; xrplcluster.com allows it.
+#forward_ws = "ws://127.0.0.1:51233"
+
+# Open HTTP and WebSocket connections at once; more are closed as they arrive.
+#max_connections = 1024
+
+# Of those, open at once from one client address (an IPv6 client's /64, which one machine
+# usually holds whole); more are closed as they arrive, and logged
+# (connections_refused, at most every 10 s). 0: no limit. This machine's own addresses are not
+# limited: behind a proxy on this machine, the proxy limits its clients.
+#max_connections_per_ip = 64
+
+# Whether clients on this machine's own addresses (127.0.0.1, ::1) are this machine's tools:
+# they may ask the server's internal methods (names starting with "_", which the stream parity
+# tool uses; anyone else is answered unknownCmd) and are not held to max_connections_per_ip.
+# Behind a reverse proxy on this machine every client arrives from loopback, so with true each
+# of them could ask those methods: set false there. Then the internal methods are refused to
+# everyone, and the proxy's connections count against max_connections_per_ip as one address
+# (set it to 0 and limit clients at the proxy). The interim server that answers from the piece
+# cache while the spool is built or extended (standalone, connected) is held to it too.
+#loopback_trusted = true
+
+# Piece caches: how many of the newest history segments to open in the background at start
+# (0: none; opened on first use).
+#warm_segments = 0
+
+# ---------------------------------------------------------------------------------------------
+# [network]: the XRPL network served.
+# Read by: mirror, connected, standalone.
+#[network]
+
+# The network: "mainnet" (the default; also 0 or "main"), "testnet" (1), "devnet" (2), or
+# another network's ID. It appears in responses (network_id, ctid) and in the peer handshake,
+# where peers of any other network are refused. For mainnet, testnet and devnet it also picks
+# the defaults of [peers] endpoints (the network's public hubs) and [validators] (its validator
+# list); another network needs both set.
+#id = "mainnet"
+
+# ---------------------------------------------------------------------------------------------
+# [index]: the optional local indexes, built as history is downloaded (every sync) and kept
+# next to it. Turning one off removes its files at the next sync, and its method then answers
+# notSupported; turning it back on builds only it, from the history already downloaded.
+# Read by: mirror, connected, standalone.
+#[index]
+
+# Clio's mpt_holders: every account that has held an MPT issuance. Small (MPTs exist on
+# mainnet since late 2025); true or false.
+#mpt_holders = true
+
+# Clio's nfts_by_issuer: every NFToken of an issuer, by taxon. About 180 MB for mainnet's
+# whole history; true or false.
+#nfts_by_issuer = true
+
+# ---------------------------------------------------------------------------------------------
+# [cache]: what the local copy of published history keeps besides the ledgers themselves.
+# Read by: mirror, connected, standalone.
+#[cache]
+
+# The publication holds a snapshot of the whole ledger state every 1,000,000 ledgers. The copy
+# always keeps the first (mainnet's ledger 32,570) and the newest the history passes; a ledger
+# between them reads each object from the newest kept snapshot at or before it plus every
+# change since, so a cold account_lines, account_objects or book_offers years back searches
+# dozens of million-ledger bundles and can take seconds. With N here, every snapshot at a
+# multiple of N ledgers is kept as well, and no ledger is more than N ledgers past a snapshot.
+# Disk for mainnet's full history today (compressed download in brackets): every 10,000,000
+# about 21 GB (10.1 GB), 5,000,000 about 42 GB (20.0 GB), 1,000,000 about 206 GB (99.0 GB). 0:
+# the first and newest only. Changing it downloads (or removes) snapshots at the next sync;
+# answers are the same either way, only faster.
+#snapshots_every = 0
+
+# ---------------------------------------------------------------------------------------------
+# [mirror]: Read by: mirror.
+#[mirror]
+
+# How often to check the publication for new history, in seconds.
+#sync_seconds = 300
+
+# ---------------------------------------------------------------------------------------------
+# [node]: the xrpld to follow. Read by: connected.
+#[node]
+
+# Its JSON-RPC URL (required), local or remote.
+#rpc = "http://127.0.0.1:5005"
+
+# Its gRPC endpoint, grpc://HOST:PORT (xrpld's [port_grpc]): each ledger's changes in one
+# request instead of one per changed object. Empty: JSON-RPC only.
+#grpc = "grpc://127.0.0.1:50051"
+
+# Its WebSocket URL, for its validations stream: required with [validators].
+#validations = "ws://127.0.0.1:6006"
+
+# A pause before each request to the node, in milliseconds; raise it for a shared public node.
+#delay_ms = 0
+
+# ---------------------------------------------------------------------------------------------
+# [validators]: accept only ledgers that a quorum of this validator list signed (80% of its
+# validators, as xrpld counts), instead of the node's word that they are validated.
+# Read by: connected (optional; recommended for a remote node, and it then needs [node]
+# validations); standalone (default: the network's own list, as [network] id picks it).
+#[validators]
+
+# The validator list: an HTTPS URL or a local file. Standalone defaults: https://vl.ripple.com
+# (mainnet), https://vl.altnet.rippletest.net (testnet), https://vl.devnet.rippletest.net (devnet).
+#list = "https://vl.ripple.com"
+
+# The list publisher's public key (hex), which the list and its validators' manifests are
+# checked against. Standalone defaults: ED2677ABFFD1B33AC6FBC3062B71F1E8397C1505E1C42C64D11AD1B28FF73F4734
+# (mainnet), ED264807102805220DA0F312E71FC2C69E1552C9C5790F6C25E3729DEB573D5860 (testnet),
+# EDBB54B0D9AEE071BB37784AF5A9E7CC49AC7A0EFCE868C54532BCB966B9CFC13B (devnet).
+#list_key = "ED2677ABFFD1B33AC6FBC3062B71F1E8397C1505E1C42C64D11AD1B28FF73F4734"
+
+# ---------------------------------------------------------------------------------------------
+# [connected]: Read by: connected.
+#[connected]
+
+# Without a [publication]: the first ledger to keep, "tip" (the node's newest validated ledger)
+# or a ledger sequence the node still holds (it exports the state at the ledger before it).
+# Read once, on the first start.
+#start = "tip"
+
+# How often the node is asked for new ledgers, in seconds.
+#poll_seconds = 3
+
+# Without a [publication]: how often complete pieces are sealed into the local history, in
+# seconds.
+#publish_seconds = 60
+
+# Without a [publication]: ledgers per piece, and pieces per bundle (a snapshot every
+# piece_ledgers x bundle_pieces ledgers). Fixed once the first piece is sealed.
+#piece_ledgers = 50000
+#bundle_pieces = 20
+
+# How often the local copy of history is brought up to date, in seconds (at the latest: it also
+# happens as soon as new history is sealed). Defaults: 30 without a [publication], 300 with one.
+#sync_seconds = 30
+
+# With a [publication]: how often to check whether the publication has a newer snapshot to
+# restart the newest-ledgers spool from, in seconds.
+#rotate_seconds = 3600
+
+# Without a [publication]: where tools/live_publisher.py is (default: the installed tools, in
+# share/xrpla/tools next to the xrpla binary).
+#tools = "/usr/share/xrpla/tools"
+
+# ---------------------------------------------------------------------------------------------
+# [standalone]: Read by: standalone.
+#[standalone]
+
+# How often to look for new ledgers on the peer network, in seconds.
+#poll_seconds = 3
+
+# How often to check the publication for new history, in seconds.
+#sync_seconds = 300
+
+# How often to check whether the publication has a newer snapshot to restart the
+# newest-ledgers spool from, in seconds (the spool then holds about one publication interval).
+#rotate_seconds = 3600
+
+# ---------------------------------------------------------------------------------------------
+# [peers]: this machine on the XRPL peer network, as a non-validating xrpld (docs/PEER-SERVING.md).
+# Read by: standalone; connected with a [publication] (when it fills a gap from peers).
+#[peers]
+
+# Peers kept connected, HOST:PORT (xrpld's [ips_fixed]). Default: none; the node joins through
+# its network's public hubs ([network] id: for mainnet, xrpld's r.ripple.com, sahyadri.isrdc.in,
+# hubs.xrpkuwait.com and hub.xrpl-commons.org, then s1.ripple.com and s2.ripple.com;
+# s.altnet.rippletest.net and r.altnet.rippletest.net for testnet,
+# s.devnet.rippletest.net for devnet), then prefers peers the network names.
+#endpoints = ["r.ripple.com:51235"]
+
+# Peers this node connects to itself (xrpld's [peers_out_max]).
+#outbound = 10
+
+# All peers at once, inbound and outbound (xrpld's [peers_max]); outbound first, inbound get
+# the rest. Default: outbound + max_inbound.
+#max_peers = 21
+
+# true: connect only to `endpoints` (the hubs when none are given), never advertise this node,
+# and keep its address out of crawls (xrpld's [peer_private]).
+#private = false
+
+# Relay validators' validations and proposals among peers, as xrpld does (each checked first;
+# transactions are never relayed).
+#relay = true
+
+# Which validations from validators outside the list are relayed:
+#   "all" (xrpld's default), "trusted" (only the list's), or "drop_untrusted" (not even counted).
+#relay_validations = "all"
+
+# Which proposals from validators outside the list are relayed: "trusted" (xrpld's default),
+# "all", or "drop_untrusted".
+#relay_proposals = "trusted"
+
+# Ask peers to stop sending a validator's messages beyond `squelch_sources` of them (xrpld's
+# reduce-relay, which it leaves off by default).
+#squelch = true
+
+# Peers kept sending each validator's messages.
+#squelch_sources = 5
+
+# true: serve ledger data to peers (accept inbound peers and answer for the newest `ledgers`
+# ledgers); false: answer every request as a node without ledgers. standalone only.
+#serve = false
+
+# With serve: how many of the newest validated ledgers are served in full (headers,
+# transaction and state trees).
+#ledgers = 256
+
+# With serve: accept inbound peers here, HOST:PORT (xrpld's [port_peer]). Empty: connect out only.
+#listen = "0.0.0.0:51235"
+
+# With serve: inbound peers at once (xrpld's [peers_in_max]); a full node redirects others.
+#max_inbound = 11
+
+# With serve: inbound peers from one address (xrpld's [overlay] ip_limit).
+#ip_limit = 2
+
+# With serve: answer /crawl on the peer port and let crawlers list this node's address.
+#crawl = false
+
+# With serve: node public keys (n9...) always admitted, beyond the limits, and never charged
+# (xrpld's [peer_reservations]).
+#reserved = []
+
+# ---------------------------------------------------------------------------------------------
+# [log]: where `xrpla run` writes what it and the processes it starts report. Without a file,
+# it goes to stdout and stderr: under systemd, the journal keeps it within its own limits.
+# Read by: every profile.
+#[log]
+
+# The log file. When it passes max_mb it is renamed FILE.1 (FILE.1 to FILE.2, and so on) and a
+# new one started; the oldest beyond `keep` is deleted.
+# Under the unit `xrpla setup` installs, the service may write only the storage directory and
+# the log file's directory as setup found them: after setting this, run setup again, which keeps
+# [log] from the configuration it replaces and lets the service write the file's directory. An
+# absolute path, in a directory of its own (not /var/log itself) or in the storage directory.
+#file = "/var/log/xrpla/xrpla.log"
+
+# Size at which the log file starts over, in MB.
+#max_mb = 100
+
+# Older log files kept.
+#keep = 5

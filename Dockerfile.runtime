@@ -1,0 +1,8 @@
+# Build context: the portable install tree produced by cmake --install.
+FROM ubuntu:22.04
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates python3 libzstd1 libsodium23 && rm -rf /var/lib/apt/lists/*
+COPY . /usr/local/
+USER 65532:65532
+WORKDIR /data
+ENTRYPOINT ["/usr/local/bin/xrpla"]
+CMD ["--help"]

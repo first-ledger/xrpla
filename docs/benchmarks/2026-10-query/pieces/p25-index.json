@@ -1,0 +1,22 @@
+{
+  "cache": "p25",
+  "optional": {
+    "mpt_holders": true,
+    "nfts_by_issuer": true
+  },
+  "ranges": [
+    {
+      "snapshot": 91000000,
+      "status": "present"
+    },
+    {
+      "nfts": "present",
+      "snapshot": 91000000
+    },
+    {
+      "object": "pieces/91000001-91050000.ef6f5f2a2bc85f3e.xrpp",
+      "status": "present"
+    }
+  ],
+  "removed": []
+}

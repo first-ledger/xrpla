@@ -1,0 +1,23 @@
+	Command being timed: "b/bin/xrpla sync --source https://xrpla-data.firstledger.net/mainnet --publisher-key publisher.pub --dir /home/ubuntu/parity-old/r63m/cache --range 63000001-63100000 --jobs 8"
+	User time (seconds): 10827.29
+	System time (seconds): 128.95
+	Percent of CPU this job got: 1593%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 11:27.75
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 20091312
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 283
+	Minor (reclaiming a frame) page faults: 58916995
+	Voluntary context switches: 492347
+	Involuntary context switches: 4174833
+	Swaps: 0
+	File system inputs: 2160824
+	File system outputs: 38196576
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

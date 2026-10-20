@@ -1,0 +1,9 @@
+{"invariant": "account_tx", "checked": 2070, "violated": 0, "errors": 0, "skipped": 0, "examples": []}
+{"invariant": "tx", "checked": 2429, "violated": 0, "errors": 0, "skipped": 0, "examples": []}
+{"invariant": "nft_info", "checked": 46, "violated": 0, "errors": 0, "skipped": 5, "examples": []}
+{"invariant": "nfts_by_issuer", "checked": 7, "violated": 0, "errors": 0, "skipped": 3, "examples": []}
+{"invariant": "nft_history", "checked": 51, "violated": 0, "errors": 0, "skipped": 0, "examples": []}
+{"invariant": "mpt_holders", "checked": 0, "violated": 0, "errors": 0, "skipped": 0, "examples": []}
+{"invariant": "account_mptokens", "checked": 0, "violated": 0, "errors": 0, "skipped": 0, "examples": []}
+{"invariant": "book_offers", "checked": 332, "violated": 0, "errors": 0, "skipped": 0, "examples": []}
+{"summary": true, "range": [32571, 107700000], "ledgers": 50, "transactions": 2448, "checked": 4935, "violated": 0, "errors": 0, "skipped": 8, "requests": 50529, "seconds": 531.5}

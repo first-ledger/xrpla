@@ -1,0 +1,6 @@
+# Preserve exact source, signed fixture, and validation bytes across platforms.
+# Validation receipts record hashes of these files.
+* -text
+
+# Keep the existing upstream license normalized as originally committed.
+LICENSE text eol=lf

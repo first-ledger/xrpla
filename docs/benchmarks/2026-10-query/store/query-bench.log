@@ -1,0 +1,8 @@
+old restore 166 s; store 4.5G; files 164
+new restore 90 s; store 4.6G; files 163
+requests: 2000 tx, 500 ledgers, 289 accounts
+old: tx 8.77 ms median, 18.93 ms p99; ledger by hash 7.83 ms median, 10.64 ms p99; account_info 9.32 ms median, 16.22 ms p99
+new: tx 9.15 ms median, 12.89 ms p99; ledger by hash 8.74 ms median, 18.58 ms p99; account_info 12.07 ms median, 18.83 ms p99
+old: tx 9.13 ms median, 12.81 ms p99; ledger by hash 8.83 ms median, 11.60 ms p99; account_info 11.17 ms median, 14.21 ms p99
+new: tx 9.24 ms median, 19.40 ms p99; ledger by hash 8.40 ms median, 11.06 ms p99; account_info 13.29 ms median, 18.57 ms p99
+DONE

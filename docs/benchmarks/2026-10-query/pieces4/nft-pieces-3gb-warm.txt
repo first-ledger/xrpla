@@ -1,0 +1,21 @@
+sampled 519 NFTs, 29 issuers, 208 accounts, 224 NFTs with offers
+method                n  median ms     p95 ms     max ms  errors
+account_nfts        421       0.60       4.94       7.85       0
+    slow: 7.8 ms {"account": "rHU8nu9zSnCpkL3gShG4aGawHzaRVfmKwQ", "ledger_index": 91050000, "limit": 400}
+    slow: 7.1 ms {"account": "r3Kt1x5e1hc1iEFHPJVFLqPPtubUXn2UMz", "ledger_index": 91050000, "limit": 400}
+nft_buy_offers      150       0.30       0.39       0.50     136
+    slow: 0.5 ms {"nft_id": "00081F408DE385B98E8D65B353018AEC78119565ADD7E9570F11146500000092", "ledger_index": 91050000}
+    slow: 0.5 ms {"nft_id": "00081F40FA4DAAF4E453B3D2077D8B23B6BDEA395A67A722D206A53904EC9388", "ledger_index": 91050000}
+nft_history         300       3.16       5.92      11.19       0
+    slow: 11.2 ms {"nft_id": "000813883CBABF8C1A71462BBDF8B69646CA97725E72DBDE761C138804C8BBEE", "limit": 20}
+    slow: 9.7 ms {"nft_id": "000813883CBABF8C1A71462BBDF8B69646CA97725E72DBDE761C138804C8BBEE", "limit": 100, "forward": true}
+nft_info            300       0.42       0.66       1.29      50
+    slow: 1.3 ms {"nft_id": "00081388C182B4F213B82CCFA4C6F59AD76F0AFCFBDF04D578C038F60000131B", "ledger_index": 91025000}
+    slow: 1.2 ms {"nft_id": "00081F408C7B90C59F79474B72A72507E6BADAF9F2C35E97CA3A728204F500E8", "ledger_index": 91050000}
+nft_sell_offers     150       0.32       0.49       0.92      88
+    slow: 0.9 ms {"nft_id": "00081388C182B4F213B82CCFA4C6F59AD76F0AFCFBDF04D508A324A100000C46", "ledger_index": 91050000}
+    slow: 0.6 ms {"nft_id": "000807D0393DE57C73F64865282B90BBC2F6AF396B840B3A611DDE33051B48DD", "ledger_index": 91050000}
+nfts_by_issuer      127       3.05       5.84      13.86       0
+    slow: 13.9 ms {"issuer": "rNBoiDuQfDgr4HRrCErB7CPE2qrDt2836D", "ledger_index": 91050000, "limit": 100, "nft_taxon": 1}
+    slow: 7.6 ms {"issuer": "rNBoiDuQfDgr4HRrCErB7CPE2qrDt2836D", "ledger_index": 91050000, "limit": 50}
+DONE

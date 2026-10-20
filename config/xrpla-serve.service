@@ -1,0 +1,25 @@
+[Unit]
+Description=XRPLA historical ledger RPC
+After=network.target
+
+[Service]
+Type=simple
+# An archive server, not the xrpla.service `xrpla setup` installs: that one runs as a static
+# xrpla account, which these dynamic ones would share, so run one or the other (docs/SETUP.md).
+DynamicUser=yes
+User=xrpla
+StateDirectory=xrpla
+WorkingDirectory=/var/lib/xrpla
+ExecStart=/usr/bin/xrpla serve --config /etc/xrpla/archive.toml
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+LimitNOFILE=4096
+TimeoutStopSec=90
+
+[Install]
+WantedBy=multi-user.target

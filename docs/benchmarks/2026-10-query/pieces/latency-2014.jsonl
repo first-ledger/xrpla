@@ -1,0 +1,26 @@
+{"requests": {"tx": 2000, "ledger by hash": 500, "account_info": 289}}
+{"target": "pieces", "phase": "cold", "transport": "http", "request": "tx", "n": 2000, "median_ms": 2.236, "p95_ms": 82.927, "p99_ms": 107.798, "max_ms": 179.688}
+{"target": "pieces", "phase": "cold", "transport": "http", "request": "ledger by hash", "n": 500, "median_ms": 0.355, "p95_ms": 1.137, "p99_ms": 1.953, "max_ms": 3.524}
+{"target": "pieces", "phase": "cold", "transport": "http", "request": "account_info", "n": 289, "median_ms": 1.998, "p95_ms": 84.005, "p99_ms": 100.995, "max_ms": 110.842}
+{"target": "pieces", "phase": "cold", "transport": "ws", "request": "tx", "n": 2000, "median_ms": 1.299, "p95_ms": 57.612, "p99_ms": 91.847, "max_ms": 155.523, "per_second_16_in_flight": 578}
+{"target": "pieces", "phase": "cold", "transport": "ws", "request": "ledger by hash", "n": 500, "median_ms": 0.1, "p95_ms": 0.175, "p99_ms": 0.301, "max_ms": 0.445, "per_second_16_in_flight": 6628}
+{"target": "pieces", "phase": "cold", "transport": "ws", "request": "account_info", "n": 289, "median_ms": 0.949, "p95_ms": 74.568, "p99_ms": 98.28, "max_ms": 111.8, "per_second_16_in_flight": 4121}
+{"target": "pieces", "phase": "warm", "transport": "http", "request": "tx", "n": 2000, "median_ms": 1.405, "p95_ms": 64.783, "p99_ms": 94.055, "max_ms": 146.302}
+{"target": "pieces", "phase": "warm", "transport": "http", "request": "ledger by hash", "n": 500, "median_ms": 0.261, "p95_ms": 0.304, "p99_ms": 0.376, "max_ms": 0.464}
+{"target": "pieces", "phase": "warm", "transport": "http", "request": "account_info", "n": 289, "median_ms": 2.071, "p95_ms": 90.194, "p99_ms": 140.469, "max_ms": 154.816}
+{"target": "pieces", "phase": "warm", "transport": "ws", "request": "tx", "n": 2000, "median_ms": 1.327, "p95_ms": 61.249, "p99_ms": 97.349, "max_ms": 155.556, "per_second_16_in_flight": 579}
+{"target": "pieces", "phase": "warm", "transport": "ws", "request": "ledger by hash", "n": 500, "median_ms": 0.117, "p95_ms": 0.16, "p99_ms": 0.252, "max_ms": 0.49, "per_second_16_in_flight": 6629}
+{"target": "pieces", "phase": "warm", "transport": "ws", "request": "account_info", "n": 289, "median_ms": 0.882, "p95_ms": 87.07, "p99_ms": 99.636, "max_ms": 109.226, "per_second_16_in_flight": 3993}
+{"target": "store", "phase": "cold", "transport": "http", "request": "tx", "n": 2000, "median_ms": 0.859, "p95_ms": 1.543, "p99_ms": 2.22, "max_ms": 22.035}
+{"target": "store", "phase": "cold", "transport": "http", "request": "ledger by hash", "n": 500, "median_ms": 0.481, "p95_ms": 0.843, "p99_ms": 1.239, "max_ms": 8.791}
+{"target": "store", "phase": "cold", "transport": "http", "request": "account_info", "n": 289, "median_ms": 0.439, "p95_ms": 0.643, "p99_ms": 1.635, "max_ms": 3.875}
+{"target": "store", "phase": "cold", "transport": "ws", "request": "tx", "n": 2000, "median_ms": 0.612, "p95_ms": 41.814, "p99_ms": 42.932, "max_ms": 44.015, "per_second_16_in_flight": 686}
+{"target": "store", "phase": "cold", "transport": "ws", "request": "ledger by hash", "n": 500, "median_ms": 0.125, "p95_ms": 0.19, "p99_ms": 0.337, "max_ms": 1.208, "per_second_16_in_flight": 6391}
+{"target": "store", "phase": "cold", "transport": "ws", "request": "account_info", "n": 289, "median_ms": 0.129, "p95_ms": 0.221, "p99_ms": 0.657, "max_ms": 2.425, "per_second_16_in_flight": 4489}
+{"target": "store", "phase": "warm", "transport": "http", "request": "tx", "n": 2000, "median_ms": 0.566, "p95_ms": 0.898, "p99_ms": 1.2, "max_ms": 2.784}
+{"target": "store", "phase": "warm", "transport": "http", "request": "ledger by hash", "n": 500, "median_ms": 0.253, "p95_ms": 0.335, "p99_ms": 0.453, "max_ms": 9.347}
+{"target": "store", "phase": "warm", "transport": "http", "request": "account_info", "n": 289, "median_ms": 0.288, "p95_ms": 0.373, "p99_ms": 0.962, "max_ms": 1.258}
+{"target": "store", "phase": "warm", "transport": "ws", "request": "tx", "n": 2000, "median_ms": 0.557, "p95_ms": 41.87, "p99_ms": 42.913, "max_ms": 51.014, "per_second_16_in_flight": 677}
+{"target": "store", "phase": "warm", "transport": "ws", "request": "ledger by hash", "n": 500, "median_ms": 0.126, "p95_ms": 0.196, "p99_ms": 0.38, "max_ms": 0.968, "per_second_16_in_flight": 6038}
+{"target": "store", "phase": "warm", "transport": "ws", "request": "account_info", "n": 289, "median_ms": 0.143, "p95_ms": 0.263, "p99_ms": 0.942, "max_ms": 1.996, "per_second_16_in_flight": 4146}
+DONE

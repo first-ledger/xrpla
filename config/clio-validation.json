@@ -1,0 +1,13 @@
+{
+  "database": {"type": "cassandra", "cassandra": {
+    "contact_points": "xrpla-cassandra-validation", "keyspace": "xrpla_validation",
+    "replication_factor": 1, "threads": 2
+  }},
+  "allow_no_etl": true,
+  "etl_sources": [{"ip": "127.0.0.1", "ws_port": "6006", "grpc_port": "50051"}],
+  "read_only": true,
+  "server": {"ip": "0.0.0.0", "port": 51233},
+  "cache": {"load": "none"},
+  "log": {"level": "debug", "enable_console": true},
+  "dos_guard": {"max_requests": 1000, "max_fetches": 100000000}
+}

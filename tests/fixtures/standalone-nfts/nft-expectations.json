@@ -1,0 +1,314 @@
+[
+ {
+  "nft_id": "0019000047670C811CA42D230944CF2D26235184754EE3485B974D9E00000004",
+  "ledger_index": 24,
+  "owner": "rfWYR2bZXSXWd3mqVTa5uqeNjD2BCm8tNm",
+  "uri": "697066733A2F2F6B6570742D73696E63652D736E617073686F74",
+  "is_burned": false,
+  "since": 5
+ },
+ {
+  "nft_id": "0019000047670C811CA42D230944CF2D26235184754EE348727D1EA200000005",
+  "ledger_index": 24,
+  "owner": "rfWYR2bZXSXWd3mqVTa5uqeNjD2BCm8tNm",
+  "uri": "",
+  "is_burned": false,
+  "since": 5
+ },
+ {
+  "nft_id": "0019000047670C811CA42D230944CF2D26235184754EE3488962EFA200000006",
+  "ledger_index": 16,
+  "owner": "rfWYR2bZXSXWd3mqVTa5uqeNjD2BCm8tNm",
+  "uri": "697066733A2F2F6D6F7665642D61667465722D736E617073686F74",
+  "is_burned": false,
+  "since": 5
+ },
+ {
+  "nft_id": "0019000047670C811CA42D230944CF2D26235184754EE3488962EFA200000006",
+  "ledger_index": 24,
+  "owner": "rnKPCKvp56WZcreASrE29RfoWJZreDmjWq",
+  "uri": "697066733A2F2F6D6F7665642D61667465722D736E617073686F74",
+  "is_burned": false,
+  "since": 17
+ },
+ {
+  "nft_id": "0019000047670C811CA42D230944CF2D26235184754EE348343168C00000002F",
+  "ledger_index": 8,
+  "owner": "rfWYR2bZXSXWd3mqVTa5uqeNjD2BCm8tNm",
+  "uri": "697066733A2F2F747261646564",
+  "is_burned": false,
+  "since": 8
+ },
+ {
+  "nft_id": "0019000047670C811CA42D230944CF2D26235184754EE348343168C00000002F",
+  "ledger_index": 10,
+  "owner": "r4n9nfPhtr1XmYtkh3yyW2WTPnquiSXypW",
+  "uri": "697066733A2F2F747261646564",
+  "is_burned": false,
+  "since": 10
+ },
+ {
+  "nft_id": "0019000047670C811CA42D230944CF2D26235184754EE348343168C00000002F",
+  "ledger_index": 13,
+  "owner": "r4n9nfPhtr1XmYtkh3yyW2WTPnquiSXypW",
+  "uri": "697066733A2F2F747261646564",
+  "is_burned": false,
+  "since": 10
+ },
+ {
+  "nft_id": "0019000047670C811CA42D230944CF2D26235184754EE348343168C00000002F",
+  "ledger_index": 14,
+  "owner": "rnKPCKvp56WZcreASrE29RfoWJZreDmjWq",
+  "uri": "697066733A2F2F747261646564",
+  "is_burned": false,
+  "since": 14
+ },
+ {
+  "nft_id": "0019000047670C811CA42D230944CF2D26235184754EE348343168C00000002F",
+  "ledger_index": 15,
+  "owner": "rnKPCKvp56WZcreASrE29RfoWJZreDmjWq",
+  "uri": "697066733A2F2F7472616465642D7632",
+  "is_burned": false,
+  "since": 14
+ },
+ {
+  "nft_id": "0019000047670C811CA42D230944CF2D26235184754EE348343168C00000002F",
+  "ledger_index": 24,
+  "owner": "rnKPCKvp56WZcreASrE29RfoWJZreDmjWq",
+  "uri": "697066733A2F2F7472616465642D7632",
+  "is_burned": false,
+  "since": 14
+ },
+ {
+  "nft_id": "0009000047670C811CA42D230944CF2D26235184754EE3484B1739C000000030",
+  "ledger_index": 18,
+  "owner": "rfWYR2bZXSXWd3mqVTa5uqeNjD2BCm8tNm",
+  "uri": "697066733A2F2F73616D652D6C65646765722D6275726E",
+  "is_burned": false,
+  "since": 8
+ },
+ {
+  "nft_id": "0009000047670C811CA42D230944CF2D26235184754EE3484B1739C000000030",
+  "ledger_index": 24,
+  "owner": "r4n9nfPhtr1XmYtkh3yyW2WTPnquiSXypW",
+  "uri": "697066733A2F2F73616D652D6C65646765722D6275726E",
+  "is_burned": true,
+  "since": 19
+ },
+ {
+  "nft_id": "0009000047670C811CA42D230944CF2D26235184754EE348A048C0C600000007",
+  "ledger_index": 24,
+  "owner": "rnKPCKvp56WZcreASrE29RfoWJZreDmjWq",
+  "uri": "697066733A2F2F62756C6B2D313030",
+  "is_burned": true,
+  "since": 22
+ },
+ {
+  "nft_id": "0009000047670C811CA42D230944CF2D26235184754EE3486E5D19C600000010",
+  "ledger_index": 23,
+  "owner": "rfWYR2bZXSXWd3mqVTa5uqeNjD2BCm8tNm",
+  "uri": "697066733A2F2F62756C6B2D313039",
+  "is_burned": true,
+  "since": 23
+ },
+ {
+  "nft_id": "0009000047670C811CA42D230944CF2D26235184754EE348B72E91C600000008",
+  "ledger_index": 24,
+  "owner": "rfWYR2bZXSXWd3mqVTa5uqeNjD2BCm8tNm",
+  "uri": "697066733A2F2F62756C6B2D313031",
+  "is_burned": true,
+  "since": 23
+ },
+ {
+  "nft_id": "0009000047670C811CA42D230944CF2D26235184754EE348CE1462C200000009",
+  "ledger_index": 24,
+  "owner": "rfWYR2bZXSXWd3mqVTa5uqeNjD2BCm8tNm",
+  "uri": "697066733A2F2F62756C6B2D313032",
+  "is_burned": true,
+  "since": 23
+ },
+ {
+  "nft_id": "0009000047670C811CA42D230944CF2D26235184754EE348E4FA33C20000000A",
+  "ledger_index": 24,
+  "owner": "rfWYR2bZXSXWd3mqVTa5uqeNjD2BCm8tNm",
+  "uri": "697066733A2F2F62756C6B2D313033",
+  "is_burned": true,
+  "since": 23
+ },
+ {
+  "nft_id": "0009000047670C811CA42D230944CF2D26235184754EE348FBE004CE0000000B",
+  "ledger_index": 24,
+  "owner": "rfWYR2bZXSXWd3mqVTa5uqeNjD2BCm8tNm",
+  "uri": "697066733A2F2F62756C6B2D313034",
+  "is_burned": true,
+  "since": 23
+ },
+ {
+  "nft_id": "0009000047670C811CA42D230944CF2D26235184754EE34812C5D5CE0000000C",
+  "ledger_index": 24,
+  "owner": "rfWYR2bZXSXWd3mqVTa5uqeNjD2BCm8tNm",
+  "uri": "697066733A2F2F62756C6B2D313035",
+  "is_burned": true,
+  "since": 23
+ },
+ {
+  "nft_id": "0009000047670C811CA42D230944CF2D26235184754EE34829ABA6C20000000D",
+  "ledger_index": 24,
+  "owner": "rfWYR2bZXSXWd3mqVTa5uqeNjD2BCm8tNm",
+  "uri": "697066733A2F2F62756C6B2D313036",
+  "is_burned": true,
+  "since": 23
+ },
+ {
+  "nft_id": "0009000047670C811CA42D230944CF2D26235184754EE348409177C20000000E",
+  "ledger_index": 24,
+  "owner": "rfWYR2bZXSXWd3mqVTa5uqeNjD2BCm8tNm",
+  "uri": "697066733A2F2F62756C6B2D313037",
+  "is_burned": true,
+  "since": 23
+ },
+ {
+  "nft_id": "0009000047670C811CA42D230944CF2D26235184754EE348577748C60000000F",
+  "ledger_index": 24,
+  "owner": "rfWYR2bZXSXWd3mqVTa5uqeNjD2BCm8tNm",
+  "uri": "697066733A2F2F62756C6B2D313038",
+  "is_burned": true,
+  "since": 23
+ },
+ {
+  "nft_id": "0009000047670C811CA42D230944CF2D26235184754EE3486E5D19C600000010",
+  "ledger_index": 24,
+  "owner": "rfWYR2bZXSXWd3mqVTa5uqeNjD2BCm8tNm",
+  "uri": "697066733A2F2F62756C6B2D313039",
+  "is_burned": true,
+  "since": 23
+ },
+ {
+  "nft_id": "0009000047670C811CA42D230944CF2D26235184754EE3488542EAC200000011",
+  "ledger_index": 24,
+  "owner": "rfWYR2bZXSXWd3mqVTa5uqeNjD2BCm8tNm",
+  "uri": "697066733A2F2F62756C6B2D313130",
+  "is_burned": true,
+  "since": 23
+ },
+ {
+  "nft_id": "0009000047670C811CA42D230944CF2D26235184754EE3489C28BBC200000012",
+  "ledger_index": 24,
+  "owner": "rfWYR2bZXSXWd3mqVTa5uqeNjD2BCm8tNm",
+  "uri": "697066733A2F2F62756C6B2D313131",
+  "is_burned": true,
+  "since": 23
+ },
+ {
+  "nft_id": "0009000047670C811CA42D230944CF2D26235184754EE348B30E8CDE00000013",
+  "ledger_index": 24,
+  "owner": "rfWYR2bZXSXWd3mqVTa5uqeNjD2BCm8tNm",
+  "uri": "697066733A2F2F62756C6B2D313132",
+  "is_burned": true,
+  "since": 23
+ },
+ {
+  "nft_id": "0009000047670C811CA42D230944CF2D26235184754EE348C9F45DDE00000014",
+  "ledger_index": 24,
+  "owner": "rfWYR2bZXSXWd3mqVTa5uqeNjD2BCm8tNm",
+  "uri": "697066733A2F2F62756C6B2D313133",
+  "is_burned": true,
+  "since": 23
+ },
+ {
+  "nft_id": "0009000047670C811CA42D230944CF2D26235184754EE348E0DA2EC200000015",
+  "ledger_index": 24,
+  "owner": "rfWYR2bZXSXWd3mqVTa5uqeNjD2BCm8tNm",
+  "uri": "697066733A2F2F62756C6B2D313134",
+  "is_burned": true,
+  "since": 23
+ },
+ {
+  "nft_id": "0009000047670C811CA42D230944CF2D26235184754EE348F7BFFFC200000016",
+  "ledger_index": 24,
+  "owner": "rfWYR2bZXSXWd3mqVTa5uqeNjD2BCm8tNm",
+  "uri": "697066733A2F2F62756C6B2D313135",
+  "is_burned": true,
+  "since": 23
+ },
+ {
+  "nft_id": "0009000047670C811CA42D230944CF2D26235184754EE3480EA5D0C600000017",
+  "ledger_index": 24,
+  "owner": "rfWYR2bZXSXWd3mqVTa5uqeNjD2BCm8tNm",
+  "uri": "697066733A2F2F62756C6B2D313136",
+  "is_burned": true,
+  "since": 23
+ },
+ {
+  "nft_id": "0009000047670C811CA42D230944CF2D26235184754EE348258BA1C600000018",
+  "ledger_index": 24,
+  "owner": "rfWYR2bZXSXWd3mqVTa5uqeNjD2BCm8tNm",
+  "uri": "697066733A2F2F62756C6B2D313137",
+  "is_burned": true,
+  "since": 23
+ },
+ {
+  "nft_id": "0009000047670C811CA42D230944CF2D26235184754EE3483C7172C200000019",
+  "ledger_index": 24,
+  "owner": "rfWYR2bZXSXWd3mqVTa5uqeNjD2BCm8tNm",
+  "uri": "697066733A2F2F62756C6B2D313138",
+  "is_burned": true,
+  "since": 23
+ },
+ {
+  "nft_id": "0009000047670C811CA42D230944CF2D26235184754EE348535743C20000001A",
+  "ledger_index": 24,
+  "owner": "rfWYR2bZXSXWd3mqVTa5uqeNjD2BCm8tNm",
+  "uri": "697066733A2F2F62756C6B2D313139",
+  "is_burned": true,
+  "since": 23
+ },
+ {
+  "nft_id": "0009000047670C811CA42D230944CF2D26235184754EE3486A3D14CE0000001B",
+  "ledger_index": 24,
+  "owner": "rfWYR2bZXSXWd3mqVTa5uqeNjD2BCm8tNm",
+  "uri": "",
+  "is_burned": true,
+  "since": 23
+ },
+ {
+  "nft_id": "0009000047670C811CA42D230944CF2D26235184754EE3488122E5CE0000001C",
+  "ledger_index": 24,
+  "owner": "rfWYR2bZXSXWd3mqVTa5uqeNjD2BCm8tNm",
+  "uri": "",
+  "is_burned": true,
+  "since": 23
+ },
+ {
+  "nft_id": "0009000047670C811CA42D230944CF2D26235184754EE3489808B6C20000001D",
+  "ledger_index": 24,
+  "owner": "rfWYR2bZXSXWd3mqVTa5uqeNjD2BCm8tNm",
+  "uri": "",
+  "is_burned": true,
+  "since": 23
+ },
+ {
+  "nft_id": "0009000047670C811CA42D230944CF2D26235184754EE348AEEE87C20000001E",
+  "ledger_index": 24,
+  "owner": "rfWYR2bZXSXWd3mqVTa5uqeNjD2BCm8tNm",
+  "uri": "",
+  "is_burned": true,
+  "since": 23
+ },
+ {
+  "nft_id": "0009000047670C811CA42D230944CF2D26235184754EE348C5D458C60000001F",
+  "ledger_index": 24,
+  "owner": "rfWYR2bZXSXWd3mqVTa5uqeNjD2BCm8tNm",
+  "uri": "",
+  "is_burned": true,
+  "since": 23
+ },
+ {
+  "nft_id": "0009000047670C811CA42D230944CF2D26235184754EE348DCBA29C600000020",
+  "ledger_index": 24,
+  "owner": "rfWYR2bZXSXWd3mqVTa5uqeNjD2BCm8tNm",
+  "uri": "",
+  "is_burned": false,
+  "since": 7
+ }
+]

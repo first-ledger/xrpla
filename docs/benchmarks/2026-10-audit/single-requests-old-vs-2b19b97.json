@@ -1,0 +1,19 @@
+{
+  "what": "Single requests at older ledgers, one at a time, seconds. Two read-only `xrpla serve --dir data/cache --threads 8 --cache-mb 8192` processes on the test server (test-host, Ryzen 7 7700) over the same full-history piece cache: the deployed build before the audit (c05a479+fdlimit) and the audit's read path. First pass cold (fresh processes), second pass warm. All 13 compared answers were byte-identical between the two.",
+  "date_utc": "2026-10-16",
+  "old": "c05a479+fdlimit",
+  "new": "audit read path (released in 2b19b97)",
+  "results": [
+    {"request": "book_offers XRP/USD.Bitstamp @80,000,000", "cold_old": 5.265, "cold_new": 2.613, "warm_old": 5.038, "warm_new": 2.432},
+    {"request": "ledger_data 256 @80,000,000", "cold_old": 17.359, "cold_new": 2.958, "warm_old": 0.020, "warm_new": 0.011},
+    {"request": "account_objects @80,000,000", "cold_old": 1.967, "cold_new": 0.592, "warm_old": 0.050, "warm_new": 0.029},
+    {"request": "account_tx 200 @80,000,000", "cold_old": 0.073, "cold_new": 0.074, "warm_old": 0.039, "warm_new": 0.029},
+    {"request": "ledger transactions+expand @80,000,000", "cold_old": 0.552, "cold_new": 0.003, "warm_old": 0.017, "warm_new": 0.003},
+    {"request": "book_offers XRP/USD.Bitstamp @100,000,000", "cold_old": 11.377, "cold_new": 5.760, "warm_old": 10.847, "warm_new": 5.361},
+    {"request": "ledger_data 256 @100,000,000", "cold_old": 9.902, "cold_new": 1.777, "warm_old": 0.023, "warm_new": 0.012},
+    {"request": "account_objects @100,000,000", "cold_old": 0.879, "cold_new": 0.268, "warm_old": 0.064, "warm_new": 0.039},
+    {"request": "account_tx 200 @100,000,000", "cold_old": 0.046, "cold_new": 0.039, "warm_old": 0.031, "warm_new": 0.022},
+    {"request": "ledger transactions+expand @100,000,000", "cold_old": 0.244, "cold_new": 0.006, "warm_old": 0.015, "warm_new": 0.007}
+  ],
+  "profile_before": "book_offers @80M on the live node (perf, 12 s): PieceHistory::object_page 34%, memcmp 40%, heap 6%: the successor walk building a whole object page per price level, because LiveHistory did not pass book_directories through."
+}

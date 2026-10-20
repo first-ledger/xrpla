@@ -1,0 +1,14 @@
+{
+  "independent_consensus_validation": false,
+  "last_ledger_hash": "cea057a66cd8d4e51c9c12b971f9ea7772c47a7b15d573dcb1857458dd307503",
+  "ledger_hashes_verified": true,
+  "patches": 21,
+  "range": {
+    "first": 1000000,
+    "last": 1000004
+  },
+  "snapshot_objects": 38683,
+  "source": "https://s1.ripple.com:51234/",
+  "source_reports_validated": true,
+  "transactions": 6
+}

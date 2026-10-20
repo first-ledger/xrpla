@@ -1,0 +1,190 @@
+{
+ "network": "isolated-standalone",
+ "versions": {
+  "xrpld": "xrpld version 3.4.0\nGit commit hash: 4a4fded2eba11427c48ce3f24d9c1aea5e7a9d17\nGit build branch: HEAD",
+  "xrpla": "xrpla 0.4.0 (libxrpl 3.4.0)"
+ },
+ "transactions": [
+  {
+   "type": "Payment",
+   "hash": "D2F84BAAEC5C8016E378126A1B472811083C38468EE5B197F76FD18C3B42C5F5",
+   "ledger": 4
+  },
+  {
+   "type": "Payment",
+   "hash": "CA9DEE823D673538813259D6CFCA41E4ECB31A0C263D87C459189262E260D360",
+   "ledger": 5
+  },
+  {
+   "type": "Payment",
+   "hash": "9100DAFC03A313B7E6036A82A15966D16288C5EA1D7B38EE6018182C11F78250",
+   "ledger": 6
+  },
+  {
+   "type": "Payment",
+   "hash": "6855603BF572E4AD560E0952C453CF420955C7FDD6D05E82893027A63D34FA12",
+   "ledger": 7
+  },
+  {
+   "type": "Payment",
+   "hash": "B0E46A19347DC6449CCD346318621ED8C04ABA6E2DB2B3F0B6C070125A62518A",
+   "ledger": 8
+  },
+  {
+   "type": "Payment",
+   "hash": "100EAB7B993605F8C60FC8FAACC9DF2452B61D9C13AE7D76F67E8861A078B753",
+   "ledger": 9
+  },
+  {
+   "type": "MPTokenIssuanceCreate",
+   "hash": "77E20BDB8BF1E8E57AB0A0791250FFC38D7BB4954457EF2513908189A0487675",
+   "ledger": 10
+  },
+  {
+   "type": "MPTokenAuthorize",
+   "hash": "7C7795F5ED1D0B22F317DABBAFFC01F080C63AD43153A00DA8DCCB530C943887",
+   "ledger": 11
+  },
+  {
+   "type": "MPTokenAuthorize",
+   "hash": "B8CA25B9A8FCF873A0EBE067E39748DDD2EB4F62D3F13E7BD6B49215F282DF94",
+   "ledger": 12
+  },
+  {
+   "type": "MPTokenAuthorize",
+   "hash": "59AF5AC89A11C597B3343A551E27998FE57E1D4A3BABEA9D27E89C59293712EA",
+   "ledger": 14
+  },
+  {
+   "type": "MPTokenAuthorize",
+   "hash": "4DEB99D7C122EA847A9A0EB267E8E4500D792F50D84717EC3B3EF4138AE8CDE8",
+   "ledger": 15
+  },
+  {
+   "type": "Payment",
+   "hash": "3826D9F49A7795D622D8F9A033608EEC6AA43866D854C622FA788B74029876F3",
+   "ledger": 16
+  },
+  {
+   "type": "Payment",
+   "hash": "EAF3FEDFE0B5D95D244837694F9FBAF28618CE04D0A81350D05A8A6013664A0E",
+   "ledger": 17
+  },
+  {
+   "type": "MPTokenIssuanceSet",
+   "hash": "33A7D3FCF4B85F545A981C97D7AA74CE8FDA0A652BC37E83ACF3C1938702688C",
+   "ledger": 18
+  },
+  {
+   "type": "MPTokenIssuanceSet",
+   "hash": "0CE4FA693CBCCE48AA830C5D33E68F173DD44D172DDFA7DE7B1B1F61648C9F18",
+   "ledger": 19
+  },
+  {
+   "type": "Clawback",
+   "hash": "250EC22A13C1A00131E0616417DBCB4AA1B2605C3B65379D51C377C24871875F",
+   "ledger": 20
+  },
+  {
+   "type": "MPTokenIssuanceCreate",
+   "hash": "9BC0ACF2650438606AB0FCF8BDA72471141218D55290AB690A8FF8867888E34E",
+   "ledger": 21
+  },
+  {
+   "type": "MPTokenAuthorize",
+   "hash": "F4E4A7CCED64072ECBC2F2B7D8BE9A4BDE39D9F06FEA613C6376335D755A812E",
+   "ledger": 22
+  },
+  {
+   "type": "MPTokenAuthorize",
+   "hash": "6C2E5C2486F84A64C95479F72808617E200AE6C05A0156DD732F0DAFC8BA5DDB",
+   "ledger": 23
+  },
+  {
+   "type": "MPTokenAuthorize",
+   "hash": "D3FE84F26B2287B71EB31D0DCF52D821DBF76EC281E8AA6EEB56D2670491485C",
+   "ledger": 24
+  },
+  {
+   "type": "Payment",
+   "hash": "8D8294D5DB069ADA93889C3D493F635A94BDAAB1268B6A236D652DF2184EB9FA",
+   "ledger": 25
+  },
+  {
+   "type": "Payment",
+   "hash": "6F53E0DB98188D74D5E1895A9F0E3B4A33A624587CD97AE30933A88223ADFBBA",
+   "ledger": 26
+  },
+  {
+   "type": "MPTokenAuthorize",
+   "hash": "2F0C7A644937AB5A1CF2C317441038339C33642F808485A888A87B8C0B1ABE0E",
+   "ledger": 27
+  },
+  {
+   "type": "OracleSet",
+   "hash": "BD52AAC1A8D8A98C85A71024ED0289A01B2008EE0CF9433BE35078E3BB24AB49",
+   "ledger": 28
+  },
+  {
+   "type": "OracleSet",
+   "hash": "EA776C3CE4AE3CAD835F24241555ED7F223773FA2B716EE9B73A8ACB19B10D55",
+   "ledger": 29
+  },
+  {
+   "type": "OracleSet",
+   "hash": "D3129601246C753288F4BDAE8757B0E985E1FD6FDD3A637E7772C3ABF2072CF7",
+   "ledger": 30
+  },
+  {
+   "type": "OracleSet",
+   "hash": "F88AAB7CF77C2630D79D46797F2BDF3E35EB11813153AD37F64E5792A003C757",
+   "ledger": 31
+  },
+  {
+   "type": "VaultCreate",
+   "hash": "60DD7B7AD10070AC4120C5BF5595583A7904F3836F7F0DC66A2CCE054E38AA0D",
+   "ledger": 32
+  },
+  {
+   "type": "VaultDeposit",
+   "hash": "3EC1C38AD11079EF0A54E8CBDD5E517E230AB923F8CF1A0D30342A7AC1E75293",
+   "ledger": 33
+  }
+ ],
+ "range": {
+  "first": 14,
+  "last": 34
+ },
+ "publication": {
+  "batches": 1,
+  "last_batch": {
+   "compression_level": 3,
+   "diff_transport": "grpc",
+   "extended": false,
+   "independent_consensus_validation": false,
+   "last_ledger_hash": "2b332c9665c3f1c007675527f4b524293701aaf8f445b45655d2f2bfbed77a2b",
+   "ledger_hashes_verified": true,
+   "ledger_stage_seconds": {
+    "canonical_verification": 0.5571924500000001,
+    "decode_and_patch_collection": 0.0006961080000000002,
+    "rpc_and_cache": 0.1653644499999999
+   },
+   "patches": 83,
+   "range": {
+    "first": 14,
+    "last": 34
+   },
+   "resumed_nodes": false,
+   "rpc_cache": true,
+   "rpc_jobs": 4,
+   "snapshot_objects": 14,
+   "source": "http://127.0.0.1:46135/",
+   "source_reports_validated": true,
+   "transactions": 20
+  },
+  "ledgers_published": 21,
+  "stopped": false,
+  "tip": 34,
+  "trust": "source-node"
+ }
+}

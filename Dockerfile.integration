@@ -1,0 +1,14 @@
+FROM ubuntu:24.04
+# From 3.4.0 the xrpld packages are published at packages.xrplf.org; the release notes give
+# each package's SHA-256 (https://github.com/XRPLF/rippled/releases/tag/3.4.0). 3.4.1's notes
+# list none: this is the repository's own checksum for 3.4.1-2, the build of the published source.
+ARG XRPLD_VERSION=3.4.1-2
+ARG XRPLD_SHA256=1e093bfbcb3fed0c3815161100740a16f35473add08c8e5aba5f5f0008d14c1f
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl python3 && \
+    curl -fL --retry 3 https://packages.xrplf.org/repository/deb-stable/pool/x/xrpld/xrpld_${XRPLD_VERSION}_amd64.deb -o /tmp/xrpld.deb && \
+    echo "${XRPLD_SHA256}  /tmp/xrpld.deb" | sha256sum -c - && \
+    apt-get install -y --no-install-recommends /tmp/xrpld.deb && rm /tmp/xrpld.deb && rm -rf /var/lib/apt/lists/*
+RUN curl -fL --retry 3 https://github.com/XRPLF/clio/releases/download/2.7.1/clio_2.7.1_amd64.deb -o /tmp/clio.deb && \
+    echo 'c7058249e4055e614313005b21e9b8bcd218e4e9f65eb776576c78a543d1a71d  /tmp/clio.deb' | sha256sum -c - && \
+    apt-get update && apt-get install -y /tmp/clio.deb && rm /tmp/clio.deb && rm -rf /var/lib/apt/lists/*
+ENTRYPOINT ["/usr/bin/bash"]

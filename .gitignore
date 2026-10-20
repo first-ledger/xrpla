@@ -1,0 +1,34 @@
+/build*/
+/.venv/
+/.conan2/
+/data/
+/.cache/
+/dist/
+/CMakeUserPresets.json
+__pycache__/
+*.pyc
+*.part
+/docs/*
+*.md
+!/README.md
+!/SECURITY.md
+# User documentation (index, guides, reference) is versioned.
+!/docs/README.md
+!/docs/SETUP.md
+!/docs/PUBLICATION.md
+!/docs/PEER-SERVING.md
+!/docs/guides/
+!/docs/guides/*.md
+!/docs/reference/
+!/docs/reference/*.md
+# Of the internal notes, the index, design goals and benchmark reports are versioned;
+# other development notes and receipts stay local.
+!/docs/internal/
+/docs/internal/*
+!/docs/internal/README.md
+!/docs/internal/SIZE-AND-FOOTPRINT.md
+!/docs/internal/QUERY-BENCHMARKS.md
+!/docs/internal/SCALING-AND-COST.md
+!/docs/internal/PARITY-PLAN.md
+!/docs/benchmarks/
+!/docs/benchmarks/**/*.md

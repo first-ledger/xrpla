@@ -1,0 +1,14 @@
+[settings]
+os=Linux
+arch=x86_64
+compiler=gcc
+compiler.version=15
+compiler.libcxx=libstdc++11
+compiler.cppstd=23
+build_type=Release
+[conf]
+tools.build:jobs=4
+# Published XRPL packages target glibc >=2.31. Use with the pinned GCC 15 image.
+user.package:libc_version=2.31
+user.package:cppstd_version=23
+tools.info.package_id:confs=['user.package:libc_version', 'user.package:cppstd_version']

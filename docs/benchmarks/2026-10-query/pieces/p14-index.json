@@ -1,0 +1,22 @@
+{
+  "cache": "p14",
+  "optional": {
+    "mpt_holders": true,
+    "nfts_by_issuer": true
+  },
+  "ranges": [
+    {
+      "snapshot": 8000000,
+      "status": "present"
+    },
+    {
+      "nfts": "present",
+      "snapshot": 8000000
+    },
+    {
+      "object": "bundles/8000001-9000000.b734093faf0f5cf8.xrpp",
+      "status": "present"
+    }
+  ],
+  "removed": []
+}

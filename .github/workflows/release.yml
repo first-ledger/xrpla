@@ -1,0 +1,122 @@
+name: Release
+# A tag vX.Y.Z (matching project(VERSION) in CMakeLists.txt) builds and tests the packages in the
+# pinned build image, attaches them to a GitHub Release, and republishes the apt repository on
+# GitHub Pages from the packages of every release (docs/guides/install.md).
+#
+# Needs, once: Settings > Pages > Source "GitHub Actions", and the repository secret
+# APT_SIGNING_KEY (the armored secret key that signs the repository; APT_SIGNING_PASSPHRASE if it
+# has one). docs/guides/release.md describes both.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: release
+  cancel-in-progress: false
+jobs:
+  package:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          df -h /
+      - uses: actions/checkout@v4
+      - name: Tag matches the project version
+        run: |
+          version=$(sed -n 's/^project(xrpla VERSION \([0-9.]*\) .*/\1/p' CMakeLists.txt)
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::tag $GITHUB_REF_NAME does not match project version $version"
+            exit 1
+          fi
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.core
+          target: package
+          outputs: type=local,dest=dist
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Checksums
+        run: |
+          cd dist
+          ls -la
+          sha256sum *.deb *.tar.gz > SHA256SUMS
+          cat SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: packages
+          path: dist/
+          if-no-files-found: error
+
+  release:
+    needs: package
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: packages
+          path: dist
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/* --repo "$GITHUB_REPOSITORY" \
+            --title "XRPLA ${GITHUB_REF_NAME#v}" --generate-notes --verify-tag
+
+  # Also run by hand (workflow_dispatch) to republish the repository, for example after a
+  # release is deleted or the signing key changes.
+  apt:
+    needs: release
+    if: always() && (needs.release.result == 'success' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Packages of every release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir debs
+          for tag in $(gh release list --repo "$GITHUB_REPOSITORY" --exclude-drafts --exclude-pre-releases \
+                         --limit 1000 --json tagName --jq '.[].tagName'); do
+            gh release download "$tag" --repo "$GITHUB_REPOSITORY" --pattern '*.deb' --dir debs
+          done
+          ls -la debs
+      - name: Import the signing key
+        env:
+          APT_SIGNING_KEY: ${{ secrets.APT_SIGNING_KEY }}
+          APT_SIGNING_PASSPHRASE: ${{ secrets.APT_SIGNING_PASSPHRASE }}
+        run: |
+          if [ -z "$APT_SIGNING_KEY" ]; then
+            echo "::error::the APT_SIGNING_KEY secret is not set (docs/guides/release.md)"
+            exit 1
+          fi
+          sudo apt-get update && sudo apt-get install -y --no-install-recommends apt-utils dpkg-dev gnupg
+          printf '%s\n' "$APT_SIGNING_KEY" | gpg --batch --import
+          if [ -n "$APT_SIGNING_PASSPHRASE" ]; then
+            echo "allow-preset-passphrase" >> ~/.gnupg/gpg-agent.conf
+            gpg-connect-agent reloadagent /bye
+            for grip in $(gpg --batch --with-keygrip --list-secret-keys --with-colons | awk -F: '$1 == "grp" {print $10}'); do
+              printf '%s' "$APT_SIGNING_PASSPHRASE" | /usr/lib/gnupg/gpg-preset-passphrase --preset "$grip"
+            done
+          fi
+      - name: Build the repository
+        run: tools/build-apt-repo.sh debs site
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deploy
+        uses: actions/deploy-pages@v4

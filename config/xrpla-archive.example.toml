@@ -1,0 +1,46 @@
+# Settings for `xrpla fetch`, `xrpla tail`, `xrpla serve` and `xrpla status` over a signed v2
+# archive (the archive tools; docs/reference/archive-v2.md). `--config FILE` reads them; a flag given on the
+# command line wins over the file. config/xrpla-serve.service and config/xrpla-tail.service
+# read /etc/xrpla/archive.toml.
+#
+# This is not the profile configuration `xrpla setup` writes and `xrpla run` reads
+# (/etc/xrpla/xrpla.toml; every setting in config/xrpla.example.toml). Unknown names here are
+# refused.
+
+# The archive: an HTTPS base URL or a local directory holding its signed manifest.
+archive = "https://archive.example.com/v2"
+
+# Which ledgers: "A-B" (sequence numbers), "latest-N" (the newest N), or "Nd" (the last N days
+# before the archive's tip; needs the archive's signed close-time indexes).
+range = "latest-100000"
+
+# Where the downloaded archive and the store live (--dir). Default "./data".
+dir = "/var/lib/xrpla/data"
+
+# The publisher's public key: a file holding 32 raw bytes or 64 hex characters. Required: no
+# key is trusted automatically.
+publisher_key = "/etc/xrpla/publisher.pub"
+
+# fetch and tail: parallel downloads, 1 to 32.
+jobs = 8
+
+# serve: the JSON-RPC listener, HOST:PORT.
+http = "127.0.0.1:5005"
+
+# serve: the WebSocket listener, HOST:PORT.
+ws = "127.0.0.1:6006"
+
+# serve: threads answering requests.
+threads = 4
+
+# tail: seconds between checks of the archive for new ledgers. Default 15.
+interval = 15
+
+# tail: keep object state for only the newest N ledgers (transaction history is always kept).
+# Default: keep all state.
+# state_window = 100000
+
+# serve: an xrpld JSON-RPC URL for what history cannot answer (submit, fee, path_find, the
+# "current" ledger and the rest of the forwarded methods). Default: none (they answer notSupported).
+# A public (non-admin) port: on xrpld's admin ports (5005, 6006) forwarded requests run as admin.
+# forward = "http://127.0.0.1:51234"

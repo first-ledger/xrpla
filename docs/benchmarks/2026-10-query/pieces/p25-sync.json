@@ -1,0 +1,92 @@
+{
+  "cached_bytes": 2566407776,
+  "fetched_bytes": 2566407776,
+  "first": 91000001,
+  "generation": 306,
+  "indexes": [
+    {
+      "blocks": 104223,
+      "bytes": 2029772061,
+      "dictionary_bytes": 112640,
+      "objects": 14307787,
+      "raw_bytes": 3446363659,
+      "seconds": 33.735103556,
+      "snapshot": 91000000,
+      "status": "built"
+    },
+    {
+      "bytes": 317267424,
+      "nfts": 6101295,
+      "seconds": 5.639720459,
+      "snapshot": 91000000,
+      "status": "built"
+    },
+    {
+      "bytes": 100,
+      "entries": 0,
+      "index": "mpt_holders",
+      "keys": 0,
+      "seconds": 9.5115e-05,
+      "snapshot": 91000000,
+      "status": "built"
+    },
+    {
+      "bytes": 97775180,
+      "entries": 6101295,
+      "index": "nfts_by_issuer",
+      "keys": 6678,
+      "seconds": 1.996139822,
+      "snapshot": 91000000,
+      "status": "built"
+    },
+    {
+      "account_keys": 36825,
+      "account_postings": 8948409,
+      "bytes": 110185873,
+      "decode_seconds": 36.305329824,
+      "ledgers": 50000,
+      "nft_keys": 6998,
+      "nft_postings": 13937,
+      "nft_state_changes": 6108,
+      "nft_state_keys": 4595,
+      "object": "pieces/91000001-91050000.ef6f5f2a2bc85f3e.xrpp",
+      "object_keys": 1675787,
+      "object_versions": 8980386,
+      "optional": [
+        {
+          "bytes": 100,
+          "entries": 0,
+          "index": "mpt_holders",
+          "keys": 0,
+          "seconds": 5.92e-05,
+          "status": "built"
+        },
+        {
+          "bytes": 121003,
+          "entries": 6998,
+          "index": "nfts_by_issuer",
+          "keys": 392,
+          "seconds": 0.002936857,
+          "status": "built"
+        }
+      ],
+      "seconds": 38.422824335,
+      "sections": {
+        "accounts": 28197786,
+        "headers": 5900000,
+        "ledger_hashes": 600000,
+        "nft_states": 229366,
+        "nfts": 299005,
+        "objects": 71123496,
+        "tx_order": 3836028
+      },
+      "status": "built",
+      "transactions": 3385548
+    }
+  ],
+  "last": 91050000,
+  "ranges": 1,
+  "removed": [],
+  "seconds": 87.28927398,
+  "snapshot": 91000000
+}

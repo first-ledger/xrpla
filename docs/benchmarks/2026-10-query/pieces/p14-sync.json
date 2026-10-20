@@ -1,0 +1,92 @@
+{
+  "cached_bytes": 4698215093,
+  "fetched_bytes": 4698215093,
+  "first": 8000001,
+  "generation": 693,
+  "indexes": [
+    {
+      "blocks": 1380,
+      "bytes": 28558119,
+      "dictionary_bytes": 112640,
+      "objects": 234071,
+      "raw_bytes": 45520611,
+      "seconds": 4.836924698,
+      "snapshot": 8000000,
+      "status": "built"
+    },
+    {
+      "bytes": 84,
+      "nfts": 0,
+      "seconds": 0.085550589,
+      "snapshot": 8000000,
+      "status": "built"
+    },
+    {
+      "bytes": 100,
+      "entries": 0,
+      "index": "mpt_holders",
+      "keys": 0,
+      "seconds": 9.0904e-05,
+      "snapshot": 8000000,
+      "status": "built"
+    },
+    {
+      "bytes": 100,
+      "entries": 0,
+      "index": "nfts_by_issuer",
+      "keys": 0,
+      "seconds": 0.000178511,
+      "snapshot": 8000000,
+      "status": "built"
+    },
+    {
+      "account_keys": 17990,
+      "account_postings": 31905634,
+      "bytes": 641689816,
+      "decode_seconds": 113.408311426,
+      "ledgers": 1000000,
+      "nft_keys": 0,
+      "nft_postings": 0,
+      "nft_state_changes": 0,
+      "nft_state_keys": 0,
+      "object": "bundles/8000001-9000000.b734093faf0f5cf8.xrpp",
+      "object_keys": 9482661,
+      "object_versions": 38579089,
+      "optional": [
+        {
+          "bytes": 100,
+          "entries": 0,
+          "index": "mpt_holders",
+          "keys": 0,
+          "seconds": 7.7522e-05,
+          "status": "built"
+        },
+        {
+          "bytes": 100,
+          "entries": 0,
+          "index": "nfts_by_issuer",
+          "keys": 0,
+          "seconds": 2.5075e-05,
+          "status": "built"
+        }
+      ],
+      "seconds": 132.583849349,
+      "sections": {
+        "accounts": 96792111,
+        "headers": 118000000,
+        "ledger_hashes": 12000000,
+        "nft_states": 24,
+        "nfts": 24,
+        "objects": 391921893,
+        "tx_order": 22975572
+      },
+      "status": "built",
+      "transactions": 14788354
+    }
+  ],
+  "last": 8300000,
+  "ranges": 1,
+  "removed": [],
+  "seconds": 164.231034387,
+  "snapshot": 8000000
+}

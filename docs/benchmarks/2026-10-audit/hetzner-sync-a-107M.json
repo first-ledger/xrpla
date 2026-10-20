@@ -1,0 +1,1444 @@
+{
+ "what": "A prime: xrpla sync of the same range as X (107,000,001-) from R2, --jobs 8, taskset 16-39, nice 10, beside the publisher, soak, replica and X",
+ "host": "Hetzner publisher-host",
+ "build": "2b19b97+nudb-spill-fix",
+ "started_utc": "2026-10-16T15:12:15Z",
+ "cache_du": "23G",
+ "time_v": {
+  "Command being timed": "\"bin/xrpla sync --source https://xrpla-data.firstledger.net/mainnet --publisher-key publisher.pub --dir /home/ubuntu/parity-a/cache --range 107000001- --jobs 8\"",
+  "User time (seconds)": "10692.47",
+  "System time (seconds)": "231.47",
+  "Percent of CPU this job got": "1064%",
+  "Elapsed (wall clock) time (h": "mm:ss or m:ss): 17:06.07",
+  "Average shared text size (kbytes)": "0",
+  "Average unshared data size (kbytes)": "0",
+  "Average stack size (kbytes)": "0",
+  "Average total size (kbytes)": "0",
+  "Maximum resident set size (kbytes)": "10880040",
+  "Average resident set size (kbytes)": "0",
+  "Major (requiring I/O) page faults": "2398",
+  "Minor (reclaiming a frame) page faults": "98843512",
+  "Voluntary context switches": "582557",
+  "Involuntary context switches": "171050",
+  "Swaps": "0",
+  "File system inputs": "25004312",
+  "File system outputs": "63468912",
+  "Socket messages sent": "0",
+  "Socket messages received": "0",
+  "Signals delivered": "0",
+  "Page size (bytes)": "4096",
+  "Exit status": "0"
+ },
+ "sync": {
+  "cached_bytes": 18255994653,
+  "fetched_bytes": 18255994653,
+  "first": 107000001,
+  "generation": 683,
+  "indexes": [
+   {
+    "blocks": 144117,
+    "bytes": 2822471071,
+    "dictionary_bytes": 112640,
+    "objects": 19865725,
+    "raw_bytes": 4772070365,
+    "seconds": 45.056321842,
+    "snapshot": 107000000,
+    "status": "built"
+   },
+   {
+    "bytes": 443803236,
+    "nfts": 8534676,
+    "seconds": 7.947094494,
+    "snapshot": 107000000,
+    "status": "built"
+   },
+   {
+    "bytes": 10465,
+    "entries": 340,
+    "index": "mpt_holders",
+    "keys": 133,
+    "seconds": 0.00055936,
+    "snapshot": 107000000,
+    "status": "built"
+   },
+   {
+    "bytes": 136862442,
+    "entries": 8534676,
+    "index": "nfts_by_issuer",
+    "keys": 13303,
+    "seconds": 2.467888956,
+    "snapshot": 107000000,
+    "status": "built"
+   },
+   {
+    "account_keys": 77643,
+    "account_postings": 10214869,
+    "bytes": 207922274,
+    "decode_seconds": 49.909348287,
+    "ledgers": 50000,
+    "nft_keys": 35320,
+    "nft_postings": 228274,
+    "nft_state_changes": 10490,
+    "nft_state_keys": 7427,
+    "object": "pieces/107000001-107050000.2dec3b78f0ad46df.xrpp",
+    "object_keys": 3838566,
+    "object_versions": 14705769,
+    "optional": [
+     {
+      "bytes": 514,
+      "entries": 10,
+      "index": "mpt_holders",
+      "keys": 7,
+      "seconds": 0.000662486,
+      "status": "built"
+     },
+     {
+      "bytes": 580641,
+      "entries": 35320,
+      "index": "nfts_by_issuer",
+      "keys": 679,
+      "seconds": 0.040693905,
+      "status": "built"
+     }
+    ],
+    "seconds": 53.60530492,
+    "sections": {
+     "accounts": 35238334,
+     "headers": 5900000,
+     "ledger_hashes": 600000,
+     "nft_states": 376779,
+     "nfts": 2081961,
+     "objects": 156648450,
+     "tx_order": 7076558
+    },
+    "status": "built",
+    "transactions": 5346740
+   },
+   {
+    "account_keys": 74265,
+    "account_postings": 10169915,
+    "bytes": 211301291,
+    "decode_seconds": 50.840993185,
+    "ledgers": 50000,
+    "nft_keys": 33978,
+    "nft_postings": 235410,
+    "nft_state_changes": 12380,
+    "nft_state_keys": 8454,
+    "object": "pieces/107050001-107100000.b568c0b8375140bb.xrpp",
+    "object_keys": 3905110,
+    "object_versions": 14651673,
+    "optional": [
+     {
+      "bytes": 310,
+      "entries": 5,
+      "index": "mpt_holders",
+      "keys": 3,
+      "seconds": 0.00058532,
+      "status": "built"
+     },
+     {
+      "bytes": 560160,
+      "entries": 33978,
+      "index": "nfts_by_issuer",
+      "keys": 721,
+      "seconds": 0.036260667,
+      "status": "built"
+     }
+    ],
+    "seconds": 54.458326495,
+    "sections": {
+     "accounts": 35546647,
+     "headers": 5900000,
+     "ledger_hashes": 600000,
+     "nft_states": 433639,
+     "nfts": 2064630,
+     "objects": 159125759,
+     "tx_order": 7630424
+    },
+    "status": "built",
+    "transactions": 5575435
+   },
+   {
+    "account_keys": 74910,
+    "account_postings": 9894337,
+    "bytes": 202717833,
+    "decode_seconds": 47.492916204,
+    "ledgers": 50000,
+    "nft_keys": 33476,
+    "nft_postings": 257060,
+    "nft_state_changes": 14593,
+    "nft_state_keys": 9007,
+    "object": "pieces/107100001-107150000.2d4057cedd66a7b3.xrpp",
+    "object_keys": 3753958,
+    "object_versions": 14000233,
+    "optional": [
+     {
+      "bytes": 546,
+      "entries": 9,
+      "index": "mpt_holders",
+      "keys": 9,
+      "seconds": 0.000396637,
+      "status": "built"
+     },
+     {
+      "bytes": 552894,
+      "entries": 33476,
+      "index": "nfts_by_issuer",
+      "keys": 756,
+      "seconds": 0.045393566,
+      "status": "built"
+     }
+    ],
+    "seconds": 51.58512968,
+    "sections": {
+     "accounts": 34001620,
+     "headers": 5900000,
+     "ledger_hashes": 600000,
+     "nft_states": 475424,
+     "nfts": 2108409,
+     "objects": 152936115,
+     "tx_order": 6696073
+    },
+    "status": "built",
+    "transactions": 5109232
+   },
+   {
+    "account_keys": 88063,
+    "account_postings": 10975530,
+    "bytes": 187681688,
+    "decode_seconds": 47.004565182,
+    "ledgers": 50000,
+    "nft_keys": 29220,
+    "nft_postings": 155782,
+    "nft_state_changes": 6794,
+    "nft_state_keys": 4641,
+    "object": "pieces/107150001-107200000.9fe1a5fb713c1934.xrpp",
+    "object_keys": 3263178,
+    "object_versions": 13731446,
+    "optional": [
+     {
+      "bytes": 270,
+      "entries": 3,
+      "index": "mpt_holders",
+      "keys": 3,
+      "seconds": 0.000437319,
+      "status": "built"
+     },
+     {
+      "bytes": 484844,
+      "entries": 29220,
+      "index": "nfts_by_issuer",
+      "keys": 759,
+      "seconds": 0.028020312,
+      "status": "built"
+     }
+    ],
+    "seconds": 50.826491647,
+    "sections": {
+     "accounts": 37751684,
+     "headers": 5900000,
+     "ledger_hashes": 600000,
+     "nft_states": 236473,
+     "nfts": 1604925,
+     "objects": 134589595,
+     "tx_order": 6998819
+    },
+    "status": "built",
+    "transactions": 5343230
+   },
+   {
+    "account_keys": 87826,
+    "account_postings": 10628715,
+    "bytes": 187841649,
+    "decode_seconds": 48.14685897,
+    "ledgers": 50000,
+    "nft_keys": 35407,
+    "nft_postings": 161278,
+    "nft_state_changes": 8511,
+    "nft_state_keys": 5407,
+    "object": "pieces/107200001-107250000.86defdccd4e3f4cf.xrpp",
+    "object_keys": 3275903,
+    "object_versions": 13931475,
+    "optional": [
+     {
+      "bytes": 468,
+      "entries": 9,
+      "index": "mpt_holders",
+      "keys": 6,
+      "seconds": 0.001023024,
+      "status": "built"
+     },
+     {
+      "bytes": 581446,
+      "entries": 35407,
+      "index": "nfts_by_issuer",
+      "keys": 652,
+      "seconds": 0.026375402,
+      "status": "built"
+     }
+    ],
+    "seconds": 51.43744557,
+    "sections": {
+     "accounts": 36825097,
+     "headers": 5900000,
+     "ledger_hashes": 600000,
+     "nft_states": 282678,
+     "nfts": 1858299,
+     "objects": 135178510,
+     "tx_order": 7196873
+    },
+    "status": "built",
+    "transactions": 5369492
+   },
+   {
+    "account_keys": 78234,
+    "account_postings": 13658211,
+    "bytes": 234600760,
+    "decode_seconds": 60.794828236,
+    "ledgers": 50000,
+    "nft_keys": 40766,
+    "nft_postings": 214757,
+    "nft_state_changes": 10694,
+    "nft_state_keys": 7943,
+    "object": "pieces/107250001-107300000.8861d83bbd5b84c2.xrpp",
+    "object_keys": 4080776,
+    "object_versions": 17722242,
+    "optional": [
+     {
+      "bytes": 520,
+      "entries": 9,
+      "index": "mpt_holders",
+      "keys": 8,
+      "seconds": 0.000695781,
+      "status": "built"
+     },
+     {
+      "bytes": 667531,
+      "entries": 40766,
+      "index": "nfts_by_issuer",
+      "keys": 665,
+      "seconds": 0.034771795,
+      "status": "built"
+     }
+    ],
+    "seconds": 65.328493227,
+    "sections": {
+     "accounts": 47256029,
+     "headers": 5900000,
+     "ledger_hashes": 600000,
+     "nft_states": 397491,
+     "nfts": 2236244,
+     "objects": 168681063,
+     "tx_order": 9529741
+    },
+    "status": "built",
+    "transactions": 6965882
+   },
+   {
+    "account_keys": 75478,
+    "account_postings": 13283115,
+    "bytes": 211475229,
+    "decode_seconds": 57.872992191,
+    "ledgers": 50000,
+    "nft_keys": 27136,
+    "nft_postings": 149698,
+    "nft_state_changes": 7206,
+    "nft_state_keys": 5147,
+    "object": "pieces/107300001-107350000.3812c2a79490f130.xrpp",
+    "object_keys": 3538636,
+    "object_versions": 16341328,
+    "optional": [
+     {
+      "bytes": 402,
+      "entries": 7,
+      "index": "mpt_holders",
+      "keys": 5,
+      "seconds": 0.000554096,
+      "status": "built"
+     },
+     {
+      "bytes": 446896,
+      "entries": 27136,
+      "index": "nfts_by_issuer",
+      "keys": 553,
+      "seconds": 0.02306975,
+      "status": "built"
+     }
+    ],
+    "seconds": 62.087058231,
+    "sections": {
+     "accounts": 46193110,
+     "headers": 5900000,
+     "ledger_hashes": 600000,
+     "nft_states": 260156,
+     "nfts": 1499538,
+     "objects": 147332598,
+     "tx_order": 9689635
+    },
+    "status": "built",
+    "transactions": 6899662
+   },
+   {
+    "account_keys": 71375,
+    "account_postings": 11870021,
+    "bytes": 193270372,
+    "decode_seconds": 53.660691302,
+    "ledgers": 50000,
+    "nft_keys": 21060,
+    "nft_postings": 227780,
+    "nft_state_changes": 5058,
+    "nft_state_keys": 3364,
+    "object": "pieces/107350001-107400000.a3d5029243edc445.xrpp",
+    "object_keys": 3225562,
+    "object_versions": 14633076,
+    "optional": [
+     {
+      "bytes": 405,
+      "entries": 11,
+      "index": "mpt_holders",
+      "keys": 2,
+      "seconds": 0.00036317,
+      "status": "built"
+     },
+     {
+      "bytes": 349671,
+      "entries": 21060,
+      "index": "nfts_by_issuer",
+      "keys": 555,
+      "seconds": 0.037131012,
+      "status": "built"
+     }
+    ],
+    "seconds": 57.4253474,
+    "sections": {
+     "accounts": 41677835,
+     "headers": 5900000,
+     "ledger_hashes": 600000,
+     "nft_states": 173735,
+     "nfts": 1549988,
+     "objects": 134249049,
+     "tx_order": 9119573
+    },
+    "status": "built",
+    "transactions": 6359078
+   },
+   {
+    "account_keys": 64619,
+    "account_postings": 7679154,
+    "bytes": 149209661,
+    "decode_seconds": 37.765646531,
+    "ledgers": 50000,
+    "nft_keys": 43050,
+    "nft_postings": 228610,
+    "nft_state_changes": 12543,
+    "nft_state_keys": 9105,
+    "object": "pieces/107400001-107450000.efa22447cd443239.xrpp",
+    "object_keys": 2557434,
+    "object_versions": 10393770,
+    "optional": [
+     {
+      "bytes": 405,
+      "entries": 11,
+      "index": "mpt_holders",
+      "keys": 2,
+      "seconds": 0.000465948,
+      "status": "built"
+     },
+     {
+      "bytes": 701983,
+      "entries": 43050,
+      "index": "nfts_by_issuer",
+      "keys": 574,
+      "seconds": 0.036927688,
+      "status": "built"
+     }
+    ],
+    "seconds": 40.612148319,
+    "sections": {
+     "accounts": 27771794,
+     "headers": 5900000,
+     "ledger_hashes": 600000,
+     "nft_states": 459081,
+     "nfts": 2356893,
+     "objects": 105305015,
+     "tx_order": 6816686
+    },
+    "status": "built",
+    "transactions": 4573949
+   },
+   {
+    "account_keys": 71842,
+    "account_postings": 10410116,
+    "bytes": 166758817,
+    "decode_seconds": 45.316770403,
+    "ledgers": 50000,
+    "nft_keys": 16685,
+    "nft_postings": 183591,
+    "nft_state_changes": 7967,
+    "nft_state_keys": 5078,
+    "object": "pieces/107450001-107500000.67dde2a421a9f44b.xrpp",
+    "object_keys": 2760155,
+    "object_versions": 12727482,
+    "optional": [
+     {
+      "bytes": 652,
+      "entries": 13,
+      "index": "mpt_holders",
+      "keys": 10,
+      "seconds": 0.00037402,
+      "status": "built"
+     },
+     {
+      "bytes": 280912,
+      "entries": 16685,
+      "index": "nfts_by_issuer",
+      "keys": 608,
+      "seconds": 0.03073859,
+      "status": "built"
+     }
+    ],
+    "seconds": 48.131912018,
+    "sections": {
+     "accounts": 36119177,
+     "headers": 5900000,
+     "ledger_hashes": 600000,
+     "nft_states": 264986,
+     "nfts": 1237228,
+     "objects": 115056340,
+     "tx_order": 7580894
+    },
+    "status": "built",
+    "transactions": 5423239
+   },
+   {
+    "account_keys": 70167,
+    "account_postings": 9280006,
+    "bytes": 171466164,
+    "decode_seconds": 43.825090799,
+    "ledgers": 50000,
+    "nft_keys": 38293,
+    "nft_postings": 259514,
+    "nft_state_changes": 6170,
+    "nft_state_keys": 4280,
+    "object": "pieces/107500001-107550000.29c6c07283a6fa07.xrpp",
+    "object_keys": 2975249,
+    "object_versions": 12782098,
+    "optional": [
+     {
+      "bytes": 991,
+      "entries": 26,
+      "index": "mpt_holders",
+      "keys": 13,
+      "seconds": 0.000662392,
+      "status": "built"
+     },
+     {
+      "bytes": 624806,
+      "entries": 38293,
+      "index": "nfts_by_issuer",
+      "keys": 526,
+      "seconds": 0.046316351,
+      "status": "built"
+     }
+    ],
+    "seconds": 47.296402797,
+    "sections": {
+     "accounts": 32429009,
+     "headers": 5900000,
+     "ledger_hashes": 600000,
+     "nft_states": 218328,
+     "nfts": 2305776,
+     "objects": 123064006,
+     "tx_order": 6948853
+    },
+    "status": "built",
+    "transactions": 4950340
+   },
+   {
+    "account_keys": 66723,
+    "account_postings": 8980037,
+    "bytes": 157287434,
+    "decode_seconds": 43.927090411,
+    "ledgers": 50000,
+    "nft_keys": 38595,
+    "nft_postings": 264674,
+    "nft_state_changes": 9392,
+    "nft_state_keys": 5719,
+    "object": "pieces/107550001-107600000.7e38f1fde57f754c.xrpp",
+    "object_keys": 2665200,
+    "object_versions": 12166484,
+    "optional": [
+     {
+      "bytes": 549,
+      "entries": 13,
+      "index": "mpt_holders",
+      "keys": 6,
+      "seconds": 0.000356357,
+      "status": "built"
+     },
+     {
+      "bytes": 630592,
+      "entries": 38595,
+      "index": "nfts_by_issuer",
+      "keys": 569,
+      "seconds": 0.043003517,
+      "status": "built"
+     }
+    ],
+    "seconds": 47.095986585,
+    "sections": {
+     "accounts": 31036658,
+     "headers": 5900000,
+     "ledger_hashes": 600000,
+     "nft_states": 303870,
+     "nfts": 2342940,
+     "objects": 111045076,
+     "tx_order": 6058698
+    },
+    "status": "built",
+    "transactions": 4524521
+   },
+   {
+    "account_keys": 69808,
+    "account_postings": 10907565,
+    "bytes": 205874064,
+    "decode_seconds": 58.337225483,
+    "ledgers": 50000,
+    "nft_keys": 40748,
+    "nft_postings": 319677,
+    "nft_state_changes": 13099,
+    "nft_state_keys": 7950,
+    "object": "pieces/107600001-107650000.20be75e0e09ff5ae.xrpp",
+    "object_keys": 3621755,
+    "object_versions": 15662030,
+    "optional": [
+     {
+      "bytes": 963,
+      "entries": 22,
+      "index": "mpt_holders",
+      "keys": 15,
+      "seconds": 0.000403796,
+      "status": "built"
+     },
+     {
+      "bytes": 665601,
+      "entries": 40748,
+      "index": "nfts_by_issuer",
+      "keys": 593,
+      "seconds": 0.056609135,
+      "status": "built"
+     }
+    ],
+    "seconds": 62.401017115,
+    "sections": {
+     "accounts": 38314793,
+     "headers": 5900000,
+     "ledger_hashes": 600000,
+     "nft_states": 421974,
+     "nfts": 2627311,
+     "objects": 150131918,
+     "tx_order": 7877876
+    },
+    "status": "built",
+    "transactions": 5762343
+   },
+   {
+    "account_keys": 19716,
+    "account_postings": 1198390,
+    "bytes": 26843280,
+    "decode_seconds": 11.558232676,
+    "ledgers": 5000,
+    "nft_keys": 9431,
+    "nft_postings": 29631,
+    "nft_state_changes": 1574,
+    "nft_state_keys": 1121,
+    "object": "fragments/107650001-107655000.100d8740172512a8.xrpp",
+    "object_keys": 516305,
+    "object_versions": 1818731,
+    "optional": [
+     {
+      "bytes": 224,
+      "entries": 2,
+      "index": "mpt_holders",
+      "keys": 2,
+      "seconds": 0.000361561,
+      "status": "built"
+     },
+     {
+      "bytes": 154862,
+      "entries": 9431,
+      "index": "nfts_by_issuer",
+      "keys": 168,
+      "seconds": 0.005114884,
+      "status": "built"
+     }
+    ],
+    "seconds": 11.994856764,
+    "sections": {
+     "accounts": 4450484,
+     "headers": 590000,
+     "ledger_hashes": 60000,
+     "nft_states": 55924,
+     "nfts": 434646,
+     "objects": 20407507,
+     "tx_order": 844527
+    },
+    "status": "built",
+    "transactions": 628740
+   },
+   {
+    "account_keys": 19969,
+    "account_postings": 1165194,
+    "bytes": 26822217,
+    "decode_seconds": 11.979540779,
+    "ledgers": 5000,
+    "nft_keys": 9687,
+    "nft_postings": 29634,
+    "nft_state_changes": 1301,
+    "nft_state_keys": 989,
+    "object": "fragments/107655001-107660000.d6a6a045d9d062dd.xrpp",
+    "object_keys": 506738,
+    "object_versions": 1823763,
+    "optional": [
+     {
+      "bytes": 244,
+      "entries": 3,
+      "index": "mpt_holders",
+      "keys": 2,
+      "seconds": 0.000327607,
+      "status": "built"
+     },
+     {
+      "bytes": 158840,
+      "entries": 9687,
+      "index": "nfts_by_issuer",
+      "keys": 163,
+      "seconds": 0.004533971,
+      "status": "built"
+     }
+    ],
+    "seconds": 12.41620455,
+    "sections": {
+     "accounts": 4563031,
+     "headers": 590000,
+     "ledger_hashes": 60000,
+     "nft_states": 48356,
+     "nfts": 445875,
+     "objects": 20113700,
+     "tx_order": 1001063
+    },
+    "status": "built",
+    "transactions": 682435
+   },
+   {
+    "account_keys": 15085,
+    "account_postings": 987958,
+    "bytes": 24292395,
+    "decode_seconds": 10.923511902,
+    "ledgers": 5000,
+    "nft_keys": 9889,
+    "nft_postings": 29601,
+    "nft_state_changes": 2107,
+    "nft_state_keys": 1486,
+    "object": "fragments/107660001-107665000.d3acd312af02ad58.xrpp",
+    "object_keys": 478258,
+    "object_versions": 1572455,
+    "optional": [
+     {
+      "bytes": 258,
+      "entries": 5,
+      "index": "mpt_holders",
+      "keys": 1,
+      "seconds": 0.000342002,
+      "status": "built"
+     },
+     {
+      "bytes": 161637,
+      "entries": 9889,
+      "index": "nfts_by_issuer",
+      "keys": 143,
+      "seconds": 0.004935638,
+      "status": "built"
+     }
+    ],
+    "seconds": 11.314730545,
+    "sections": {
+     "accounts": 3637041,
+     "headers": 590000,
+     "ledger_hashes": 60000,
+     "nft_states": 74211,
+     "nfts": 450147,
+     "objects": 18771986,
+     "tx_order": 708818
+    },
+    "status": "built",
+    "transactions": 529143
+   },
+   {
+    "account_keys": 14892,
+    "account_postings": 904538,
+    "bytes": 23818035,
+    "decode_seconds": 10.871911397,
+    "ledgers": 5000,
+    "nft_keys": 11031,
+    "nft_postings": 29270,
+    "nft_state_changes": 1441,
+    "nft_state_keys": 910,
+    "object": "fragments/107665001-107670000.54810273c6acb16a.xrpp",
+    "object_keys": 474441,
+    "object_versions": 1524866,
+    "optional": [
+     {
+      "bytes": 238,
+      "entries": 4,
+      "index": "mpt_holders",
+      "keys": 1,
+      "seconds": 0.000332206,
+      "status": "built"
+     },
+     {
+      "bytes": 179435,
+      "entries": 11031,
+      "index": "nfts_by_issuer",
+      "keys": 123,
+      "seconds": 0.005361448,
+      "status": "built"
+     }
+    ],
+    "seconds": 11.251362017,
+    "sections": {
+     "accounts": 3362971,
+     "headers": 590000,
+     "ledger_hashes": 60000,
+     "nft_states": 47238,
+     "nfts": 488049,
+     "objects": 18586585,
+     "tx_order": 683000
+    },
+    "status": "built",
+    "transactions": 504785
+   },
+   {
+    "account_keys": 18203,
+    "account_postings": 1001414,
+    "bytes": 24718744,
+    "decode_seconds": 10.81652067,
+    "ledgers": 5000,
+    "nft_keys": 8668,
+    "nft_postings": 27561,
+    "nft_state_changes": 1416,
+    "nft_state_keys": 957,
+    "object": "fragments/107670001-107675000.7af1a3a1e8085c2c.xrpp",
+    "object_keys": 485717,
+    "object_versions": 1601591,
+    "optional": [
+     {
+      "bytes": 178,
+      "entries": 1,
+      "index": "mpt_holders",
+      "keys": 1,
+      "seconds": 0.000398059,
+      "status": "built"
+     },
+     {
+      "bytes": 142041,
+      "entries": 8668,
+      "index": "nfts_by_issuer",
+      "keys": 141,
+      "seconds": 0.010662044,
+      "status": "built"
+     }
+    ],
+    "seconds": 11.221360971,
+    "sections": {
+     "accounts": 3790133,
+     "headers": 590000,
+     "ledger_hashes": 60000,
+     "nft_states": 48692,
+     "nfts": 400283,
+     "objects": 19076263,
+     "tx_order": 753181
+    },
+    "status": "built",
+    "transactions": 553451
+   },
+   {
+    "account_keys": 19428,
+    "account_postings": 963953,
+    "bytes": 23028742,
+    "decode_seconds": 10.35020711,
+    "ledgers": 5000,
+    "nft_keys": 8286,
+    "nft_postings": 27194,
+    "nft_state_changes": 876,
+    "nft_state_keys": 668,
+    "object": "fragments/107675001-107680000.383a84929c677213.xrpp",
+    "object_keys": 441238,
+    "object_versions": 1531054,
+    "optional": [
+     {
+      "bytes": 362,
+      "entries": 5,
+      "index": "mpt_holders",
+      "keys": 5,
+      "seconds": 0.000855555,
+      "status": "built"
+     },
+     {
+      "bytes": 136373,
+      "entries": 8286,
+      "index": "nfts_by_issuer",
+      "keys": 161,
+      "seconds": 0.00417665,
+      "status": "built"
+     }
+    ],
+    "seconds": 10.742234432,
+    "sections": {
+     "accounts": 3740571,
+     "headers": 590000,
+     "ledger_hashes": 60000,
+     "nft_states": 32660,
+     "nfts": 385716,
+     "objects": 17443377,
+     "tx_order": 776226
+    },
+    "status": "built",
+    "transactions": 552037
+   },
+   {
+    "account_keys": 18300,
+    "account_postings": 997254,
+    "bytes": 24039205,
+    "decode_seconds": 10.855709561,
+    "ledgers": 5000,
+    "nft_keys": 7787,
+    "nft_postings": 28895,
+    "nft_state_changes": 653,
+    "nft_state_keys": 513,
+    "object": "fragments/107680001-107685000.af951627b5f4d832.xrpp",
+    "object_keys": 462556,
+    "object_versions": 1607402,
+    "optional": [
+     {
+      "bytes": 224,
+      "entries": 2,
+      "index": "mpt_holders",
+      "keys": 2,
+      "seconds": 0.000303542,
+      "status": "built"
+     },
+     {
+      "bytes": 128712,
+      "entries": 7787,
+      "index": "nfts_by_issuer",
+      "keys": 176,
+      "seconds": 0.004985064,
+      "status": "built"
+     }
+    ],
+    "seconds": 11.244861454,
+    "sections": {
+     "accounts": 3881327,
+     "headers": 590000,
+     "ledger_hashes": 60000,
+     "nft_states": 24908,
+     "nfts": 374677,
+     "objects": 18284779,
+     "tx_order": 823322
+    },
+    "status": "built",
+    "transactions": 574211
+   },
+   {
+    "account_keys": 19856,
+    "account_postings": 883107,
+    "bytes": 22466279,
+    "decode_seconds": 10.54564847,
+    "ledgers": 5000,
+    "nft_keys": 8187,
+    "nft_postings": 29744,
+    "nft_state_changes": 502,
+    "nft_state_keys": 426,
+    "object": "fragments/107685001-107690000.e5f688e0892a5739.xrpp",
+    "object_keys": 431000,
+    "object_versions": 1462467,
+    "optional": [
+     {
+      "bytes": 100,
+      "entries": 0,
+      "index": "mpt_holders",
+      "keys": 0,
+      "seconds": 0.000451809,
+      "status": "built"
+     },
+     {
+      "bytes": 134031,
+      "entries": 8187,
+      "index": "nfts_by_issuer",
+      "keys": 128,
+      "seconds": 0.005042385,
+      "status": "built"
+     }
+    ],
+    "seconds": 10.907692898,
+    "sections": {
+     "accounts": 3595451,
+     "headers": 590000,
+     "ledger_hashes": 60000,
+     "nft_states": 20282,
+     "nfts": 391551,
+     "objects": 17016297,
+     "tx_order": 792506
+    },
+    "status": "built",
+    "transactions": 534880
+   },
+   {
+    "account_keys": 14412,
+    "account_postings": 839523,
+    "bytes": 21952387,
+    "decode_seconds": 9.799605696,
+    "ledgers": 5000,
+    "nft_keys": 9314,
+    "nft_postings": 38265,
+    "nft_state_changes": 563,
+    "nft_state_keys": 411,
+    "object": "fragments/107690001-107695000.a4de24cac8439548.xrpp",
+    "object_keys": 431148,
+    "object_versions": 1449984,
+    "optional": [
+     {
+      "bytes": 178,
+      "entries": 1,
+      "index": "mpt_holders",
+      "keys": 1,
+      "seconds": 0.000308172,
+      "status": "built"
+     },
+     {
+      "bytes": 152136,
+      "entries": 9314,
+      "index": "nfts_by_issuer",
+      "keys": 130,
+      "seconds": 0.006487444,
+      "status": "built"
+     }
+    ],
+    "seconds": 10.150953343,
+    "sections": {
+     "accounts": 3174502,
+     "headers": 590000,
+     "ledger_hashes": 60000,
+     "nft_states": 20345,
+     "nfts": 459211,
+     "objects": 16987244,
+     "tx_order": 660893
+    },
+    "status": "built",
+    "transactions": 479267
+   },
+   {
+    "account_keys": 3167,
+    "account_postings": 46494,
+    "bytes": 1489923,
+    "decode_seconds": 0.763147046,
+    "ledgers": 250,
+    "nft_keys": 781,
+    "nft_postings": 1609,
+    "nft_state_changes": 55,
+    "nft_state_keys": 44,
+    "object": "fragments/107695001-107695250.9893413db4130414.xrpp",
+    "object_keys": 30447,
+    "object_versions": 76361,
+    "optional": [
+     {
+      "bytes": 100,
+      "entries": 0,
+      "index": "mpt_holders",
+      "keys": 0,
+      "seconds": 0.000670091,
+      "status": "built"
+     },
+     {
+      "bytes": 13493,
+      "entries": 781,
+      "index": "nfts_by_issuer",
+      "keys": 39,
+      "seconds": 0.000617423,
+      "status": "built"
+     }
+    ],
+    "seconds": 0.791876437,
+    "sections": {
+     "accounts": 230298,
+     "headers": 29500,
+     "ledger_hashes": 3000,
+     "nft_states": 2143,
+     "nfts": 32472,
+     "objects": 1154074,
+     "tx_order": 38244
+    },
+    "status": "built",
+    "transactions": 27169
+   },
+   {
+    "account_keys": 3350,
+    "account_postings": 43553,
+    "bytes": 1523678,
+    "decode_seconds": 0.611252095,
+    "ledgers": 250,
+    "nft_keys": 878,
+    "nft_postings": 1544,
+    "nft_state_changes": 46,
+    "nft_state_keys": 31,
+    "object": "fragments/107695251-107695500.b29855c643b7aa8a.xrpp",
+    "object_keys": 31786,
+    "object_versions": 76168,
+    "optional": [
+     {
+      "bytes": 100,
+      "entries": 0,
+      "index": "mpt_holders",
+      "keys": 0,
+      "seconds": 0.000357485,
+      "status": "built"
+     },
+     {
+      "bytes": 15073,
+      "entries": 878,
+      "index": "nfts_by_issuer",
+      "keys": 40,
+      "seconds": 0.00041903,
+      "status": "built"
+     }
+    ],
+    "seconds": 0.638899145,
+    "sections": {
+     "accounts": 221199,
+     "headers": 29500,
+     "ledger_hashes": 3000,
+     "nft_states": 1593,
+     "nfts": 35639,
+     "objects": 1199140,
+     "tx_order": 33415
+    },
+    "status": "built",
+    "transactions": 24519
+   },
+   {
+    "account_keys": 4674,
+    "account_postings": 60463,
+    "bytes": 1948142,
+    "decode_seconds": 0.967683965,
+    "ledgers": 250,
+    "nft_keys": 738,
+    "nft_postings": 1135,
+    "nft_state_changes": 53,
+    "nft_state_keys": 39,
+    "object": "fragments/107695501-107695750.e87df25fed64f42f.xrpp",
+    "object_keys": 39964,
+    "object_versions": 93873,
+    "optional": [
+     {
+      "bytes": 100,
+      "entries": 0,
+      "index": "mpt_holders",
+      "keys": 0,
+      "seconds": 0.000402081,
+      "status": "built"
+     },
+     {
+      "bytes": 12878,
+      "entries": 738,
+      "index": "nfts_by_issuer",
+      "keys": 42,
+      "seconds": 0.000576155,
+      "status": "built"
+     }
+    ],
+    "seconds": 1.020760302,
+    "sections": {
+     "accounts": 320158,
+     "headers": 29500,
+     "ledger_hashes": 3000,
+     "nft_states": 1937,
+     "nfts": 29649,
+     "objects": 1510987,
+     "tx_order": 52719
+    },
+    "status": "built",
+    "transactions": 35287
+   },
+   {
+    "account_keys": 4080,
+    "account_postings": 50003,
+    "bytes": 1844495,
+    "decode_seconds": 0.811809719,
+    "ledgers": 250,
+    "nft_keys": 1160,
+    "nft_postings": 1988,
+    "nft_state_changes": 48,
+    "nft_state_keys": 33,
+    "object": "fragments/107695751-107696000.86b4a6a71d9da647.xrpp",
+    "object_keys": 38918,
+    "object_versions": 86636,
+    "optional": [
+     {
+      "bytes": 100,
+      "entries": 0,
+      "index": "mpt_holders",
+      "keys": 0,
+      "seconds": 0.000318517,
+      "status": "built"
+     },
+     {
+      "bytes": 19651,
+      "entries": 1160,
+      "index": "nfts_by_issuer",
+      "keys": 43,
+      "seconds": 0.000652792,
+      "status": "built"
+     }
+    ],
+    "seconds": 0.84733435,
+    "sections": {
+     "accounts": 260317,
+     "headers": 29500,
+     "ledger_hashes": 3000,
+     "nft_states": 1686,
+     "nfts": 46869,
+     "objects": 1466395,
+     "tx_order": 36536
+    },
+    "status": "built",
+    "transactions": 27115
+   },
+   {
+    "account_keys": 3375,
+    "account_postings": 42716,
+    "bytes": 1465612,
+    "decode_seconds": 0.693934121,
+    "ledgers": 250,
+    "nft_keys": 735,
+    "nft_postings": 1226,
+    "nft_state_changes": 63,
+    "nft_state_keys": 48,
+    "object": "fragments/107696001-107696250.321ed78a219ba15f.xrpp",
+    "object_keys": 30596,
+    "object_versions": 74307,
+    "optional": [
+     {
+      "bytes": 100,
+      "entries": 0,
+      "index": "mpt_holders",
+      "keys": 0,
+      "seconds": 0.000420464,
+      "status": "built"
+     },
+     {
+      "bytes": 13092,
+      "entries": 735,
+      "index": "nfts_by_issuer",
+      "keys": 54,
+      "seconds": 0.000535675,
+      "status": "built"
+     }
+    ],
+    "seconds": 0.727447429,
+    "sections": {
+     "accounts": 214524,
+     "headers": 29500,
+     "ledger_hashes": 3000,
+     "nft_states": 2348,
+     "nfts": 29737,
+     "objects": 1156534,
+     "tx_order": 29777
+    },
+    "status": "built",
+    "transactions": 22908
+   },
+   {
+    "account_keys": 3736,
+    "account_postings": 50388,
+    "bytes": 1629590,
+    "decode_seconds": 0.797298217,
+    "ledgers": 250,
+    "nft_keys": 502,
+    "nft_postings": 1046,
+    "nft_state_changes": 139,
+    "nft_state_keys": 91,
+    "object": "fragments/107696251-107696500.854483bf020c1c94.xrpp",
+    "object_keys": 33693,
+    "object_versions": 81029,
+    "optional": [
+     {
+      "bytes": 100,
+      "entries": 0,
+      "index": "mpt_holders",
+      "keys": 0,
+      "seconds": 0.000353289,
+      "status": "built"
+     },
+     {
+      "bytes": 9146,
+      "entries": 502,
+      "index": "nfts_by_issuer",
+      "keys": 44,
+      "seconds": 0.000448263,
+      "status": "built"
+     }
+    ],
+    "seconds": 0.82780401,
+    "sections": {
+     "accounts": 256384,
+     "headers": 29500,
+     "ledger_hashes": 3000,
+     "nft_states": 4660,
+     "nfts": 20948,
+     "objects": 1274578,
+     "tx_order": 40328
+    },
+    "status": "built",
+    "transactions": 28735
+   },
+   {
+    "account_keys": 4035,
+    "account_postings": 52391,
+    "bytes": 1735044,
+    "decode_seconds": 0.916296331,
+    "ledgers": 250,
+    "nft_keys": 890,
+    "nft_postings": 1705,
+    "nft_state_changes": 156,
+    "nft_state_keys": 90,
+    "object": "fragments/107696501-107696750.985152bc67ea7b45.xrpp",
+    "object_keys": 35749,
+    "object_versions": 84716,
+    "optional": [
+     {
+      "bytes": 100,
+      "entries": 0,
+      "index": "mpt_holders",
+      "keys": 0,
+      "seconds": 0.000391888,
+      "status": "built"
+     },
+     {
+      "bytes": 15155,
+      "entries": 890,
+      "index": "nfts_by_issuer",
+      "keys": 35,
+      "seconds": 0.000673872,
+      "status": "built"
+     }
+    ],
+    "seconds": 0.951726298,
+    "sections": {
+     "accounts": 269019,
+     "headers": 29500,
+     "ledger_hashes": 3000,
+     "nft_states": 4770,
+     "nfts": 36428,
+     "objects": 1350358,
+     "tx_order": 41777
+    },
+    "status": "built",
+    "transactions": 29782
+   },
+   {
+    "account_keys": 3677,
+    "account_postings": 43984,
+    "bytes": 1543544,
+    "decode_seconds": 0.964909446,
+    "ledgers": 250,
+    "nft_keys": 705,
+    "nft_postings": 1158,
+    "nft_state_changes": 68,
+    "nft_state_keys": 51,
+    "object": "fragments/107696751-107697000.a54c81dae4dd166e.xrpp",
+    "object_keys": 32114,
+    "object_versions": 76710,
+    "optional": [
+     {
+      "bytes": 100,
+      "entries": 0,
+      "index": "mpt_holders",
+      "keys": 0,
+      "seconds": 0.000339973,
+      "status": "built"
+     },
+     {
+      "bytes": 12262,
+      "entries": 705,
+      "index": "nfts_by_issuer",
+      "keys": 38,
+      "seconds": 0.000474647,
+      "status": "built"
+     }
+    ],
+    "seconds": 0.984481771,
+    "sections": {
+     "accounts": 229649,
+     "headers": 29500,
+     "ledger_hashes": 3000,
+     "nft_states": 2498,
+     "nfts": 28360,
+     "objects": 1216398,
+     "tx_order": 33947
+    },
+    "status": "built",
+    "transactions": 24801
+   },
+   {
+    "account_keys": 4478,
+    "account_postings": 66126,
+    "bytes": 2183028,
+    "decode_seconds": 1.156036638,
+    "ledgers": 250,
+    "nft_keys": 985,
+    "nft_postings": 1769,
+    "nft_state_changes": 57,
+    "nft_state_keys": 43,
+    "object": "fragments/107697001-107697250.70542268f7fc7915.xrpp",
+    "object_keys": 44839,
+    "object_versions": 109005,
+    "optional": [
+     {
+      "bytes": 178,
+      "entries": 1,
+      "index": "mpt_holders",
+      "keys": 1,
+      "seconds": 0.000355449,
+      "status": "built"
+     },
+     {
+      "bytes": 16806,
+      "entries": 985,
+      "index": "nfts_by_issuer",
+      "keys": 41,
+      "seconds": 0.000528001,
+      "status": "built"
+     }
+    ],
+    "seconds": 1.182618066,
+    "sections": {
+     "accounts": 342924,
+     "headers": 29500,
+     "ledger_hashes": 3000,
+     "nft_states": 2109,
+     "nfts": 40424,
+     "objects": 1699933,
+     "tx_order": 64946
+    },
+    "status": "built",
+    "transactions": 42093
+   }
+  ],
+  "last": 107697250,
+  "ranges": 31,
+  "removed": [],
+  "seconds": 1026.033455602,
+  "snapshot": 107000000
+ }
+}

@@ -1,0 +1,38 @@
+# Approved XRPLA publications: the published histories `xrpla setup` offers by name, each with
+# its publisher's key and the mirrors that serve it. Installed as
+# /usr/share/xrpla/publications.toml and replaced by each package upgrade, so a configuration
+# that names a publication ([publication] name = "...") takes its updated mirrors with it.
+# `xrpla publications` lists what this file holds. docs/reference/publications.md describes it.
+#
+# Trust: the publisher key is what is trusted. Everything downloaded is checked against it: the
+# catalog's Ed25519 signature, every object's SHA-256 against the signed catalog, and every
+# ledger's hash chain; a catalog older than one already followed is refused. A mirror is
+# trusted with nothing: a bad one can only withhold the publication or serve an older copy of
+# it, and the next mirror is then tried. So an entry is reviewed for its key above all.
+#
+# Proposing an entry: open a pull request adding a [[publication]] table. Its publisher_key must
+# be verifiable out of band (published on the publisher's own site, say, at the homepage given);
+# each mirror must serve the publication's exact objects (catalog/current.json at its base); the
+# name must be new. Reviewers check the key against where the publisher published it, fetch and
+# verify the catalog from every mirror (`xrpla sync --publication NAME`), and reach the contact.
+#
+# Each entry:
+#   name           a short id, lowercase letters, digits and -; what a configuration names
+#   network        "mainnet", "testnet" or "devnet"
+#   publisher_key  the publisher's Ed25519 public key, 64 hexadecimal characters
+#   mirrors        HTTPS base URLs (each the directory holding catalog/current.json), tried in order
+#   first_ledger   the first ledger the publication holds (informational)
+#   description    one line on what it is
+#   homepage       where the publisher publishes its key and describes the publication
+#   contact        how to reach the publisher
+
+# XRPLA's own mainnet publication.
+[[publication]]
+name = "xrpla-mainnet"
+network = "mainnet"
+publisher_key = "1b4adf5cccad231179f5eaad2ede3f1927908d9cee0966f0b559a617264e6ce6"
+mirrors = ["https://xrpla-data.firstledger.net/mainnet"]
+first_ledger = 32570
+description = "Full XRP Ledger mainnet history, published by the XRPLA project"
+homepage = "https://github.com/first-ledger/xrpla"
+contact = "https://github.com/first-ledger/xrpla/issues"

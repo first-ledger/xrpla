@@ -1,0 +1,38 @@
+[Unit]
+Description=XRPLA live publisher (follows xrpld, publishes pieces and bundles to R2)
+After=network-online.target xrpld.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=xrpla-publisher
+StateDirectory=xrpla-publisher
+WorkingDirectory=/var/lib/xrpla-publisher
+# XRPLA_S3_ENDPOINT, XRPLA_S3_BUCKET, XRPLA_S3_ACCESS_KEY_ID, XRPLA_S3_SECRET_ACCESS_KEY,
+# XRPLA_S3_PREFIX (e.g. mainnet/). Keep this file and the seeds readable by this user only.
+EnvironmentFile=/etc/xrpla/publisher.env
+# The first start of a new publication also needs --start FIRST_LEDGER; afterwards the
+# spool named in /var/lib/xrpla-publisher/current is resumed.
+ExecStart=/usr/bin/python3 /usr/share/xrpla/tools/live_publisher.py \
+  --node http://127.0.0.1:5005 --grpc-source grpc://127.0.0.1:50051 \
+  --workdir /var/lib/xrpla-publisher --spool-seed /etc/xrpla/spool.seed \
+  --xrpla /usr/bin/xrpla --bucket /var/lib/xrpla-publisher/bucket \
+  --signing-key /etc/xrpla/publisher.seed \
+  --decoder /usr/bin/xrpla_history_decode --snapshot-tool /usr/bin/xrpla_snapshot \
+  --encoder /usr/bin/xrpla_history_encode --index-tool /usr/bin/xrpla_tx_index --push
+# SIGTERM stops the follower and any publish run; a publish writes its catalog
+# generation last, so stopping midway is safe.
+KillSignal=SIGTERM
+TimeoutStopSec=300
+Restart=always
+RestartSec=30
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+ReadWritePaths=/var/lib/xrpla-publisher
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

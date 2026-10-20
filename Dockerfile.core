@@ -1,0 +1,40 @@
+# Pinned build environment; the installed runtime is portable glibc Linux.
+ARG XRPLA_BUILD_IMAGE=ghcr.io/xrplf/xrpld/nix-ubuntu:sha-cb2642b@sha256:4e651167c6f2d51b075bfc380eba47ff3025317b020ae173ed7845c09837eb45
+# `deps` holds the pinned Conan dependency build and changes only with the lockfile,
+# so `docker build --target deps` can be reused to compile the source in a container.
+FROM ${XRPLA_BUILD_IMAGE} AS deps
+ARG XRPLA_JOBS=4
+SHELL ["/usr/bin/bash", "-lc"]
+WORKDIR /src
+COPY conanfile.py conan.lock ./
+COPY tools/core-profile tools/core-profile
+COPY tools/prepare-sources.py tools/prepare-sources.py
+RUN conan profile detect --force && \
+    conan remote add xrplf https://conan.xrplf.org/repository/conan/ --index 0 --force && \
+    python3 tools/prepare-sources.py /root/.cache/xrpla-sources && \
+    conan install . -of build-core --build=missing -pr:h tools/core-profile -pr:b tools/core-profile \
+      -c:a tools.files.download:retry=0 -c:a tools.build:jobs=${XRPLA_JOBS} -cc core.net.http:timeout=15 \
+      -cc core.sources:download_cache=/root/.cache/xrpla-sources
+# Python tests load the shared system zstd and libsodium through ctypes; the
+# canonical executables keep linking their pinned Conan libraries statically.
+RUN apt-get update && apt-get install -y --no-install-recommends libzstd1 libsodium23 && rm -rf /var/lib/apt/lists/*
+FROM deps AS build
+COPY . .
+RUN cmake -S . -B build-core/Release -G Ninja -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_TOOLCHAIN_FILE=/src/build-core/generators/conan_toolchain.cmake && \
+    cmake --build build-core/Release -j 4 && \
+    XRPLA_ZSTD_LIBRARY=/usr/lib/x86_64-linux-gnu/libzstd.so.1 XRPLA_SODIUM_LIBRARY=/usr/lib/x86_64-linux-gnu/libsodium.so.23 \
+    ctest --test-dir build-core/Release --output-on-failure && \
+    cmake --install build-core/Release --prefix /install
+# `docker build --target package --output DIR` writes the release packages (.deb and .tar.gz).
+FROM build AS packaging
+RUN cd build-core/Release && cpack -B /dist && rm -rf /dist/_CPack_Packages
+FROM scratch AS package
+COPY --from=packaging /dist/ /
+FROM ubuntu:22.04 AS runtime
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates python3 && rm -rf /var/lib/apt/lists/*
+COPY --from=build /install /usr/local
+USER 65532:65532
+WORKDIR /data
+ENTRYPOINT ["/usr/local/bin/xrpla"]
+CMD ["--help"]

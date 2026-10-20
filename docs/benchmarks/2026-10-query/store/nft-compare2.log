@@ -1,0 +1,15 @@
+nfts 24 issuers 12 mpts 0 nft/mpt tx sampled {'NFTokenCreateOffer': 33, 'NFTokenAcceptOffer': 14, 'NFTokenMint': 5, 'NFTokenCancelOffer': 7}
+queries same 84 different 0
+{
+  "ledger_index_max": 91020000,
+  "ledger_index_min": 91000001,
+  "limit": 50,
+  "nft_id": "000803E88ACAA32313BB87F729EF7DA56BD13C57BE46E3C86811EAFA047F3D64",
+  "status": "success",
+  "transactions": [
+    {
+      "meta": {
+        "AffectedNodes": [
+          {
+            "ModifiedNode": {
+     

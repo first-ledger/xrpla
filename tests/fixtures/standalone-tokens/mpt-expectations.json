@@ -1,0 +1,351 @@
+[
+ {
+  "mpt_issuance_id": "0000000480A11652701D3C5A759CE6FD1328CD31B06BBC89",
+  "ledger_index": 13,
+  "holders": [
+   "rndT6ThEBdKFN2ZeLEreiQRpGVSmYmVcxa"
+  ]
+ },
+ {
+  "mpt_issuance_id": "0000000B80A11652701D3C5A759CE6FD1328CD31B06BBC89",
+  "ledger_index": 13,
+  "holders": []
+ },
+ {
+  "mpt_issuance_id": "0000000480A11652701D3C5A759CE6FD1328CD31B06BBC89",
+  "ledger_index": 14,
+  "holders": [
+   "rnLwLe68AdFD6L8s6ZtusRfVNF1kJom9tA",
+   "rndT6ThEBdKFN2ZeLEreiQRpGVSmYmVcxa"
+  ]
+ },
+ {
+  "mpt_issuance_id": "0000000B80A11652701D3C5A759CE6FD1328CD31B06BBC89",
+  "ledger_index": 14,
+  "holders": []
+ },
+ {
+  "mpt_issuance_id": "0000000480A11652701D3C5A759CE6FD1328CD31B06BBC89",
+  "ledger_index": 15,
+  "holders": [
+   "rnLwLe68AdFD6L8s6ZtusRfVNF1kJom9tA",
+   "rndT6ThEBdKFN2ZeLEreiQRpGVSmYmVcxa"
+  ]
+ },
+ {
+  "mpt_issuance_id": "0000000B80A11652701D3C5A759CE6FD1328CD31B06BBC89",
+  "ledger_index": 15,
+  "holders": []
+ },
+ {
+  "mpt_issuance_id": "0000000480A11652701D3C5A759CE6FD1328CD31B06BBC89",
+  "ledger_index": 16,
+  "holders": [
+   "rnLwLe68AdFD6L8s6ZtusRfVNF1kJom9tA",
+   "rndT6ThEBdKFN2ZeLEreiQRpGVSmYmVcxa"
+  ]
+ },
+ {
+  "mpt_issuance_id": "0000000B80A11652701D3C5A759CE6FD1328CD31B06BBC89",
+  "ledger_index": 16,
+  "holders": []
+ },
+ {
+  "mpt_issuance_id": "0000000480A11652701D3C5A759CE6FD1328CD31B06BBC89",
+  "ledger_index": 17,
+  "holders": [
+   "rnLwLe68AdFD6L8s6ZtusRfVNF1kJom9tA",
+   "rndT6ThEBdKFN2ZeLEreiQRpGVSmYmVcxa"
+  ]
+ },
+ {
+  "mpt_issuance_id": "0000000B80A11652701D3C5A759CE6FD1328CD31B06BBC89",
+  "ledger_index": 17,
+  "holders": []
+ },
+ {
+  "mpt_issuance_id": "0000000480A11652701D3C5A759CE6FD1328CD31B06BBC89",
+  "ledger_index": 18,
+  "holders": [
+   "rnLwLe68AdFD6L8s6ZtusRfVNF1kJom9tA",
+   "rndT6ThEBdKFN2ZeLEreiQRpGVSmYmVcxa"
+  ]
+ },
+ {
+  "mpt_issuance_id": "0000000B80A11652701D3C5A759CE6FD1328CD31B06BBC89",
+  "ledger_index": 18,
+  "holders": []
+ },
+ {
+  "mpt_issuance_id": "0000000480A11652701D3C5A759CE6FD1328CD31B06BBC89",
+  "ledger_index": 19,
+  "holders": [
+   "rnLwLe68AdFD6L8s6ZtusRfVNF1kJom9tA",
+   "rndT6ThEBdKFN2ZeLEreiQRpGVSmYmVcxa"
+  ]
+ },
+ {
+  "mpt_issuance_id": "0000000B80A11652701D3C5A759CE6FD1328CD31B06BBC89",
+  "ledger_index": 19,
+  "holders": []
+ },
+ {
+  "mpt_issuance_id": "0000000480A11652701D3C5A759CE6FD1328CD31B06BBC89",
+  "ledger_index": 20,
+  "holders": [
+   "rnLwLe68AdFD6L8s6ZtusRfVNF1kJom9tA",
+   "rndT6ThEBdKFN2ZeLEreiQRpGVSmYmVcxa"
+  ]
+ },
+ {
+  "mpt_issuance_id": "0000000B80A11652701D3C5A759CE6FD1328CD31B06BBC89",
+  "ledger_index": 20,
+  "holders": []
+ },
+ {
+  "mpt_issuance_id": "0000000480A11652701D3C5A759CE6FD1328CD31B06BBC89",
+  "ledger_index": 21,
+  "holders": [
+   "rnLwLe68AdFD6L8s6ZtusRfVNF1kJom9tA",
+   "rndT6ThEBdKFN2ZeLEreiQRpGVSmYmVcxa"
+  ]
+ },
+ {
+  "mpt_issuance_id": "0000000B80A11652701D3C5A759CE6FD1328CD31B06BBC89",
+  "ledger_index": 21,
+  "holders": []
+ },
+ {
+  "mpt_issuance_id": "0000000480A11652701D3C5A759CE6FD1328CD31B06BBC89",
+  "ledger_index": 22,
+  "holders": [
+   "rnLwLe68AdFD6L8s6ZtusRfVNF1kJom9tA",
+   "rndT6ThEBdKFN2ZeLEreiQRpGVSmYmVcxa"
+  ]
+ },
+ {
+  "mpt_issuance_id": "0000000B80A11652701D3C5A759CE6FD1328CD31B06BBC89",
+  "ledger_index": 22,
+  "holders": [
+   "rLUQ21aJnYZyeXfX4Mt5zSLJv6a7RmciGE"
+  ]
+ },
+ {
+  "mpt_issuance_id": "0000000480A11652701D3C5A759CE6FD1328CD31B06BBC89",
+  "ledger_index": 23,
+  "holders": [
+   "rnLwLe68AdFD6L8s6ZtusRfVNF1kJom9tA",
+   "rndT6ThEBdKFN2ZeLEreiQRpGVSmYmVcxa"
+  ]
+ },
+ {
+  "mpt_issuance_id": "0000000B80A11652701D3C5A759CE6FD1328CD31B06BBC89",
+  "ledger_index": 23,
+  "holders": [
+   "rLUQ21aJnYZyeXfX4Mt5zSLJv6a7RmciGE",
+   "rndT6ThEBdKFN2ZeLEreiQRpGVSmYmVcxa"
+  ]
+ },
+ {
+  "mpt_issuance_id": "0000000480A11652701D3C5A759CE6FD1328CD31B06BBC89",
+  "ledger_index": 24,
+  "holders": [
+   "rnLwLe68AdFD6L8s6ZtusRfVNF1kJom9tA",
+   "rndT6ThEBdKFN2ZeLEreiQRpGVSmYmVcxa"
+  ]
+ },
+ {
+  "mpt_issuance_id": "0000000B80A11652701D3C5A759CE6FD1328CD31B06BBC89",
+  "ledger_index": 24,
+  "holders": [
+   "rLUQ21aJnYZyeXfX4Mt5zSLJv6a7RmciGE",
+   "rnLwLe68AdFD6L8s6ZtusRfVNF1kJom9tA",
+   "rndT6ThEBdKFN2ZeLEreiQRpGVSmYmVcxa"
+  ]
+ },
+ {
+  "mpt_issuance_id": "0000000480A11652701D3C5A759CE6FD1328CD31B06BBC89",
+  "ledger_index": 25,
+  "holders": [
+   "rnLwLe68AdFD6L8s6ZtusRfVNF1kJom9tA",
+   "rndT6ThEBdKFN2ZeLEreiQRpGVSmYmVcxa"
+  ]
+ },
+ {
+  "mpt_issuance_id": "0000000B80A11652701D3C5A759CE6FD1328CD31B06BBC89",
+  "ledger_index": 25,
+  "holders": [
+   "rLUQ21aJnYZyeXfX4Mt5zSLJv6a7RmciGE",
+   "rnLwLe68AdFD6L8s6ZtusRfVNF1kJom9tA",
+   "rndT6ThEBdKFN2ZeLEreiQRpGVSmYmVcxa"
+  ]
+ },
+ {
+  "mpt_issuance_id": "0000000480A11652701D3C5A759CE6FD1328CD31B06BBC89",
+  "ledger_index": 26,
+  "holders": [
+   "rnLwLe68AdFD6L8s6ZtusRfVNF1kJom9tA",
+   "rndT6ThEBdKFN2ZeLEreiQRpGVSmYmVcxa"
+  ]
+ },
+ {
+  "mpt_issuance_id": "0000000B80A11652701D3C5A759CE6FD1328CD31B06BBC89",
+  "ledger_index": 26,
+  "holders": [
+   "rLUQ21aJnYZyeXfX4Mt5zSLJv6a7RmciGE",
+   "rnLwLe68AdFD6L8s6ZtusRfVNF1kJom9tA",
+   "rndT6ThEBdKFN2ZeLEreiQRpGVSmYmVcxa"
+  ]
+ },
+ {
+  "mpt_issuance_id": "0000000480A11652701D3C5A759CE6FD1328CD31B06BBC89",
+  "ledger_index": 27,
+  "holders": [
+   "rnLwLe68AdFD6L8s6ZtusRfVNF1kJom9tA",
+   "rndT6ThEBdKFN2ZeLEreiQRpGVSmYmVcxa"
+  ]
+ },
+ {
+  "mpt_issuance_id": "0000000B80A11652701D3C5A759CE6FD1328CD31B06BBC89",
+  "ledger_index": 27,
+  "holders": [
+   "rnLwLe68AdFD6L8s6ZtusRfVNF1kJom9tA",
+   "rndT6ThEBdKFN2ZeLEreiQRpGVSmYmVcxa"
+  ]
+ },
+ {
+  "mpt_issuance_id": "0000000480A11652701D3C5A759CE6FD1328CD31B06BBC89",
+  "ledger_index": 28,
+  "holders": [
+   "rnLwLe68AdFD6L8s6ZtusRfVNF1kJom9tA",
+   "rndT6ThEBdKFN2ZeLEreiQRpGVSmYmVcxa"
+  ]
+ },
+ {
+  "mpt_issuance_id": "0000000B80A11652701D3C5A759CE6FD1328CD31B06BBC89",
+  "ledger_index": 28,
+  "holders": [
+   "rnLwLe68AdFD6L8s6ZtusRfVNF1kJom9tA",
+   "rndT6ThEBdKFN2ZeLEreiQRpGVSmYmVcxa"
+  ]
+ },
+ {
+  "mpt_issuance_id": "0000000480A11652701D3C5A759CE6FD1328CD31B06BBC89",
+  "ledger_index": 29,
+  "holders": [
+   "rnLwLe68AdFD6L8s6ZtusRfVNF1kJom9tA",
+   "rndT6ThEBdKFN2ZeLEreiQRpGVSmYmVcxa"
+  ]
+ },
+ {
+  "mpt_issuance_id": "0000000B80A11652701D3C5A759CE6FD1328CD31B06BBC89",
+  "ledger_index": 29,
+  "holders": [
+   "rnLwLe68AdFD6L8s6ZtusRfVNF1kJom9tA",
+   "rndT6ThEBdKFN2ZeLEreiQRpGVSmYmVcxa"
+  ]
+ },
+ {
+  "mpt_issuance_id": "0000000480A11652701D3C5A759CE6FD1328CD31B06BBC89",
+  "ledger_index": 30,
+  "holders": [
+   "rnLwLe68AdFD6L8s6ZtusRfVNF1kJom9tA",
+   "rndT6ThEBdKFN2ZeLEreiQRpGVSmYmVcxa"
+  ]
+ },
+ {
+  "mpt_issuance_id": "0000000B80A11652701D3C5A759CE6FD1328CD31B06BBC89",
+  "ledger_index": 30,
+  "holders": [
+   "rnLwLe68AdFD6L8s6ZtusRfVNF1kJom9tA",
+   "rndT6ThEBdKFN2ZeLEreiQRpGVSmYmVcxa"
+  ]
+ },
+ {
+  "mpt_issuance_id": "0000000480A11652701D3C5A759CE6FD1328CD31B06BBC89",
+  "ledger_index": 31,
+  "holders": [
+   "rnLwLe68AdFD6L8s6ZtusRfVNF1kJom9tA",
+   "rndT6ThEBdKFN2ZeLEreiQRpGVSmYmVcxa"
+  ]
+ },
+ {
+  "mpt_issuance_id": "0000000B80A11652701D3C5A759CE6FD1328CD31B06BBC89",
+  "ledger_index": 31,
+  "holders": [
+   "rnLwLe68AdFD6L8s6ZtusRfVNF1kJom9tA",
+   "rndT6ThEBdKFN2ZeLEreiQRpGVSmYmVcxa"
+  ]
+ },
+ {
+  "mpt_issuance_id": "0000000480A11652701D3C5A759CE6FD1328CD31B06BBC89",
+  "ledger_index": 32,
+  "holders": [
+   "rnLwLe68AdFD6L8s6ZtusRfVNF1kJom9tA",
+   "rndT6ThEBdKFN2ZeLEreiQRpGVSmYmVcxa"
+  ]
+ },
+ {
+  "mpt_issuance_id": "0000000B80A11652701D3C5A759CE6FD1328CD31B06BBC89",
+  "ledger_index": 32,
+  "holders": [
+   "rnLwLe68AdFD6L8s6ZtusRfVNF1kJom9tA",
+   "rndT6ThEBdKFN2ZeLEreiQRpGVSmYmVcxa"
+  ]
+ },
+ {
+  "mpt_issuance_id": "000000018E1FCC0597D15E4BEABC88C1EDB60CE9C3301057",
+  "ledger_index": 32,
+  "holders": [
+   "rUrP8zScmC1Uyhv3oyWeYNErF4uuzvtgdL"
+  ]
+ },
+ {
+  "mpt_issuance_id": "0000000480A11652701D3C5A759CE6FD1328CD31B06BBC89",
+  "ledger_index": 33,
+  "holders": [
+   "rnLwLe68AdFD6L8s6ZtusRfVNF1kJom9tA",
+   "rndT6ThEBdKFN2ZeLEreiQRpGVSmYmVcxa"
+  ]
+ },
+ {
+  "mpt_issuance_id": "0000000B80A11652701D3C5A759CE6FD1328CD31B06BBC89",
+  "ledger_index": 33,
+  "holders": [
+   "rnLwLe68AdFD6L8s6ZtusRfVNF1kJom9tA",
+   "rndT6ThEBdKFN2ZeLEreiQRpGVSmYmVcxa"
+  ]
+ },
+ {
+  "mpt_issuance_id": "000000018E1FCC0597D15E4BEABC88C1EDB60CE9C3301057",
+  "ledger_index": 33,
+  "holders": [
+   "rUrP8zScmC1Uyhv3oyWeYNErF4uuzvtgdL",
+   "rndT6ThEBdKFN2ZeLEreiQRpGVSmYmVcxa"
+  ]
+ },
+ {
+  "mpt_issuance_id": "0000000480A11652701D3C5A759CE6FD1328CD31B06BBC89",
+  "ledger_index": 34,
+  "holders": [
+   "rnLwLe68AdFD6L8s6ZtusRfVNF1kJom9tA",
+   "rndT6ThEBdKFN2ZeLEreiQRpGVSmYmVcxa"
+  ]
+ },
+ {
+  "mpt_issuance_id": "0000000B80A11652701D3C5A759CE6FD1328CD31B06BBC89",
+  "ledger_index": 34,
+  "holders": [
+   "rnLwLe68AdFD6L8s6ZtusRfVNF1kJom9tA",
+   "rndT6ThEBdKFN2ZeLEreiQRpGVSmYmVcxa"
+  ]
+ },
+ {
+  "mpt_issuance_id": "000000018E1FCC0597D15E4BEABC88C1EDB60CE9C3301057",
+  "ledger_index": 34,
+  "holders": [
+   "rUrP8zScmC1Uyhv3oyWeYNErF4uuzvtgdL",
+   "rndT6ThEBdKFN2ZeLEreiQRpGVSmYmVcxa"
+  ]
+ }
+]

@@ -1,0 +1,25 @@
+{
+  "compression_level": 3,
+  "diff_transport": "grpc",
+  "extended": false,
+  "independent_consensus_validation": false,
+  "last_ledger_hash": "bd873b7d54c7b22baf2732344b3af504daad265ab4fc51a28b842fa247cc9fbc",
+  "ledger_hashes_verified": true,
+  "ledger_stage_seconds": {
+    "canonical_verification": 0.4543094100000001,
+    "decode_and_patch_collection": 0.012831192000000002,
+    "rpc_and_cache": 0.011009693
+  },
+  "patches": 98,
+  "range": {
+    "first": 6,
+    "last": 24
+  },
+  "resumed_nodes": false,
+  "rpc_cache": true,
+  "rpc_jobs": 4,
+  "snapshot_objects": 8,
+  "source": "http://127.0.0.1:38667/",
+  "source_reports_validated": true,
+  "transactions": 81
+}

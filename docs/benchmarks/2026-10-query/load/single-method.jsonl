@@ -1,0 +1,13 @@
+{"label": "pieces", "mix": "only:server_info", "inflight": 64, "per_second": 45379, "p50_ms": 1.34, "p99_ms": 2.49, "server_cores_busy": 1.87}
+{"label": "pieces", "mix": "only:account_info", "inflight": 64, "per_second": 31160, "p50_ms": 2.0, "p99_ms": 2.81, "server_cores_busy": 3.28}
+{"label": "pieces", "mix": "only:tx", "inflight": 64, "per_second": 14076, "p50_ms": 4.25, "p99_ms": 8.02, "server_cores_busy": 6.73}
+{"label": "pieces", "mix": "only:ledger", "inflight": 64, "per_second": 37106, "p50_ms": 1.55, "p99_ms": 4.22, "server_cores_busy": 1.95}
+{"label": "pieces", "mix": "only:account_lines", "inflight": 64, "per_second": 7230, "p50_ms": 7.64, "p99_ms": 21.39, "server_cores_busy": 10.22}
+{"label": "pieces", "mix": "only:book_offers", "inflight": 64, "per_second": 1557, "p50_ms": 38.2, "p99_ms": 93.84, "server_cores_busy": 13.88}
+{"label": "pieces", "mix": "only:account_tx", "inflight": 64, "per_second": 785, "p50_ms": 72.55, "p99_ms": 259.01, "server_cores_busy": 7.81}
+{"label": "xrpld", "mix": "only:server_info", "inflight": 64, "per_second": 13342, "p50_ms": 4.21, "p99_ms": 10.4, "server_cores_busy": 2.19}
+{"label": "xrpld", "mix": "only:account_info", "inflight": 64, "per_second": 13126, "p50_ms": 4.66, "p99_ms": 7.18, "server_cores_busy": 2.19}
+{"label": "xrpld", "mix": "only:tx", "inflight": 64, "per_second": 5711, "p50_ms": 10.52, "p99_ms": 23.8, "server_cores_busy": 1.5}
+{"label": "xrpld", "mix": "only:ledger", "inflight": 64, "per_second": 18063, "p50_ms": 3.17, "p99_ms": 9.19, "server_cores_busy": 2.54}
+{"label": "xrpld", "mix": "only:account_lines", "inflight": 64, "per_second": 3631, "p50_ms": 16.68, "p99_ms": 30.63, "server_cores_busy": 1.39}
+{"label": "xrpld", "mix": "only:book_offers", "inflight": 64, "per_second": 1149, "p50_ms": 52.53, "p99_ms": 88.44, "server_cores_busy": 1.22}

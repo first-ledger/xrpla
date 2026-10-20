@@ -1,0 +1,6 @@
+requests: 2000 tx, 500 ledgers, 289 accounts
+old (ws): tx 9.15 ms median, 52.09 ms p99, 109/s with 16 in flight; ledger by hash 8.40 ms median, 11.15 ms p99, 126/s with 16 in flight; account_info 9.79 ms median, 13.40 ms p99, 113/s with 16 in flight
+new (ws): tx 0.61 ms median, 43.03 ms p99, 647/s with 16 in flight; ledger by hash 0.14 ms median, 0.40 ms p99, 5684/s with 16 in flight; account_info 0.28 ms median, 1.67 ms p99, 3507/s with 16 in flight
+old (ws): tx 8.76 ms median, 51.89 ms p99, 120/s with 16 in flight; ledger by hash 8.17 ms median, 10.76 ms p99, 130/s with 16 in flight; account_info 9.84 ms median, 25.29 ms p99, 112/s with 16 in flight
+new (ws): tx 0.60 ms median, 42.96 ms p99, 674/s with 16 in flight; ledger by hash 0.13 ms median, 0.27 ms p99, 5755/s with 16 in flight; account_info 0.20 ms median, 1.00 ms p99, 3467/s with 16 in flight
+DONE

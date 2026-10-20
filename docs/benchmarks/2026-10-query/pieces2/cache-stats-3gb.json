@@ -1,0 +1,1 @@
+{"result":{"archives":{"bytes":1918432402,"entries":43,"hits":22888,"misses":1357},"load_ms":{"dictionary":83919.656709,"page_decode":35386.436196,"segment_open":217.708811,"snapshot_block":121.914544},"pages":{"bytes":965739235,"entries":1086,"hits":100107,"misses":6038},"snapshot_blocks":{"bytes":52297806,"entries":1361,"hits":191039,"misses":1361},"status":"success"}}

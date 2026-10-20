@@ -1,0 +1,73 @@
+Imported rippled ledger 88002048 / 88100000 (761 ledgers/s; seconds read 2, verify 0, nodes 0, sql 0, commit 0)
+Imported rippled ledger 88004096 / 88100000 (1290 ledgers/s; seconds read 2, verify 0, nodes 0, sql 0, commit 0)
+Imported rippled ledger 88006144 / 88100000 (1641 ledgers/s; seconds read 2, verify 0, nodes 0, sql 0, commit 0)
+Imported rippled ledger 88008192 / 88100000 (1896 ledgers/s; seconds read 2, verify 1, nodes 0, sql 0, commit 0)
+Imported rippled ledger 88010240 / 88100000 (2104 ledgers/s; seconds read 2, verify 1, nodes 0, sql 0, commit 0)
+Imported rippled ledger 88012288 / 88100000 (2308 ledgers/s; seconds read 2, verify 2, nodes 0, sql 0, commit 0)
+Imported rippled ledger 88014336 / 88100000 (2476 ledgers/s; seconds read 2, verify 2, nodes 0, sql 0, commit 0)
+Imported rippled ledger 88016384 / 88100000 (2642 ledgers/s; seconds read 2, verify 2, nodes 0, sql 0, commit 0)
+Imported rippled ledger 88018432 / 88100000 (2767 ledgers/s; seconds read 2, verify 3, nodes 0, sql 1, commit 0)
+Imported rippled ledger 88020480 / 88100000 (2854 ledgers/s; seconds read 2, verify 3, nodes 0, sql 1, commit 0)
+Imported rippled ledger 88022528 / 88100000 (2956 ledgers/s; seconds read 2, verify 3, nodes 0, sql 1, commit 0)
+Imported rippled ledger 88024576 / 88100000 (3045 ledgers/s; seconds read 2, verify 3, nodes 0, sql 1, commit 0)
+Imported rippled ledger 88026624 / 88100000 (3115 ledgers/s; seconds read 2, verify 4, nodes 0, sql 1, commit 0)
+Imported rippled ledger 88028672 / 88100000 (3165 ledgers/s; seconds read 2, verify 4, nodes 0, sql 1, commit 0)
+Imported rippled ledger 88030720 / 88100000 (2221 ledgers/s; seconds read 6, verify 4, nodes 0, sql 2, commit 0)
+Imported rippled ledger 88032768 / 88100000 (2273 ledgers/s; seconds read 6, verify 5, nodes 0, sql 2, commit 0)
+Imported rippled ledger 88034816 / 88100000 (2321 ledgers/s; seconds read 6, verify 5, nodes 0, sql 2, commit 0)
+Imported rippled ledger 88036864 / 88100000 (2372 ledgers/s; seconds read 6, verify 6, nodes 0, sql 2, commit 0)
+Imported rippled ledger 88038912 / 88100000 (2416 ledgers/s; seconds read 6, verify 6, nodes 0, sql 2, commit 0)
+Imported rippled ledger 88040960 / 88100000 (2459 ledgers/s; seconds read 6, verify 6, nodes 0, sql 2, commit 0)
+Imported rippled ledger 88043008 / 88100000 (2507 ledgers/s; seconds read 6, verify 7, nodes 0, sql 2, commit 0)
+Imported rippled ledger 88045056 / 88100000 (2551 ledgers/s; seconds read 7, verify 7, nodes 0, sql 3, commit 0)
+Imported rippled ledger 88047104 / 88100000 (2590 ledgers/s; seconds read 7, verify 7, nodes 0, sql 3, commit 0)
+Imported rippled ledger 88049152 / 88100000 (2630 ledgers/s; seconds read 7, verify 8, nodes 0, sql 3, commit 0)
+Imported rippled ledger 88051200 / 88100000 (2662 ledgers/s; seconds read 7, verify 8, nodes 0, sql 3, commit 0)
+Imported rippled ledger 88053248 / 88100000 (2693 ledgers/s; seconds read 7, verify 8, nodes 0, sql 3, commit 0)
+Imported rippled ledger 88055296 / 88100000 (2700 ledgers/s; seconds read 7, verify 9, nodes 0, sql 4, commit 0)
+Imported rippled ledger 88057344 / 88100000 (2741 ledgers/s; seconds read 7, verify 9, nodes 0, sql 4, commit 0)
+Imported rippled ledger 88059392 / 88100000 (2769 ledgers/s; seconds read 7, verify 9, nodes 0, sql 4, commit 0)
+Imported rippled ledger 88061440 / 88100000 (2798 ledgers/s; seconds read 7, verify 9, nodes 0, sql 4, commit 0)
+Imported rippled ledger 88063488 / 88100000 (2824 ledgers/s; seconds read 7, verify 10, nodes 0, sql 4, commit 0)
+Imported rippled ledger 88065536 / 88100000 (2842 ledgers/s; seconds read 7, verify 10, nodes 0, sql 4, commit 0)
+Imported rippled ledger 88067584 / 88100000 (2866 ledgers/s; seconds read 7, verify 11, nodes 0, sql 4, commit 0)
+Imported rippled ledger 88069632 / 88100000 (2891 ledgers/s; seconds read 7, verify 11, nodes 0, sql 5, commit 0)
+Imported rippled ledger 88071680 / 88100000 (2917 ledgers/s; seconds read 7, verify 11, nodes 0, sql 5, commit 0)
+Imported rippled ledger 88073728 / 88100000 (2942 ledgers/s; seconds read 7, verify 12, nodes 0, sql 5, commit 0)
+Imported rippled ledger 88075776 / 88100000 (2965 ledgers/s; seconds read 7, verify 12, nodes 0, sql 5, commit 0)
+Imported rippled ledger 88077824 / 88100000 (2977 ledgers/s; seconds read 7, verify 12, nodes 0, sql 5, commit 0)
+Imported rippled ledger 88079872 / 88100000 (2996 ledgers/s; seconds read 7, verify 12, nodes 0, sql 6, commit 0)
+Imported rippled ledger 88081920 / 88100000 (2989 ledgers/s; seconds read 7, verify 13, nodes 0, sql 6, commit 0)
+Imported rippled ledger 88083968 / 88100000 (2990 ledgers/s; seconds read 7, verify 13, nodes 0, sql 7, commit 0)
+Imported rippled ledger 88086016 / 88100000 (2994 ledgers/s; seconds read 7, verify 13, nodes 0, sql 7, commit 0)
+Imported rippled ledger 88088064 / 88100000 (2424 ledgers/s; seconds read 14, verify 14, nodes 0, sql 7, commit 0)
+Imported rippled ledger 88090112 / 88100000 (2444 ledgers/s; seconds read 14, verify 14, nodes 0, sql 7, commit 0)
+Imported rippled ledger 88092160 / 88100000 (2464 ledgers/s; seconds read 14, verify 14, nodes 0, sql 8, commit 0)
+Imported rippled ledger 88094208 / 88100000 (2483 ledgers/s; seconds read 14, verify 14, nodes 0, sql 8, commit 0)
+Imported rippled ledger 88096256 / 88100000 (2501 ledgers/s; seconds read 14, verify 15, nodes 0, sql 8, commit 0)
+Imported rippled ledger 88098304 / 88100000 (2519 ledgers/s; seconds read 14, verify 15, nodes 0, sql 8, commit 0)
+Imported rippled ledger 88100000 / 88100000 (2531 ledgers/s; seconds read 14, verify 15, nodes 0, sql 9, commit 0)
+transaction.db indexes built: AcctLgrIndex 2 s; AcctTxIDIndex 2 s; AcctTxIndex 2 s; TxLgrIndex 0 s; read 3 s; read.scan 3 s; read.thread-all 22 s; read.thread-io 1 s; read.thread-runs 5 s; read.thread-sort 8 s; read.walk 0 s; sqlite_autoindex_Transactions_1 1 s; write 2 s;
+	Command being timed: "b/bin/xrpla restore --source https://xrpla-data.firstledger.net/mainnet --publisher-key publisher.pub --to nudb --out /home/ubuntu/parity-old/r88m/node --range 88000001-88100000 --jobs 8"
+	User time (seconds): 429.23
+	System time (seconds): 104.23
+	Percent of CPU this job got: 700%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 1:16.12
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 13750688
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 19
+	Minor (reclaiming a frame) page faults: 26344646
+	Voluntary context switches: 2208979
+	Involuntary context switches: 40223
+	Swaps: 0
+	File system inputs: 6200
+	File system outputs: 105659200
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

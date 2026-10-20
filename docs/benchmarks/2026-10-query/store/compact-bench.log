@@ -1,0 +1,58 @@
+== q-new (as restored)
+book_offers            xrpla med    89.69 p95   473.63 max   485.73 | xrpld med    2.65 p95     4.2
+     slow: 485.73 ms (xrpld 1.98) {"taker_pays": {"currency": "EUR", "issuer": "rMwjYedjc7qqtKYVLiAccJSmCwih4LnE2q"}, "taker_gets": {"currency": "XRP"}, "ledger_index": 8235663, "limit
+     slow: 473.63 ms (xrpld 3.8) {"taker_pays": {"currency": "CNY", "issuer": "razqQKzJRdB4UxFPWf5NEpEG3WMkmwgcXA"}, "taker_gets": {"currency": "XRP"}, "ledger_index": 8259949, "limit
+account_currencies     xrpla med     0.87 p95   248.36 max  2114.34 | xrpld med    0.53 p95   18.28
+     slow: 2114.34 ms (xrpld 0.92) {"account": "rMWUykAmNQDaM9poSes8VLDZDDKEbmo7MX", "ledger_index": 8119938}
+     slow: 448.56 ms (xrpld 0.56) {"account": "rwpxNWdpKu2QVgrh5LQXEygYLshhgnRL1Y", "ledger_index": 8121041}
+gateway_balances       xrpla med      0.8 p95   103.32 max   217.63 | xrpld med    0.51 p95   11.07
+     slow: 217.63 ms (xrpld 55.59) {"account": "rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B", "ledger_index": 8133730}
+     slow: 192.9 ms (xrpld 1.01) {"account": "rPEZyTnSyQyXBCwMVYyaafSVPL8oMtfG6a", "ledger_index": 8004827}
+ledger_data            xrpla med     1.86 p95    16.16 max    16.16 | xrpld med    0.83 p95    4.26
+     slow: 16.16 ms (xrpld 4.07) {"ledger_index": 8000001, "limit": 200, "type": "offer", "marker": "003800871F5109F193B9B8AE01481AA853E914071F3421F4BA99D88DAAD60FC7"}
+     slow: 14.01 ms (xrpld 2.22) {"ledger_index": 8000001, "limit": 200, "type": "offer"}
+noripple_check         xrpla med     0.91 p95    15.48 max   224.85 | xrpld med    0.62 p95    3.56
+     slow: 224.85 ms (xrpld 50.01) {"account": "rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B", "ledger_index": 8133730, "role": "gateway", "transactions": true, "limit": 20}
+     slow: 145.53 ms (xrpld 24.05) {"account": "razqQKzJRdB4UxFPWf5NEpEG3WMkmwgcXA", "ledger_index": 8166425, "role": "gateway", "transactions": true, "limit": 20}
+ledger                 xrpla med     2.17 p95     9.88 max    28.98 | xrpld med    0.93 p95    4.29
+     slow: 28.98 ms (xrpld 2.21) {"ledger_index": 8070446, "transactions": true, "expand": true, "api_version": 2}
+     slow: 16.96 ms (xrpld 3.55) {"ledger_index": 8013341, "transactions": true, "expand": true, "api_version": 2}
+account_tx             xrpla med      3.4 p95     9.18 max    26.32 | xrpld med    0.56 p95    1.07
+     slow: 26.32 ms (xrpld 0.53) {"account": "rPcwxF1b2S7gDie3D4e861p8i6Ke2At5md", "ledger_index_min": 8000001, "ledger_index_max": 8300000, "limit": 10, "forward": true}
+     slow: 23.81 ms (xrpld 0.54) {"account": "r3cPPejMEFKidfAwrFATCXfE2dbde4Axho", "ledger_index_min": 8000001, "ledger_index_max": 8300000, "limit": 10, "api_version": 2}
+account_lines          xrpla med     0.78 p95     7.65 max    37.41 | xrpld med    0.58 p95    2.84
+     slow: 37.41 ms (xrpld 1.82) {"account": "r3cPPejMEFKidfAwrFATCXfE2dbde4Axho", "ledger_index": 8000001}
+     slow: 35.61 ms (xrpld 2.68) {"account": "rHsZHqa5oMQNL5hFm4kfLd47aEMYjPstpg", "ledger_index": 8001105}
+account_mptokens       xrpla med     1.21 p95     7.26 max     7.45 | xrpld med    None p95    None
+     slow: 7.45 ms (xrpld None) {"account": "rM3X3QSr8icjTGpaF52dozhbT2BZSXJQYM", "ledger_index": 8255778}
+     slow: 7.26 ms (xrpld None) {"account": "rPKSvQ1qFAksr7hzk2wC2xtqSqFbxP3wvg", "ledger_index": 8298427}
+compacted in 33 s; files 163 -> 151
+== q-compact
+book_offers            xrpla med    24.02 p95   114.91 max   122.58 | xrpld med    2.12 p95    3.96
+     slow: 122.58 ms (xrpld 1.9) {"taker_pays": {"currency": "CNY", "issuer": "razqQKzJRdB4UxFPWf5NEpEG3WMkmwgcXA"}, "taker_gets": {"currency": "XRP"}, "ledger_index": 8259949, "limit
+     slow: 114.91 ms (xrpld 2.99) {"taker_pays": {"currency": "JPY", "issuer": "rMAz5ZnK73nyNUL4foAvaxdreczCkG3vA6"}, "taker_gets": {"currency": "XRP"}, "ledger_index": 8259949, "limit
+account_currencies     xrpla med     0.54 p95    65.64 max   235.39 | xrpld med     0.5 p95   17.61
+     slow: 235.39 ms (xrpld 0.55) {"account": "rMWUykAmNQDaM9poSes8VLDZDDKEbmo7MX", "ledger_index": 8119938}
+     slow: 153.1 ms (xrpld 92.9) {"account": "rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B", "ledger_index": 8133730}
+gateway_balances       xrpla med     0.52 p95    49.92 max   105.19 | xrpld med    0.49 p95   12.38
+     slow: 105.19 ms (xrpld 56.13) {"account": "rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B", "ledger_index": 8133730}
+     slow: 97.58 ms (xrpld 1.12) {"account": "rPEZyTnSyQyXBCwMVYyaafSVPL8oMtfG6a", "ledger_index": 8004827}
+account_tx             xrpla med     2.97 p95     9.32 max    36.16 | xrpld med    0.54 p95    1.05
+     slow: 36.16 ms (xrpld 0.64) {"account": "rPcwxF1b2S7gDie3D4e861p8i6Ke2At5md", "ledger_index_min": 8000001, "ledger_index_max": 8300000, "limit": 10, "forward": true}
+     slow: 22.06 ms (xrpld 0.51) {"account": "r3cPPejMEFKidfAwrFATCXfE2dbde4Axho", "ledger_index_min": 8000001, "ledger_index_max": 8300000, "limit": 10, "api_version": 2}
+noripple_check         xrpla med      0.6 p95     7.52 max   131.71 | xrpld med    0.58 p95    4.09
+     slow: 131.71 ms (xrpld 50.58) {"account": "rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B", "ledger_index": 8133730, "role": "gateway", "transactions": true, "limit": 20}
+     slow: 68.73 ms (xrpld 28.37) {"account": "rnuF96W4SZoCJmbHYBFoJZpR8eCaxNvekK", "ledger_index": 8283857, "role": "gateway", "transactions": true, "limit": 20}
+ledger                 xrpla med     1.22 p95     7.45 max    20.09 | xrpld med    0.83 p95    2.94
+     slow: 20.09 ms (xrpld 0.76) {"ledger_index": 8139634, "transactions": true}
+     slow: 15.01 ms (xrpld 3.5) {"ledger_index": 8199028, "transactions": true, "expand": true, "api_version": 2}
+ledger_data            xrpla med     0.95 p95      5.7 max      5.7 | xrpld med    0.76 p95    2.77
+     slow: 5.7 ms (xrpld 2.17) {"ledger_index": 8300000, "limit": 200, "type": "offer"}
+     slow: 5.26 ms (xrpld 2.77) {"ledger_index": 8000001, "limit": 200, "type": "offer", "marker": "003800871F5109F193B9B8AE01481AA853E914071F3421F4BA99D88DAAD60FC7"}
+account_mptokens       xrpla med     0.58 p95     3.39 max     3.61 | xrpld med    None p95    None
+     slow: 3.61 ms (xrpld None) {"account": "rM3X3QSr8icjTGpaF52dozhbT2BZSXJQYM", "ledger_index": 8255778}
+     slow: 3.39 ms (xrpld None) {"account": "rfYv1TXnwgDDK4WQNbFALykYuEBnrR4pDX", "ledger_index": 8049210}
+account_lines          xrpla med     0.53 p95     3.37 max     7.71 | xrpld med    0.57 p95     2.6
+     slow: 7.71 ms (xrpld 3.44) {"account": "razqQKzJRdB4UxFPWf5NEpEG3WMkmwgcXA", "ledger_index": 8166425}
+     slow: 7.19 ms (xrpld 1.1) {"account": "rHsZHqa5oMQNL5hFm4kfLd47aEMYjPstpg", "ledger_index": 8001105}
+DONE

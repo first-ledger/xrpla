@@ -1,0 +1,57 @@
+{
+  "clio": {
+    "applied": true,
+    "clio_version": "2.7.1",
+    "first": 107000001,
+    "jobs": 16,
+    "last": 107707250,
+    "load": {
+      "clio_version": "2.7.1",
+      "first": 107000001,
+      "keyspace": "clio",
+      "last": 107707250,
+      "plan_lines": 951674818,
+      "plan_sha256": "fe4bbd5ea36067b078eda5d83087e55cf00b9c4de82750495cd31f1cff1e2281",
+      "published": true,
+      "resumed_from_line": 1,
+      "rows_sent": 951674801,
+      "workers": 4
+    },
+    "plan": "/home/ubuntu/parity-c/restore/plan/clio-plan.jsonl",
+    "rows": 951674801,
+    "streamed": true
+  },
+  "store": {
+    "baseline_hash": "4fe1ef0cb72893f61ca4452980ce7f5d14b5d542cfb6dc8938c8e19c58dc7b91",
+    "bytes_read": 20169277810,
+    "complete_ledgers": {
+      "first": 107000001,
+      "last": 107707250
+    },
+    "last_ledger_hash": "52ccd98f168dfb555f6b58177b281afbed201ab5c589afe74e712c556cf67724",
+    "ledgers_applied": 1250,
+    "schema": 2,
+    "seconds": 307.569398319,
+    "state_ledgers": {
+      "first": 107000001,
+      "last": 107707250
+    },
+    "store_available": true,
+    "timings": {
+      "compact": 0.0,
+      "flush": 0.0,
+      "read": 131.1865629359292,
+      "replay": {
+        "changes": 202325132,
+        "ledgers": 707250,
+        "prepare": 569.706202595,
+        "root_checks": 2.024100654,
+        "state_updates": 2003.718721603,
+        "submit_waiting": 132.735932882
+      },
+      "store": 4.958044330000001,
+      "verify": 145.98622389098196
+    },
+    "verification": "canonical-ledger-roots-and-parent-chain"
+  }
+}

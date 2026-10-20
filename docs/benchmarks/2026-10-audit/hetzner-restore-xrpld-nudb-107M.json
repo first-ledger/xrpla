@@ -1,0 +1,104 @@
+{
+ "what": "X: xrpla restore --to nudb from R2 (https://xrpla-data.firstledger.net/mainnet), snapshot 107,000,000 + ledgers 107,000,001-107,696,500, --jobs 8, taskset 16-39, nice 10, beside the publisher, soak and Postgres replica",
+ "host": "Hetzner publisher-host (Xeon Gold 5412U, 126 GB, NVMe RAID1)",
+ "build": "2b19b97",
+ "started_utc": "2026-10-16T14:12:58Z",
+ "database_bytes_du": "711G",
+ "time_v": {
+  "Command being timed": "\"bin/xrpla restore --source https://xrpla-data.firstledger.net/mainnet --publisher-key publisher.pub --to nudb --out /home/ubuntu/parity-x/node --range 107000001- --jobs 8\"",
+  "User time (seconds)": "5975.71",
+  "System time (seconds)": "1549.31",
+  "Percent of CPU this job got": "795%",
+  "Elapsed (wall clock) time (h": "mm:ss or m:ss): 15:46.20",
+  "Average shared text size (kbytes)": "0",
+  "Average unshared data size (kbytes)": "0",
+  "Average stack size (kbytes)": "0",
+  "Average total size (kbytes)": "0",
+  "Maximum resident set size (kbytes)": "29797220",
+  "Average resident set size (kbytes)": "0",
+  "Major (requiring I/O) page faults": "35",
+  "Minor (reclaiming a frame) page faults": "365832954",
+  "Voluntary context switches": "36264720",
+  "Involuntary context switches": "303906",
+  "Swaps": "0",
+  "File system inputs": "543732352",
+  "File system outputs": "1763154720",
+  "Socket messages sent": "0",
+  "Socket messages received": "0",
+  "Signals delivered": "0",
+  "Page size (bytes)": "4096",
+  "Exit status": "0"
+ },
+ "restore": {
+  "baseline": 107000000,
+  "baseline_hash": "4fe1ef0cb72893f61ca4452980ce7f5d14b5d542cfb6dc8938c8e19c58dc7b91",
+  "bytes_read": 20600411922,
+  "config": "/home/ubuntu/parity-x/node/rippled.cfg",
+  "first": 107000001,
+  "format": "rippled-3.3.0-nudb",
+  "last": 107696500,
+  "last_hash": "c8caaff37a9b441735efcb5ee38bf51c484a0a358a99e74787be1e2aea30fa33",
+  "ledger_seconds": 916.32615213,
+  "ledgers_written": 696500,
+  "nodes": null,
+  "nudb": {
+   "buckets": 14725476,
+   "data_bytes": 498225836163,
+   "key_phase_seconds": {
+    "data_sync": 0.000640869,
+    "distribute": 36.143457685,
+    "final_sync": 13.965143731,
+    "sort_and_fill": 133.73477781399998
+   },
+   "key_seconds": 183.843986787,
+   "keys": 1536264162,
+   "opened": true,
+   "regions": 50,
+   "repeated": 135077274
+  },
+  "nudb_data_size": 498225836163,
+  "nudb_entries": 1671341436,
+  "phase_seconds": {
+   "commit": 98.20878084200004,
+   "commit_parts": {
+    "nodes_durable": 34.770878565,
+    "receipt": 0.7015756299999999,
+    "sql_commit": 62.73459744200002,
+    "verified": 0.0016940549999999994
+   },
+   "nodes": 0.0,
+   "read": 85.82327015500249,
+   "rows": 325.942950755,
+   "sql": 460.16908291998914,
+   "verify": 323.70225711200516
+  },
+  "seconds": 943.263478319,
+  "snapshot_nodes": {
+   "data_bytes": 5804807541,
+   "entries": 28098560,
+   "nodes": 28098560,
+   "value_bytes": 4737062169
+  },
+  "snapshot_phase_seconds": {
+   "add": 4.439981757,
+   "finish": 1.436679306,
+   "read": 21.060503356
+  },
+  "snapshot_seconds": 26.937338779,
+  "source": "xrpla-pieces",
+  "sql_index_seconds": 294.346062821,
+  "sql_rowids": {
+   "accounts": 147186539,
+   "transactions": 77407825
+  },
+  "transactions": 77407825,
+  "verify_seconds": {
+   "changes": 198329793,
+   "ledgers": 696500,
+   "prepare": 1497.181487832,
+   "root_checks": 3.30239315,
+   "state_updates": 6497.775055267,
+   "submit_waiting": 322.083188345
+  }
+ }
+}
