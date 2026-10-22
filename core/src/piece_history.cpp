@@ -18,12 +18,17 @@
 #include <map>
 #include <mutex>
 #include <random>
+#include <semaphore>
 #include <set>
 #include <thread>
 #include <tuple>
+#include <type_traits>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
+#ifdef __GLIBC__
+#include <malloc.h>  // malloc_trim: release_freed_memory without jemalloc
+#endif
 
 namespace xrpla::core {
 namespace r = ::xrpl;
@@ -102,40 +107,128 @@ public:
 // Memory shared by several caches. Each cache has a guaranteed share and may grow past it into
 // room the others leave unused; while the total is over budget, a cache over its share evicts
 // down to it (on its next insert or lookup), so a cache under its share gets its room back.
+// The total counts what decoded values alive take, not only what the caches hold: a value a
+// request still holds when it is evicted stays counted (Charged) until it is destroyed. Counting
+// only the cached entries, a server under load sat at its budget while it held two to three
+// times as much, in segments and pages its requests were still reading.
 // One budget serves every PieceHistory of a cache directory (shared_budget): a sync that switches
 // the selection has a new history opened while the one it replaces still answers the requests
 // that hold it (and a live tail's, until follow_tail has rebuilt it). The replaced one is retired:
 // its caches are emptied and their shares set to nothing, so what it caches meanwhile is evicted
 // first whenever the total is over, and the two together stay within one --cache, not two.
-// A retired cache trims itself only when it is used, so the budget also lists the retired caches:
-// any of its caches finding the total over sheds theirs first (Retired::shed), then its own.
+// A cache trims itself only when it is used, so the budget lists its caches: one finding the
+// total over sheds the retired caches' entries first (Cache::shed), then its own down to its
+// share, then those of any other live cache beyond its share. One cache alone filling the budget
+// would otherwise keep it full while the others, under their shares, evicted all they got.
 // Evicted values, let go once the locks are: a decoded page or segment frees its memory then.
-using Freed = std::vector<std::shared_ptr<void const>>;
-struct Retired {
-    // Evicts entries while the budget is over, into `freed`; skips this cache if its lock is held
-    // elsewhere.
-    virtual void shed(Freed& freed) = 0;
-    virtual ~Retired() = default;
+// `bytes` is what they will free: those no request holds (Lru::drop), which a trim no longer
+// needs to evict room for, although the budget counts them until they are let go.
+struct Freed {
+    std::vector<std::shared_ptr<void const>> values;
+    std::size_t bytes = 0;
 };
-// Lock order: a cache's own lock, then the budget's `mutex`, then a retired cache's lock taken
-// only by try_lock (shed), so no order among caches can deadlock. A cache never holds its own lock
-// while it takes the budget's to enlist or leave (Lru::retire, ~Lru), and a retired cache never
-// sheds the others: a cache's lock is never asked for, blocking, under the budget's.
+struct Cache {
+    // Evicts entries beyond the cache's share while the budget is over, into `freed`; skips the
+    // cache if its lock is held elsewhere.
+    virtual void shed(Freed& freed) = 0;
+    virtual ~Cache() = default;
+};
+// Lock order: a cache's own lock, then the budget's `mutex`, then another cache's lock taken only
+// by try_lock (shed), so no order among caches can deadlock. A cache never holds its own lock
+// while it takes the budget's to enlist, retire or leave (Lru::share, Lru::retire, ~Lru), and a
+// retired cache never sheds the others: a cache's lock is never asked for, blocking, under the
+// budget's.
 struct Budget {
-    std::atomic<std::size_t> total{0}, used{0};
+    // `used`: what the decoded values alive take, cached or `held` (evicted while a request still
+    // holds them).
+    std::atomic<std::size_t> total{0}, used{0}, held{0};
+    // How many live and retired caches hold more than their share (a retired cache: anything),
+    // read without `mutex`: none to shed is the common case.
+    std::atomic<std::size_t> live_over{0}, retired_over{0};
     std::mutex mutex;
-    std::vector<Retired*> retired;  // under `mutex`
-    // What the retired caches hold, read without `mutex`: nothing to shed is the common case, a
-    // retired cache being emptied when it retires and again whenever the total is over.
-    std::atomic<std::size_t> retired_bytes{0};
-    Json stats() const { return {{"total", total.load()}, {"used", used.load()}}; }
-    void enlist(Retired* cache) { std::lock_guard lock(mutex); retired.push_back(cache); }
-    void leave(Retired* cache) { std::lock_guard lock(mutex); std::erase(retired, cache); }
+    std::vector<Cache*> live, retired;  // under `mutex`
+    Json stats() const {
+        auto u = used.load(), h = held.load();
+        return {{"total", total.load()}, {"used", u}, {"cached", u - std::min(u, h)}, {"held", h}};
+    }
+    // Whether the total is over once `freed` is let go.
+    bool over(Freed const& freed) const { return used > total + freed.bytes; }
+    void enlist(Cache* cache) { std::lock_guard lock(mutex); live.push_back(cache); }
+    void retire(Cache* cache) { std::lock_guard lock(mutex); std::erase(live, cache); retired.push_back(cache); }
+    void leave(Cache* cache) { std::lock_guard lock(mutex); std::erase(live, cache); std::erase(retired, cache); }
     // The retired caches' entries, oldest retired first, while the total is over.
-    void shed(Freed& freed) {
-        if (!retired_bytes || used <= total) return;
+    void shed_retired(Freed& freed) {
+        if (!retired_over || !over(freed)) return;
         std::lock_guard lock(mutex);
-        for (auto* cache : retired) { if (used <= total) break; cache->shed(freed); }
+        for (auto* cache : retired) { if (!over(freed)) break; cache->shed(freed); }
+    }
+    // The other live caches' entries beyond their shares, while the total is over; `self` is the
+    // caller, counted in live_over when `self_over`.
+    void shed_live(Freed& freed, Cache const* self, bool self_over) {
+        if (live_over <= std::size_t(self_over) || !over(freed)) return;
+        std::lock_guard lock(mutex);
+        for (auto* cache : live) { if (!over(freed)) break; if (cache != self) cache->shed(freed); }
+    }
+};
+// What a cached value is charged, kept with the value. While it is an entry, the charge counts in
+// its cache's bytes and in the budget's `used`; when it is evicted it moves to the budget's `held`
+// (still in `used`) and is given back when the value is destroyed, by whichever request let go of
+// it last. Every value type of an Lru derives from it. Its fields change only under the lock of
+// the cache the value was inserted in (one, once); the destructor runs after every other use.
+struct Charged {
+    Budget* budget = nullptr;  // set when evicted
+    std::size_t charged = 0;
+    bool evicted = false;
+    Charged() = default;
+    Charged(Charged const&) = delete;
+    Charged& operator=(Charged const&) = delete;
+    ~Charged() { if (evicted) { budget->held -= charged; budget->used -= charged; } }
+};
+// Segment dictionaries being loaded, in the whole process (every history, every budget). A load
+// builds its dictionary (42 MB on average, 60-80 ms) before its segment is cached and charged, and
+// with every pool thread and request worker loading at once (32 on a 16-core server) those loads
+// alone held GBs that no budget saw. Half the cores, 2 to 8, keep loads overlapping one another
+// and the other requests' decodes; further loads wait for a slot.
+// Before it takes one, a load waits while the values alive (Budget::used) are a quarter over the
+// budget, for requests to finish and let go of theirs: more concurrent requests then cost latency
+// rather than memory. The wait is bounded (2 s, then the load goes ahead), as what it waits for
+// may be held by the very requests waiting, each holding pages it has read; it polls, as values
+// are let go everywhere and a wakeup on each would cost every request.
+// A load waits (for memory, then a slot) holding no lock: not a segment's (a read under one waits
+// for nothing, so a slot's holder waiting for a segment always gets it) and not a cache's
+// (Lru::get loads with its lock let go).
+class Openings {
+public:
+    unsigned const size = std::clamp(std::thread::hardware_concurrency() / 2, 2u, 8u);
+private:
+    std::counting_semaphore<64> slots_{static_cast<std::ptrdiff_t>(size)};
+public:
+    static constexpr std::chrono::seconds patience{2};
+    std::atomic<std::uint64_t> loading{0}, memory_waits{0}, wait_ns{0};
+    static Openings& shared() {
+        static Openings openings;
+        return openings;
+    }
+    // A slot, given back when it goes out of scope.
+    class Slot {
+        Openings& o_;
+    public:
+        explicit Slot(Openings& o) : o_(o) {}
+        ~Slot() { --o_.loading; o_.slots_.release(); }
+        Slot(Slot const&) = delete;
+        Slot& operator=(Slot const&) = delete;
+    };
+    Slot take(Budget const& budget) {
+        auto start = std::chrono::steady_clock::now();
+        auto pressed = [&] { return budget.used > budget.total + budget.total / 4; };
+        if (pressed()) {
+            ++memory_waits;
+            while (pressed() && std::chrono::steady_clock::now() - start < patience) std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        }
+        slots_.acquire();
+        ++loading;
+        wait_ns += static_cast<std::uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - start).count());
+        return Slot(*this);
     }
 };
 // The budget of the histories open on `cache`, created by the first. Kept while one holds it:
@@ -153,7 +246,10 @@ std::shared_ptr<Budget> shared_budget(fs::path const& cache) {
     if (!budget) slot = budget = std::make_shared<Budget>();
     return budget;
 }
-template<class K, class T> class Lru final : Retired {
+// A value's charge is measured by `size` when it is inserted (and again by recharge) and kept in
+// the value (Charged), so what is given back is always what was charged.
+template<class K, class T> class Lru final : Cache {
+    static_assert(std::is_base_of_v<Charged, T>);
     using Item = std::pair<K, std::shared_ptr<T>>;
     std::mutex mutex_;
     std::list<Item> order_;
@@ -164,70 +260,101 @@ template<class K, class T> class Lru final : Retired {
     std::size_t bytes_ = 0, capacity_;
     std::size_t (*size_)(T const&);
     Budget* budget_ = nullptr;
-    bool retired_ = false;  // enlisted in budget_'s retired caches (and counted in its retired_bytes)
-    void charge(T const& value) {
-        auto n = size_(value); bytes_ += n;
-        if (budget_) { budget_->used += n; if (retired_) budget_->retired_bytes += n; }
+    bool retired_ = false;  // moved to budget_'s retired caches
+    bool over_ = false;     // counted in budget_'s live_over or retired_over
+    // Keeps the budget's count of caches over their share.
+    void tally() {
+        if (!budget_ || (bytes_ > capacity_) == over_) return;
+        over_ = !over_;
+        auto& count = retired_ ? budget_->retired_over : budget_->live_over;
+        if (over_) ++count; else --count;
     }
-    void release(T const& value) {
-        auto n = size_(value); bytes_ -= n;
-        if (budget_) { budget_->used -= n; if (retired_) budget_->retired_bytes -= n; }
+    void charge(T& value) {
+        value.charged = size_(value); bytes_ += value.charged;
+        if (budget_) budget_->used += value.charged;
+        tally();
+    }
+    // An entry's charge given back, for the value to be charged again in place (recharge).
+    void release(T& value) {
+        bytes_ -= value.charged;
+        if (budget_) budget_->used -= value.charged;
+        tally();
+    }
+    // Takes an entry's value out of the cache into `freed`: its charge moves to the budget's held
+    // bytes until the value is destroyed (Charged), at once when the cache held the last reference
+    // (`freed` is let go after the locks), or when the request holding it is done. Under mutex_,
+    // nothing else can take a new reference, so use_count() says which.
+    void drop(std::shared_ptr<T>& value, Freed& freed) {
+        bytes_ -= value->charged;
+        if (budget_) { value->budget = budget_; value->evicted = true; budget_->held += value->charged; }
+        tally();
+        if (value.use_count() == 1) freed.bytes += value->charged;
+        freed.values.push_back(std::move(value));
     }
     // The caller declares `freed` before taking mutex_, so what is evicted is freed after it is let go.
     void evict_oldest(Freed& freed) {
-        release(*order_.back().second);
-        freed.push_back(std::move(order_.back().second));
+        drop(order_.back().second, freed);
         index_.erase(order_.back().first); order_.pop_back();
     }
-    // Over its share and the budget full (or, alone, over its capacity); keeps the newest entry.
-    // With the budget full, the retired caches give back theirs first (the caller holds mutex_; a
-    // retired cache does not shed the others: Budget's lock order).
+    // With the budget full, the retired caches give back theirs first; then this one evicts down
+    // to its share (or, alone, its capacity), keeping the newest entry; then the other live caches
+    // beyond theirs (a retired cache sheds no other: Budget's lock order). The caller holds mutex_.
     void trim(Freed& freed) {
-        if (budget_ && !retired_) budget_->shed(freed);
-        auto over = [&] { return bytes_ > capacity_ && (!budget_ || budget_->used > budget_->total); };
+        if (budget_ && !retired_) budget_->shed_retired(freed);
+        auto over = [&] { return bytes_ > capacity_ && (!budget_ || budget_->over(freed)); };
         while (order_.size() > 1 && over()) evict_oldest(freed);
+        if (budget_ && !retired_) budget_->shed_live(freed, this, over_);
     }
-    // Retired::shed, from another cache of the budget (under the budget's lock): every entry may
-    // go, as from retire(); a request holding one keeps it until it is done.
+    // Cache::shed, from another cache of the budget (under the budget's lock): every entry beyond
+    // this cache's share may go (all of a retired one's, as from retire()); a request holding one
+    // keeps it until it is done.
     void shed(Freed& freed) override {
         std::unique_lock lock(mutex_, std::try_to_lock);
         if (!lock) return;  // in use: it trims itself meanwhile, and the next shed tries it again
-        while (!order_.empty() && budget_->used > budget_->total) evict_oldest(freed);
+        while (!order_.empty() && bytes_ > capacity_ && budget_->over(freed)) evict_oldest(freed);
     }
 public:
     U hits = 0, misses = 0;
     Lru(std::size_t capacity, std::size_t (*size)(T const&)) : capacity_(capacity), size_(size) {}
     // A shared budget outlives this cache (its history holds it): what this one charged is given
-    // back, or a reopened history would find it full of entries that no longer exist. A retired
-    // one leaves the budget's list first, so no other cache sheds it from here on.
+    // back, or a reopened history would find it full of entries that no longer exist. It leaves
+    // the budget's lists first, so no other cache sheds it from here on. Its entries are not
+    // marked evicted: no request holds one once its history is gone.
     ~Lru() override {
         if (!budget_) return;
-        if (retired_) { budget_->leave(this); budget_->retired_bytes -= bytes_; }
+        budget_->leave(this);
+        if (over_) --(retired_ ? budget_->retired_over : budget_->live_over);
         budget_->used -= bytes_;
     }
     Lru(Lru const&) = delete;
     Lru& operator=(Lru const&) = delete;
     // The capacity, or with a shared budget the guaranteed share.
-    void capacity(std::size_t value) { std::lock_guard lock(mutex_); capacity_ = value; }
+    void capacity(std::size_t value) { std::lock_guard lock(mutex_); capacity_ = value; tally(); }
     std::size_t capacity() { std::lock_guard lock(mutex_); return capacity_; }
-    void share(Budget& budget) { std::lock_guard lock(mutex_); budget_ = &budget; budget.used += bytes_; }
+    // Enlisted after its own lock is let go (Budget's lock order).
+    void share(Budget& budget) {
+        { std::lock_guard lock(mutex_); budget_ = &budget; budget.used += bytes_; tally(); }
+        budget.enlist(this);
+    }
     // Every entry evicted and no share kept: from now on this cache holds only room the shared
     // budget has left, and is the first to evict once it is over (it is always over its share).
     // A request holding an entry keeps it until it is done; a load under way still inserts its
-    // value, as any insert, then trims. Hits and misses are kept. With a shared budget it is then
-    // enlisted, so the budget's other caches evict what it caches later before their own entries
-    // (taken after its own lock is let go: Budget's lock order).
+    // value, as any insert, then trims. Hits and misses are kept. With a shared budget it then
+    // moves to the budget's retired caches, so the budget's other caches evict what it caches
+    // later before their own entries (taken after its own lock is let go: Budget's lock order).
     void retire() {
-        bool enlist = false;
+        bool moved = false;
         {
             Freed freed;
             std::lock_guard lock(mutex_);
+            if (budget_ && !retired_) {
+                if (over_) { --budget_->live_over; over_ = false; }  // counted with the retired ones from here on
+                retired_ = moved = true;
+            }
             capacity_ = 0;
             while (!order_.empty()) evict_oldest(freed);
-            enlist = budget_ && !retired_;
-            if (enlist) retired_ = true;
         }
-        if (enlist) budget_->enlist(this);
+        if (moved) budget_->retire(this);
     }
     template<class Load> std::shared_ptr<T> get(K const& key, Load load) {
         std::promise<std::shared_ptr<T>> loaded;
@@ -261,25 +388,32 @@ public:
         return value;
     }
     bool contains(K const& key) { std::lock_guard lock(mutex_); return index_.contains(key); }
-    // Inserts or replaces (a longer decode of a partial page).
+    // Inserts or replaces (a longer decode of a partial page); a value is inserted once.
     void put(K const& key, std::shared_ptr<T> value) {
         Freed freed;
         std::lock_guard lock(mutex_);
         ++misses;
-        if (auto it = index_.find(key); it != index_.end()) {
-            release(*it->second->second); freed.push_back(std::move(it->second->second)); order_.erase(it->second); index_.erase(it);
-        }
+        if (auto it = index_.find(key); it != index_.end()) { drop(it->second->second, freed); order_.erase(it->second); index_.erase(it); }
         order_.emplace_front(key, value); index_[key] = order_.begin(); charge(*value);
         trim(freed);
     }
-    // `value`'s charge again after `update` changed what it holds, if it is still the entry for
-    // `key` (an evicted one is no longer charged).
+    // `value`'s charge again after `update` changed what it holds: as the entry for `key`, or,
+    // evicted while a request still holds it, in the budget's held bytes. A value never charged
+    // (a load another one's insert beat) is not counted.
     template<class Update> void recharge(K const& key, T& value, Update update) {
         Freed freed;
         std::lock_guard lock(mutex_);
-        auto it = index_.find(key);
-        if (it == index_.end() || it->second->second.get() != &value) return;
-        release(value); update(value); charge(value);
+        if (value.evicted) {
+            auto was = value.charged;
+            update(value);
+            value.charged = size_(value);
+            budget_->held += value.charged; budget_->used += value.charged;  // added first: neither goes below zero
+            budget_->held -= was; budget_->used -= was;
+        } else {
+            auto it = index_.find(key);
+            if (it == index_.end() || it->second->second.get() != &value) return;
+            release(value); update(value); charge(value);
+        }
         trim(freed);
     }
     // Without counting a hit or refreshing the entry: for planning which loads are needed.
@@ -298,20 +432,25 @@ public:
         return it->second->second;
     }
     Json stats() { std::lock_guard lock(mutex_); return {{"entries", order_.size()}, {"bytes", bytes_}, {"share", capacity_}, {"hits", hits}, {"misses", misses}}; }
-    // `visit(value)` for each entry, outside the cache's lock (the entries are held meanwhile).
+    // `visit(value)` for each entry, outside the cache's lock. Only weak pointers are kept for the
+    // walk: an entry evicted meanwhile is freed as usual (and skipped), and each visited value is
+    // let go right after its visit.
     template<class Visit> void each(Visit visit) {
-        std::vector<std::shared_ptr<T>> values;
-        { std::lock_guard lock(mutex_); for (auto const& item : order_) values.push_back(item.second); }
-        for (auto const& value : values) visit(*value);
+        std::vector<std::weak_ptr<T>> values;
+        { std::lock_guard lock(mutex_); values.reserve(order_.size()); for (auto const& item : order_) values.push_back(item.second); }
+        for (auto const& weak : values) if (auto value = weak.lock()) visit(*value);
     }
 };
 
-struct OpenArchive {
+struct OpenArchive : Charged {
     std::mutex mutex;
     hx::Archive archive;
     // Memory charged to the open-segment cache (held), measured again as it grows (under
-    // the cache's lock and this mutex); read by cache_stats under this mutex alone.
+    // the cache's lock and this mutex); read by cache_stats without either.
     std::atomic<std::size_t> weight = 0;
+    // Its codec dictionary is loaded (Impl::prepare): read without `mutex` to decide whether a
+    // dictionary slot is needed before the hold is taken (Openings).
+    std::atomic<bool> prepared = false;
     // Set while what it holds may differ from `weight`: by a read that grew it, as it lets go of
     // `mutex` (Hold; one that throws too), and by a measure that found `mutex` held (Impl::grew).
     // Cleared when it is measured; the next lookup of a stale segment measures it (Impl::archive).
@@ -338,7 +477,7 @@ struct Ledger {
     std::vector<std::pair<V, V>> transactions, patches;
 };
 // A decoded ledger: its record, and the record parsed (views into it).
-struct Page {
+struct Page : Charged {
     Bytes raw;
     Ledger ledger;
     std::size_t bytes = 0;
@@ -384,7 +523,12 @@ std::size_t page_bytes(Page const& p) { return p.bytes; }
 std::size_t page_charge(Page const& p) {
     return sizeof(Page) + p.raw.capacity() + (p.ledger.transactions.capacity() + p.ledger.patches.capacity()) * sizeof(std::pair<V, V>);
 }
-std::size_t block_bytes(StateBlock const& b) { return sizeof(StateBlock) + b.raw.capacity() + b.items.capacity() * sizeof(std::pair<V, V>); }
+// A snapshot block as the block cache holds it: StateBlock (piece_format.hpp) with its charge.
+// Impl::block hands out the StateBlock through a pointer that holds this, and so its charge.
+struct Block : Charged { std::shared_ptr<StateBlock> data; };
+std::size_t block_bytes(Block const& b) {
+    return sizeof(Block) + sizeof(StateBlock) + b.data->raw.capacity() + b.data->items.capacity() * sizeof(std::pair<V, V>);
+}
 
 Ledger parse_ledger(V raw) {
     hx::Reader r{raw};
@@ -401,6 +545,17 @@ Ledger parse_ledger(V raw) {
     return l;
 }
 Bytes txid(V tx) { return hx::half(Bytes("TXN\0", 4) + Bytes(tx)); }
+// A decoded ledger's transactions with their metadata, ordered by hash as ledger records list them.
+std::vector<TransactionRecord> by_hash(Ledger const& ledger) {
+    std::vector<std::pair<Bytes, TransactionRecord>> sorted;
+    sorted.reserve(ledger.transactions.size());
+    for (auto const& [tx, meta] : ledger.transactions) sorted.push_back({txid(tx), {Bytes(tx), Bytes(meta)}});
+    std::sort(sorted.begin(), sorted.end(), [](auto const& a, auto const& b) { return a.first < b.first; });
+    std::vector<TransactionRecord> out;
+    out.reserve(sorted.size());
+    for (auto& item : sorted) out.push_back(std::move(item.second));
+    return out;
+}
 }
 
 struct PieceHistory::Impl {
@@ -436,8 +591,8 @@ struct PieceHistory::Impl {
     // only when the snapshot and every range have theirs.
     std::unique_ptr<OptionalIndex> holders, issuers;
     bool has_holders = false, has_issuers = false;
-    // An open segment holds its codec dictionary (loaded by the first object or ledger decode;
-    // header and transaction reads never need it), the values rendered from it and any
+    // An open segment holds its codec dictionary (loaded when an object or ledger decode first
+    // opens it; header and transaction reads never need it), the values rendered from it and any
     // transaction pages read, charged by what it holds after each read: loading a dictionary is
     // most of a cold read (about 80 ms for a 2014 segment), so as many stay open as the budget holds.
     // Shared by the three caches below and by every other history of this cache directory
@@ -452,12 +607,14 @@ struct PieceHistory::Impl {
     static std::uint64_t since(std::chrono::steady_clock::time_point t) {
         return static_cast<std::uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - t).count());
     }
-    // Decoded ledgers, keyed by (range, segment, ledger, patches only): object lookups decode
-    // without metadata, and a full ledger serves them too.
-    using LedgerKey = std::tuple<std::size_t, std::size_t, U, bool>;
+    // Decoded ledgers, keyed by (range, segment, ledger, part): object lookups decode without
+    // metadata, transaction reads (tx, account_tx, nft_history) without object changes, and a
+    // whole ledger serves either.
+    using Part = hx::Part;
+    using LedgerKey = std::tuple<std::size_t, std::size_t, U, Part>;
     using SegmentId = std::pair<std::size_t, std::size_t>;
     Lru<LedgerKey, Page> pages{512u << 20, page_bytes};
-    Lru<U, StateBlock> blocks{128u << 20, block_bytes};
+    Lru<U, Block> blocks{128u << 20, block_bytes};
     std::mutex hint_mutex;
     std::map<Bytes, std::pair<U, U>> hints;  // transaction hash -> (ledger, record position)
 
@@ -534,20 +691,35 @@ struct PieceHistory::Impl {
         }
         return std::nullopt;
     }
-    std::shared_ptr<OpenArchive> archive(std::size_t ri, std::size_t si) {
+    // Segment `si` of range `ri`, opened if not cached, with its codec dictionary when `dictionary`
+    // (decodes need it). A cold segment's dictionary is loaded by the load that opens it, before it
+    // is inserted: it is cached with what it holds charged, and concurrent requests for it wait for
+    // that one load (Lru::get). A segment cached without one (opened by a transaction read) has it
+    // loaded under its hold. Either load first takes a dictionary slot (Openings), holding no lock.
+    std::shared_ptr<OpenArchive> archive(std::size_t ri, std::size_t si, bool dictionary = false) {
         auto open = archives.get({ri, si}, [&] {
             auto t = std::chrono::steady_clock::now();
             auto const& s = ranges[ri]->directory.segments[si];
             auto a = std::make_shared<OpenArchive>(ranges[ri]->file->view().substr(s.offset, s.length));
             open_ns += since(t);
+            if (dictionary) {
+                auto slot = Openings::shared().take(*budget);
+                prepare(*a);  // no other thread can reach it yet: no hold needed
+            }
             a->weight = held(*a);
             return a;
         });
+        if (dictionary && !open->prepared) {
+            auto slot = Openings::shared().take(*budget);
+            auto lock = hold(*open);
+            prepare(*open);
+        }
         if (open->stale) grew(ri, si, *open);  // a read that grew it left it uncharged (OpenArchive::stale)
         return open;
     }
     // Charges a segment again after a read grew it, measured under the cache's lock and its own
-    // mutex, so two reads that grew it never leave the older size charged. When another thread
+    // mutex, so two reads that grew it never leave the older size charged; one evicted while
+    // requests read it is charged in the budget's held bytes (Lru::recharge). When another thread
     // holds the segment (a decode can take a while; cache_stats) it is not waited for, as every
     // lookup would wait behind the cache's lock: the segment stays stale, and is measured by that
     // read once it is done or else by the next lookup of it.
@@ -558,15 +730,19 @@ struct PieceHistory::Impl {
             else value.stale = true;
         });
     }
-    // Loads a segment's dictionary unless loaded; the caller holds its mutex.
+    // Loads a segment's dictionary unless loaded; the caller holds its mutex (or alone has the
+    // segment) and a dictionary slot.
     void prepare(OpenArchive& a) {
-        if (a.archive.dictionaryBytes()) return;
-        auto t = std::chrono::steady_clock::now();
-        a.archive.prepare();
-        dictionary_ns += since(t);
-        auto [read, parse] = a.archive.dictionarySeconds();
-        dictionary_read_ns += static_cast<std::uint64_t>(read * 1e9); dictionary_parse_ns += static_cast<std::uint64_t>(parse * 1e9);
-        dictionary_bytes += a.archive.dictionaryBytes(); ++dictionaries;
+        if (a.prepared) return;
+        if (!a.archive.dictionaryBytes()) {
+            auto t = std::chrono::steady_clock::now();
+            a.archive.prepare();
+            dictionary_ns += since(t);
+            auto [read, parse] = a.archive.dictionarySeconds();
+            dictionary_read_ns += static_cast<std::uint64_t>(read * 1e9); dictionary_parse_ns += static_cast<std::uint64_t>(parse * 1e9);
+            dictionary_bytes += a.archive.dictionaryBytes(); ++dictionaries;
+        }
+        a.prepared = true;
     }
     Bytes transaction_blob(U seq, U position) {
         auto ri = range_of(seq); auto si = ranges[ri]->directory.segment_of(seq);
@@ -592,66 +768,74 @@ struct PieceHistory::Impl {
         grew(ri, si, *a);
         return out;
     }
-    // With `patches_only` a ledger's metadata is empty. index-pieces checked every page's
+    // Ledger `seq` decoded as `part` or whole, if cached. With Part::patches a ledger's metadata is
+    // empty, with Part::transactions its object changes. index-pieces checked every page's
     // canonical digest, so these decodes skip it.
-    std::shared_ptr<Page> cached(std::size_t ri, std::size_t si, U seq, bool patches_only, bool peek = false) {
+    std::shared_ptr<Page> cached(std::size_t ri, std::size_t si, U seq, Part part, bool peek = false) {
         auto look = [&](LedgerKey const& key) { return peek ? pages.peek(key) : pages.find(key); };
-        if (auto p = look({ri, si, seq, false})) return p;
-        return patches_only ? look({ri, si, seq, true}) : nullptr;
+        if (auto p = look({ri, si, seq, Part::all})) return p;
+        return part == Part::all ? nullptr : look({ri, si, seq, part});
     }
-    // Decodes and caches the ledgers of one segment not cached yet. Each is built alone; under one
-    // hold of the segment and in ascending order, so a page's parse continues from the ledger
-    // before (the reader keeps where it stopped) instead of starting again at the page's first.
-    std::map<U, std::shared_ptr<Page>> decode(std::size_t ri, std::size_t si, std::set<U> const& ledgers, bool patches_only) {
+    // Decodes and caches the ledgers of one segment not cached yet; returns ledger `keep`'s page
+    // when this call decoded it. Each is built alone; under one hold of the segment and in
+    // ascending order, so a page's parse continues from the ledger before (the reader keeps where
+    // it stopped) instead of starting again at the page's first. Each goes into the cache as soon
+    // as it is built, still under the hold: it is charged from then on, not after the whole
+    // segment's ledgers were held uncounted, and a read that waited for the hold finds it rather
+    // than decoding it again.
+    std::shared_ptr<Page> decode(std::size_t ri, std::size_t si, std::set<U> const& ledgers, Part part, std::optional<U> keep = std::nullopt) {
         std::vector<U> missing;
-        for (auto seq : ledgers) if (!cached(ri, si, seq, patches_only, true)) missing.push_back(seq);
-        std::map<U, std::shared_ptr<Page>> decoded;
-        if (missing.empty()) return decoded;
-        auto a = archive(ri, si);
+        for (auto seq : ledgers) if (!cached(ri, si, seq, part, true)) missing.push_back(seq);
+        std::shared_ptr<Page> kept;
+        if (missing.empty()) return kept;
+        auto a = archive(ri, si, true);
         {
             auto lock = hold(*a);
-            prepare(*a);
             auto t = std::chrono::steady_clock::now();
             for (auto seq : missing) {
                 // Another read of this segment may have decoded it while this one waited.
-                if (cached(ri, si, seq, patches_only, true)) continue;
+                if (cached(ri, si, seq, part, true)) continue;
                 auto p = std::make_shared<Page>();
-                p->raw = a->archive.decodeLedger(seq, patches_only);
+                p->raw = a->archive.decodeLedger(seq, part);
                 // The record is built by appending (up to twice its size reserved): trimmed before it is
                 // parsed (the parse's views point into it), and charged what it and the views hold.
                 p->raw.shrink_to_fit();
                 p->ledger = parse_ledger(p->raw);
                 p->bytes = page_charge(*p);
-                decoded.emplace(seq, std::move(p));
+                pages.put({ri, si, seq, part}, p);
+                if (seq == keep) kept = std::move(p);
             }
             page_ns += since(t);
         }
         grew(ri, si, *a);
-        for (auto const& [seq, p] : decoded) pages.put({ri, si, seq, patches_only}, p);
-        return decoded;
+        return kept;
     }
     // Ledger `seq`, decoded when not cached.
-    std::shared_ptr<Page> page(U seq, bool patches_only = false) {
+    std::shared_ptr<Page> page(U seq, Part part = Part::all) {
         auto [ri, si] = segment_id(seq);
         // Another read may decode it meanwhile, and a full cache evict it again before it is found.
         for (int tries = 0; tries < 4; ++tries) {
-            if (auto p = cached(ri, si, seq, patches_only)) return p;
-            auto decoded = decode(ri, si, {seq}, patches_only);
-            if (auto it = decoded.find(seq); it != decoded.end()) return it->second;
+            if (auto p = cached(ri, si, seq, part)) return p;
+            if (auto p = decode(ri, si, {seq}, part, seq)) return p;
         }
         throw Error("Decoded ledger evicted before it was read");
     }
     // Loads of the ledgers wanted, one task per segment.
-    std::vector<std::function<void()>> load_tasks(std::map<SegmentId, std::set<U>> const& wanted, bool patches_only) {
+    std::vector<std::function<void()>> load_tasks(std::map<SegmentId, std::set<U>> const& wanted, Part part) {
         std::vector<std::function<void()>> tasks;
         for (auto const& [id, ledgers] : wanted)
-            tasks.push_back([this, id = id, &ledgers = ledgers, patches_only] { decode(id.first, id.second, ledgers, patches_only); });
+            tasks.push_back([this, id = id, &ledgers = ledgers, part] { decode(id.first, id.second, ledgers, part); });
         return tasks;
     }
+    // The loads one request runs at once (the pool's threads stay shared by every request). Each
+    // segment being decoded pins its codec dictionary (tens of MB) and the ledgers it builds, so
+    // with 16 a hundred concurrent listings held well past the cache budget; 4 still overlap a
+    // request's reads.
+    static constexpr std::size_t request_loads = 4;
     // Runs loads on the shared pool (and the calling thread); a failure is left for the read that
     // needs the data.
     static void parallel(std::vector<std::function<void()>> const& tasks) {
-        (void)LoadPool::shared().run(tasks, 16);
+        (void)LoadPool::shared().run(tasks, request_loads);
     }
     // (range, segment, page) holding a ledger.
     SegmentId segment_id(U seq) const {
@@ -659,8 +843,17 @@ struct PieceHistory::Impl {
         return {ri, ranges[ri]->directory.segment_of(seq)};
     }
     std::shared_ptr<StateBlock> block(U i) { return block(base_for(snapshot_seq), i); }
+    // The block through a pointer that holds its cache entry (Block), so the block stays charged
+    // while a request reads it, cached or not.
     std::shared_ptr<StateBlock> block(Base const& base, U i) {
-        return blocks.get(base.tag << 48 | i, [&] { auto t = std::chrono::steady_clock::now(); auto b = base.state->load(i); block_ns += since(t); return b; });
+        auto b = blocks.get(base.tag << 48 | i, [&] {
+            auto t = std::chrono::steady_clock::now();
+            auto loaded = std::make_shared<Block>();
+            loaded->data = base.state->load(i);
+            block_ns += since(t);
+            return loaded;
+        });
+        return std::shared_ptr<StateBlock>(b, b->data.get());
     }
     // The first snapshot object whose key is > key.
     std::optional<std::pair<Bytes, Bytes>> snapshot_after(V key) {
@@ -698,7 +891,7 @@ struct PieceHistory::Impl {
         if (!version) return std::nullopt;
         if (version->deleted) return Bytes();
         U ledger = r.first + version->ledger;
-        auto p = page(ledger, true);
+        auto p = page(ledger, Part::patches);
         auto const& patches = p->at(ledger).patches;
         auto found = std::lower_bound(patches.begin(), patches.end(), record.key, [](auto const& patch, V k) { return patch.first < k; });
         if (found == patches.end() || found->first != record.key || found->second.empty()) throw Error("Object version missing from ledger");
@@ -886,9 +1079,9 @@ Bytes PieceHistory::object(Bytes const& key, std::uint32_t seq) const {
 }
 // Keys grouped by where their version at `seq` is: a ledger's patches in some segment page, or
 // the base snapshot. Each segment is read by one task (opened once, its pages decoded once each,
-// up to the newest ledger wanted), each snapshot block once, on up to 16 threads. Segments and
-// decoded pages go through the shared caches, so the same directory read again (a gateway's
-// trust lines) is served from memory.
+// up to the newest ledger wanted), each snapshot block once, Impl::request_loads at a time.
+// Segments and decoded pages go through the shared caches, so the same directory read again (a
+// gateway's trust lines) is served from memory.
 std::vector<Bytes> PieceHistory::objects(std::vector<Bytes> const& keys, std::uint32_t seq) const {
     auto& m = *impl_;
     if (seq < m.snapshot_seq || seq > m.last) throw Error("Ledger state has been pruned");
@@ -917,9 +1110,9 @@ std::vector<Bytes> PieceHistory::objects(std::vector<Bytes> const& keys, std::ui
         auto [ri, si] = segment;
         std::set<U> ledgers;
         for (auto const& w : wanted) ledgers.insert(w.ledger);
-        m.decode(ri, si, ledgers, true);
+        m.decode(ri, si, ledgers, Impl::Part::patches);
         for (auto const& w : wanted) {
-            auto p = m.page(w.ledger, true);
+            auto p = m.page(w.ledger, Impl::Part::patches);
             auto const& patches = p->at(w.ledger).patches;
             V key(keys[w.index]);
             auto found = std::lower_bound(patches.begin(), patches.end(), key, [](auto const& patch, V k) { return patch.first < k; });
@@ -936,7 +1129,7 @@ std::vector<Bytes> PieceHistory::objects(std::vector<Bytes> const& keys, std::ui
         }
     });
     // As Impl::parallel, but a failure is the caller's: every key must be read.
-    if (auto failure = LoadPool::shared().run(tasks, 16)) std::rethrow_exception(failure);
+    if (auto failure = LoadPool::shared().run(tasks, Impl::request_loads)) std::rethrow_exception(failure);
     return out;
 }
 std::optional<std::pair<std::uint32_t, Bytes>> PieceHistory::deleted_object(Bytes const& key, std::uint32_t seq) const {
@@ -976,7 +1169,7 @@ Json PieceHistory::object_page(std::uint32_t seq, std::string const& marker, uns
         if (binary) items.push_back({{"index", to_hex(keys[i])}, {"data", to_hex(values[i])}});
         else { auto object = object_json({keys[i], values[i]}); object["index"] = to_hex(keys[i]); items.push_back(object); }
     }
-    Json result{{"state", items}};
+    Json result{{"state", std::move(items)}};
     if (more) result["marker"] = to_hex(keys.back());
     return result;
 }
@@ -1078,13 +1271,14 @@ Json PieceHistory::history_page(std::string const& column, Bytes const& key, std
             }
         }
         if (!forward) std::reverse(list.begin(), list.end());
-        // The caller reads each listed transaction with its metadata next: decode their ledgers together.
+        // The caller reads each listed transaction with its metadata next: decode their ledgers
+        // together, without the object changes no listing reads.
         std::map<Impl::SegmentId, std::set<U>> ledgers;
         for (std::size_t i = 0; i < list.size() && i + items.size() < limit; ++i) {
             U seq = r.first + list[i].ledger;
             ledgers[m.segment_id(seq)].insert(seq);
         }
-        Impl::parallel(m.load_tasks(ledgers, false));
+        Impl::parallel(m.load_tasks(ledgers, Impl::Part::transactions));
         for (auto const& p : list) {
             U seq = r.first + p.ledger;
             if (items.size() == limit) { next = {{"ledger", seq}, {"seq", p.index}}; break; }
@@ -1095,7 +1289,7 @@ Json PieceHistory::history_page(std::string const& column, Bytes const& key, std
         }
         if (!next.is_null()) break;
     }
-    Json result{{"transactions", items}, {"limit", limit}};
+    Json result{{"transactions", std::move(items)}, {"limit", limit}};
     if (!next.is_null()) result["marker"] = next;
     return result;
 }
@@ -1105,7 +1299,7 @@ Json PieceHistory::transaction(Bytes const& hash, bool binary) const {
     auto location = m.locate(hash);
     if (!location) return nullptr;
     auto [seq, position] = *location;
-    auto p = m.page(seq);
+    auto p = m.page(seq, Impl::Part::transactions);
     auto const& ledger = p->at(seq);
     if (position >= ledger.transactions.size()) throw Error("Transaction position outside ledger");
     auto [tx, meta] = ledger.transactions[position];
@@ -1129,17 +1323,19 @@ LedgerRecord PieceHistory::ledger_record(std::uint32_t seq) const {
     if (seq < m.first || seq > m.last) throw Error("Ledger is not stored");
     auto p = m.page(seq);
     auto const& ledger = p->at(seq);
-    LedgerRecord record{seq, Bytes(ledger.header), {}, {}};
-    std::vector<std::pair<Bytes, TransactionRecord>> sorted;
-    for (auto const& [tx, meta] : ledger.transactions) sorted.push_back({txid(tx), {Bytes(tx), Bytes(meta)}});
-    std::sort(sorted.begin(), sorted.end(), [](auto const& a, auto const& b) { return a.first < b.first; });
-    for (auto& item : sorted) record.transactions.push_back(std::move(item.second));
+    LedgerRecord record{seq, Bytes(ledger.header), by_hash(ledger), {}};
+    record.patches.reserve(ledger.patches.size());
     for (auto const& [key, value] : ledger.patches) record.patches.push_back({Bytes(key), Bytes(value)});
     return record;
 }
+// As ledger_record's transactions, from a decode without the ledger's object changes, which
+// none of its callers reads.
 std::vector<TransactionRecord> PieceHistory::ledger_transaction_records(std::uint32_t seq) const {
-    if (impl_->baseline && seq == impl_->snapshot_seq) return {};  // the baseline ledger has none
-    return ledger_record(seq).transactions;
+    auto& m = *impl_;
+    if (m.baseline && seq == m.snapshot_seq) return {};  // the baseline ledger has none
+    if (seq < m.first || seq > m.last) throw Error("Ledger is not stored");
+    auto p = m.page(seq, Impl::Part::transactions);
+    return by_hash(p->at(seq));
 }
 bool PieceHistory::has_nft_state() const { return impl_->nfts != nullptr; }
 void PieceHistory::warm(unsigned segments) const {
@@ -1150,14 +1346,7 @@ void PieceHistory::warm(unsigned segments) const {
     std::vector<std::function<void()>> tasks;
     for (std::size_t i = 0; i < std::min<std::size_t>(segments, list.size()); ++i) {
         auto si = list.size() - 1 - i;
-        tasks.push_back([&m, ri, si] {
-            auto a = m.archive(ri, si);
-            {
-                auto lock = hold(*a);
-                m.prepare(*a);
-            }
-            m.grew(ri, si, *a);
-        });
+        tasks.push_back([&m, ri, si] { m.archive(ri, si, true); });
     }
     Impl::parallel(tasks);
 }
@@ -1189,7 +1378,7 @@ void PieceHistory::prefetch(std::vector<Bytes> const& keys, std::uint32_t seq) c
             }
         }
     } catch (std::exception const&) { return; }
-    auto tasks = m.load_tasks(ledgers, true);
+    auto tasks = m.load_tasks(ledgers, Impl::Part::patches);
     for (auto block : blocks) tasks.push_back([&m, base, block] { m.block(base, block); });
     if (tasks.size() >= 2) Impl::parallel(tasks);
 }
@@ -1309,7 +1498,7 @@ Json PieceHistory::nft(Bytes const& id, std::uint32_t seq) const {
             U ledger = r.first + e->ledger;
             if (ledger > seq) continue;
             if (!current) {
-                auto page = m.page(ledger);
+                auto page = m.page(ledger, Impl::Part::transactions);
                 auto const& transactions = page->at(ledger).transactions;
                 if (e->position >= transactions.size()) throw Error("Transaction position outside ledger");
                 auto [tx, meta] = transactions[e->position];
@@ -1380,7 +1569,7 @@ std::vector<Json> PieceHistory::nfts(std::vector<Bytes> const& ids, std::uint32_
                 if (auto owner = m.nfts->owner(id); owner && m.state->count) blocks.insert(m.state->block_for(Bytes(*owner) + id.substr(20)));
             }
         } catch (std::exception const&) {}
-        auto tasks = m.load_tasks(ledgers, false);
+        auto tasks = m.load_tasks(ledgers, Impl::Part::transactions);
         for (auto block : blocks) tasks.push_back([&m, block] { m.block(block); });
         Impl::parallel(tasks);
     }
@@ -1403,28 +1592,47 @@ Json allocator_stats() {
     }
     return out;
 }
+void release_freed_memory() {
+    if (mallctl) {
+        // "arena.<i>.purge" with MALLCTL_ARENAS_ALL (4096, jemalloc.h) for i: every arena's
+        // unused dirty pages are returned now rather than as they decay.
+        mallctl("arena.4096.purge", nullptr, nullptr, nullptr, 0);
+        return;
+    }
+#ifdef __GLIBC__
+    malloc_trim(0);
+#endif
+}
 Json PieceHistory::cache_stats() const {
     auto& m = *impl_;
-    // What the open segments hold, summed by part (hx::Archive::memory).
+    // What the open segments hold, summed by part (hx::Archive::memory). A segment a read holds
+    // is not waited for: a decode can hold it for seconds, and a walk that waited kept every
+    // segment after it alive, evicted or not, and made the reads' measures (Impl::grew) fail
+    // meanwhile. It counts in `segments` and `charged_bytes`, and in `busy_segments`, not the parts.
     hx::Archive::Memory sum;
-    std::size_t segments = 0, charged = 0;
+    std::size_t segments = 0, busy = 0, charged = 0;
     m.archives.each([&](OpenArchive& a) {
-        std::lock_guard lock(a.mutex);
+        ++segments; charged += a.weight;
+        std::unique_lock lock(a.mutex, std::try_to_lock);
+        if (!lock) { ++busy; return; }
         auto part = a.archive.memory();
         sum.dictionary += part.dictionary; sum.tables += part.tables; sum.memos += part.memos; sum.memoCount += part.memoCount;
-        sum.transactionPages += part.transactionPages; sum.cursors += part.cursors; charged += a.weight; ++segments;
+        sum.transactionPages += part.transactionPages; sum.cursors += part.cursors;
         sum.headers += part.headers; sum.values += part.values; sum.hashes += part.hashes; sum.atoms += part.atoms;
         sum.shapes += part.shapes; sum.shapeItems += part.shapeItems; sum.shapeCount += part.shapeCount;
     });
-    Json open{{"segments", segments}, {"charged_bytes", charged}, {"dictionary_bytes", sum.dictionary}, {"table_bytes", sum.tables},
+    Json open{{"segments", segments}, {"busy_segments", busy}, {"charged_bytes", charged}, {"dictionary_bytes", sum.dictionary}, {"table_bytes", sum.tables},
               {"memo_bytes", sum.memos}, {"memos", sum.memoCount}, {"transaction_page_bytes", sum.transactionPages}, {"cursor_bytes", sum.cursors},
               {"tables", {{"header_bytes", sum.headers}, {"value_bytes", sum.values}, {"hash_bytes", sum.hashes}, {"atom_bytes", sum.atoms},
                           {"shape_bytes", sum.shapes}, {"shapes", sum.shapeCount}, {"shape_items", sum.shapeItems}}}};
     auto ms = [](std::uint64_t ns) { return static_cast<double>(ns) / 1e6; };
+    auto& openings = Openings::shared();  // the whole process's, as the dictionary slots are
     return {{"budget", m.budget->stats()}, {"archives", m.archives.stats()}, {"pages", m.pages.stats()}, {"snapshot_blocks", m.blocks.stats()},
             {"load_ms", {{"segment_open", ms(m.open_ns)}, {"dictionary", ms(m.dictionary_ns)}, {"page_decode", ms(m.page_ns)}, {"snapshot_block", ms(m.block_ns)}}},
             {"dictionaries", {{"loaded", m.dictionaries.load()}, {"read_ms", ms(m.dictionary_read_ns)}, {"parse_ms", ms(m.dictionary_parse_ns)},
-                              {"mean_bytes", m.dictionaries ? m.dictionary_bytes / m.dictionaries : 0}}},
+                              {"mean_bytes", m.dictionaries ? m.dictionary_bytes / m.dictionaries : 0},
+                              {"slots", openings.size}, {"loading", openings.loading.load()},
+                              {"memory_waits", openings.memory_waits.load()}, {"wait_ms", ms(openings.wait_ns)}}},
             {"open_segments", open}, {"allocator", allocator_stats()}};
 }
 
@@ -1493,6 +1701,8 @@ std::shared_ptr<PieceHistory const> open_piece_history(fs::path const& dir) {
         // it holds, so the fresh one's caches and warm have it, rather than the two holding twice
         // --cache until the requests (and a live tail) holding the replaced one let it go.
         if (replaced && replaced != fresh) replaced->retire();
+        replaced.reset();
+        release_freed_memory();
         warm(fresh);
     }).detach();
     return entry.history;

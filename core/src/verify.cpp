@@ -1,4 +1,5 @@
 #include <xrpla/core/verify.hpp>
+#include <xrpla/core/operations.hpp>  // release_freed_memory
 #include <sodium.h>
 #include <xrpl/basics/TaggedCache.ipp>
 #include <xrpl/basics/chrono.h>
@@ -20,9 +21,6 @@
 #include <rocksdb/cache.h>
 #include <rocksdb/filter_policy.h>
 #include <rocksdb/table.h>
-#ifdef __GLIBC__
-#include <malloc.h>
-#endif
 #include <algorithm>
 #include <array>
 #include <chrono>
@@ -128,13 +126,6 @@ class PersistentNodes final : public r::node_store::Database {
         return std::unique_ptr<rocksdb::DB>(ptr);
     }
     static fs::path beside(fs::path const& path, char const* suffix) { return fs::path(path.string() + suffix); }
-    // The copy's memtables and the old store's caches, freed on the walk's threads, stay in
-    // their malloc arenas unless handed back.
-    static void release_freed_memory() {
-#ifdef __GLIBC__
-        malloc_trim(0);
-#endif
-    }
 public:
     PersistentNodes(fs::path const& path, r::node_store::Scheduler& scheduler, beast::Journal j, LedgerVerifier::NodeSink sink)
         : Database(scheduler, 0, [] { r::Section s; s.set("earliest_seq", "1"); return s; }(), j), sink_(std::move(sink)), path_(path) {
@@ -219,6 +210,8 @@ public:
         auto seconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - finished->started).count();
         swap_in(std::move(finished->target));
         live_ = nodes; written_ = 0;
+        // The copy's memtables and the old store's caches, freed on the walk's threads, stay
+        // with the allocator unless handed back.
         release_freed_memory();
         return Compacted{nodes, seconds};
     }

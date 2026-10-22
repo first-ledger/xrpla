@@ -315,6 +315,7 @@ void keep_synced(core::SyncOptions sync, fs::path pointer, std::chrono::seconds 
                 auto result = core::sync_pieces(sync);
                 locked.ran();
                 if (result.at("fetched_bytes").get<std::uint64_t>()) std::cerr << result.dump() << std::endl;
+                core::release_freed_memory();  // what the sync's downloads and indexing freed
             }
             catch (DirectoryLocked const&) { locked.skipped(sync.cache); retry = std::chrono::steady_clock::now() + std::chrono::seconds(30); }
             catch (std::exception const& error) { locked.ran(); std::cerr << Json{{"event", "sync_failed"}, {"error", error.what()}}.dump() << std::endl; }
@@ -698,7 +699,7 @@ int run_config(fs::path const& path) {
             LockedSkips locked;
             for (;;) {
                 std::this_thread::sleep_for(interval);
-                try { std::cerr << core::sync_pieces(sync).dump() << '\n'; locked.ran(); }
+                try { std::cerr << core::sync_pieces(sync).dump() << '\n'; locked.ran(); core::release_freed_memory(); }
                 catch (DirectoryLocked const&) { locked.skipped(sync.cache); }  // a sync run by hand holds the cache: this round is skipped
                 catch (std::exception const& error) { locked.ran(); std::cerr << "{\"sync_failed\":" << Json(error.what()).dump() << "}\n"; }
             }

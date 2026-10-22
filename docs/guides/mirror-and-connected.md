@@ -64,7 +64,9 @@ For a publication not in the list, save its key (`echo <PUBLISHER_KEY> > publish
 it, each checked against the signed catalog, from the publication's mirrors in turn), builds the local query index for anything new,
 then switches `selection.json` and removes files no longer selected. A running `serve` picks up
 the new selection. Run `sync` again (from cron or a timer) to stay current; the mirror profile
-does that every `[mirror] sync_seconds`.
+does that every `[mirror] sync_seconds`. A sync that runs longer than a minute (the first one
+takes hours) logs `sync_progress` to stderr once a minute: bytes and objects done out of the
+total and `eta_seconds` while downloading, then the ranges indexed.
 
 Useful `sync` options: `--range A-B` or `--range A-` (which ledgers), `--jobs N` (parallel
 downloads, default 4), `--indexes all|none|mpt_holders,nfts_by_issuer`, `--snapshots-every N`

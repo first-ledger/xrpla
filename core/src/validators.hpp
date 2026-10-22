@@ -256,8 +256,12 @@ private:
     std::map<Bytes, NegativeUnl> parents_;
     // The ledger (its key above) whose validations are kept (keep).
     std::optional<Bytes> kept_;
-    // Forgets the validations of the ledgers adopt does not keep.
+    // Forgets the validations of the ledgers adopt does not keep: on each commit, and every
+    // `trim_every` validations counted (add), so commits that stall while validations arrive
+    // keep the ledgers within its window (some 35 signers each), not every ledger since.
     void forget_old();
+    static constexpr std::size_t trim_every = 1024;  // some 30 mainnet ledgers' validations
+    std::size_t counted_ = 0;
     // This quorum, judged under `list` instead, what it learned carried over (adopt).
     void replace(ValidatorList list);
     std::optional<Bytes> master_for(Bytes const& signing_key) const;

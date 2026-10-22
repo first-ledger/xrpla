@@ -1,0 +1,1 @@
+{"mix": "realistic", "clients": 100, "slow_readers": 0, "seconds": 300, "requests": 4151, "per_second": 13.8, "errors": {"actNotFound": 1103, "RemoteDisconnected": 100, "ConnectionRefusedError": 42000}, "ms_p50": 140, "ms_p95": 6758, "ms_p99": 9487, "ms_max": 23439, "received_mb": 75}

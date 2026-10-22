@@ -1,0 +1,939 @@
+{"t": 1792602822.2, "anon_mb": 42, "file_mb": 30, "alloc_mb": 41, "resident_mb": 63, "budget_used_mb": 0, "budget_cached_mb": 0, "budget_held_mb": 0, "segments": 0, "segments_mb": 0, "pages_mb": 0, "conns": 0}
+{"t": 1792602823.2, "anon_mb": 3920, "file_mb": 4914}
+{"t": 1792602824.2, "anon_mb": 5187, "file_mb": 7607}
+{"t": 1792602825.2, "anon_mb": 5420, "file_mb": 10890}
+{"t": 1792602826.2, "anon_mb": 5587, "file_mb": 13408}
+{"t": 1792602827.2, "anon_mb": 5512, "file_mb": 16432, "alloc_mb": 4576, "resident_mb": 5723, "budget_used_mb": 3744, "budget_cached_mb": 3744, "budget_held_mb": 0, "segments": 67, "segments_mb": 3658, "pages_mb": 63, "conns": 25}
+{"t": 1792602828.4, "anon_mb": 5521, "file_mb": 19757}
+{"t": 1792602829.4, "anon_mb": 5382, "file_mb": 22289}
+{"t": 1792602830.4, "anon_mb": 5114, "file_mb": 25385}
+{"t": 1792602831.4, "anon_mb": 5413, "file_mb": 24903}
+{"t": 1792602832.4, "anon_mb": 5383, "file_mb": 25228, "alloc_mb": 4559, "resident_mb": 5510, "budget_used_mb": 3800, "budget_cached_mb": 3727, "budget_held_mb": 72, "segments": 79, "segments_mb": 3545, "pages_mb": 132, "conns": 25}
+{"t": 1792602834.2, "anon_mb": 5373, "file_mb": 25239}
+{"t": 1792602835.2, "anon_mb": 5299, "file_mb": 25167}
+{"t": 1792602836.2, "anon_mb": 5525, "file_mb": 25049}
+{"t": 1792602837.2, "anon_mb": 5617, "file_mb": 24962}
+{"t": 1792602838.2, "anon_mb": 5518, "file_mb": 24967, "alloc_mb": 5213, "resident_mb": 6314, "budget_used_mb": 4082, "budget_cached_mb": 4082, "budget_held_mb": 0, "segments": 53, "segments_mb": 3812, "pages_mb": 201, "conns": 25}
+{"t": 1792602839.9, "anon_mb": 5298, "file_mb": 25269}
+{"t": 1792602840.9, "anon_mb": 5440, "file_mb": 25050}
+{"t": 1792602841.9, "anon_mb": 5432, "file_mb": 25073}
+{"t": 1792602842.9, "anon_mb": 5041, "file_mb": 24394}
+{"t": 1792602843.9, "anon_mb": 5468, "file_mb": 25086, "alloc_mb": 3859, "resident_mb": 5054, "budget_used_mb": 3302, "budget_cached_mb": 2967, "budget_held_mb": 334, "segments": 56, "segments_mb": 2618, "pages_mb": 266, "conns": 25}
+{"t": 1792602845.2, "anon_mb": 5465, "file_mb": 25088}
+{"t": 1792602846.2, "anon_mb": 5470, "file_mb": 24896}
+{"t": 1792602847.2, "anon_mb": 5702, "file_mb": 24822}
+{"t": 1792602848.2, "anon_mb": 5723, "file_mb": 24812}
+{"t": 1792602849.2, "anon_mb": 5532, "file_mb": 24950, "alloc_mb": 4649, "resident_mb": 5776, "budget_used_mb": 3709, "budget_cached_mb": 3709, "budget_held_mb": 0, "segments": 62, "segments_mb": 3287, "pages_mb": 319, "conns": 25}
+{"t": 1792602850.5, "anon_mb": 5680, "file_mb": 24843}
+{"t": 1792602851.5, "anon_mb": 5574, "file_mb": 24920}
+{"t": 1792602852.5, "anon_mb": 5750, "file_mb": 24735}
+{"t": 1792602853.5, "anon_mb": 5739, "file_mb": 24705}
+{"t": 1792602854.5, "anon_mb": 5809, "file_mb": 24694, "alloc_mb": 5042, "resident_mb": 6049, "budget_used_mb": 4082, "budget_cached_mb": 4082, "budget_held_mb": 0, "segments": 59, "segments_mb": 3569, "pages_mb": 371, "conns": 25}
+{"t": 1792602855.9, "anon_mb": 5430, "file_mb": 24824}
+{"t": 1792602856.9, "anon_mb": 5522, "file_mb": 24865}
+{"t": 1792602857.9, "anon_mb": 5519, "file_mb": 24967}
+{"t": 1792602858.9, "anon_mb": 5439, "file_mb": 25038}
+{"t": 1792602859.9, "anon_mb": 5455, "file_mb": 24864, "alloc_mb": 5114, "resident_mb": 6017, "budget_used_mb": 4049, "budget_cached_mb": 4049, "budget_held_mb": 0, "segments": 49, "segments_mb": 3404, "pages_mb": 421, "conns": 25}
+{"t": 1792602861.8, "anon_mb": 5630, "file_mb": 24843}
+{"t": 1792602862.8, "anon_mb": 5470, "file_mb": 24984}
+{"t": 1792602863.8, "anon_mb": 5674, "file_mb": 24731}
+{"t": 1792602864.8, "anon_mb": 5359, "file_mb": 25099}
+{"t": 1792602865.8, "anon_mb": 5742, "file_mb": 24694, "alloc_mb": 5000, "resident_mb": 6134, "budget_used_mb": 4027, "budget_cached_mb": 4027, "budget_held_mb": 0, "segments": 55, "segments_mb": 3381, "pages_mb": 481, "conns": 25}
+{"t": 1792602867.2, "anon_mb": 5916, "file_mb": 24530}
+{"t": 1792602868.2, "anon_mb": 5647, "file_mb": 24752}
+{"t": 1792602869.2, "anon_mb": 5615, "file_mb": 24823}
+{"t": 1792602870.2, "anon_mb": 5713, "file_mb": 24702}
+{"t": 1792602871.2, "anon_mb": 5315, "file_mb": 24953, "alloc_mb": 4349, "resident_mb": 5486, "budget_used_mb": 3529, "budget_cached_mb": 3529, "budget_held_mb": 0, "segments": 56, "segments_mb": 2797, "pages_mb": 543, "conns": 25}
+{"t": 1792602873.1, "anon_mb": 5634, "file_mb": 24714}
+{"t": 1792602874.1, "anon_mb": 5657, "file_mb": 24663}
+{"t": 1792602875.1, "anon_mb": 5453, "file_mb": 24821}
+{"t": 1792602876.1, "anon_mb": 5511, "file_mb": 24892}
+{"t": 1792602877.1, "anon_mb": 5572, "file_mb": 24798, "alloc_mb": 5126, "resident_mb": 6119, "budget_used_mb": 4089, "budget_cached_mb": 4089, "budget_held_mb": 0, "segments": 59, "segments_mb": 3283, "pages_mb": 604, "conns": 25}
+{"t": 1792602879.0, "anon_mb": 5477, "file_mb": 24911}
+{"t": 1792602880.0, "anon_mb": 5809, "file_mb": 24573}
+{"t": 1792602881.0, "anon_mb": 5608, "file_mb": 24663}
+{"t": 1792602882.0, "anon_mb": 5504, "file_mb": 24866}
+{"t": 1792602883.0, "anon_mb": 5713, "file_mb": 24652, "alloc_mb": 4772, "resident_mb": 5861, "budget_used_mb": 3821, "budget_cached_mb": 3821, "budget_held_mb": 0, "segments": 66, "segments_mb": 2922, "pages_mb": 669, "conns": 25}
+{"t": 1792602884.4, "anon_mb": 5649, "file_mb": 24714}
+{"t": 1792602885.4, "anon_mb": 5758, "file_mb": 24525}
+{"t": 1792602886.4, "anon_mb": 5533, "file_mb": 24822}
+{"t": 1792602887.4, "anon_mb": 5617, "file_mb": 24732}
+{"t": 1792602888.4, "anon_mb": 5645, "file_mb": 24618, "alloc_mb": 4744, "resident_mb": 5914, "budget_used_mb": 3928, "budget_cached_mb": 3928, "budget_held_mb": 0, "segments": 62, "segments_mb": 2939, "pages_mb": 745, "conns": 25}
+{"t": 1792602889.6, "anon_mb": 5816, "file_mb": 24518}
+{"t": 1792602890.6, "anon_mb": 5612, "file_mb": 24600}
+{"t": 1792602891.6, "anon_mb": 5434, "file_mb": 24765}
+{"t": 1792602892.6, "anon_mb": 5406, "file_mb": 24704}
+{"t": 1792602893.6, "anon_mb": 5706, "file_mb": 24610, "alloc_mb": 4711, "resident_mb": 5855, "budget_used_mb": 3826, "budget_cached_mb": 3826, "budget_held_mb": 0, "segments": 57, "segments_mb": 2753, "pages_mb": 808, "conns": 25}
+{"t": 1792602895.5, "anon_mb": 5645, "file_mb": 24667}
+{"t": 1792602896.5, "anon_mb": 5582, "file_mb": 24718}
+{"t": 1792602897.5, "anon_mb": 5586, "file_mb": 24702}
+{"t": 1792602898.5, "anon_mb": 5538, "file_mb": 24749}
+{"t": 1792602899.5, "anon_mb": 5489, "file_mb": 24805, "alloc_mb": 4949, "resident_mb": 5888, "budget_used_mb": 4020, "budget_cached_mb": 4020, "budget_held_mb": 0, "segments": 83, "segments_mb": 2863, "pages_mb": 866, "conns": 25}
+{"t": 1792602900.9, "anon_mb": 5640, "file_mb": 24653}
+{"t": 1792602901.9, "anon_mb": 5631, "file_mb": 24658}
+{"t": 1792602902.9, "anon_mb": 5993, "file_mb": 24283}
+{"t": 1792602903.9, "anon_mb": 5862, "file_mb": 24416}
+{"t": 1792602904.9, "anon_mb": 5691, "file_mb": 24583, "alloc_mb": 5083, "resident_mb": 6012, "budget_used_mb": 4089, "budget_cached_mb": 4089, "budget_held_mb": 0, "segments": 64, "segments_mb": 2851, "pages_mb": 928, "conns": 25}
+{"t": 1792602906.5, "anon_mb": 5453, "file_mb": 24819}
+{"t": 1792602907.5, "anon_mb": 5412, "file_mb": 24858}
+{"t": 1792602908.5, "anon_mb": 5858, "file_mb": 24195}
+{"t": 1792602909.5, "anon_mb": 6008, "file_mb": 24245}
+{"t": 1792602910.5, "anon_mb": 5851, "file_mb": 24402, "alloc_mb": 4987, "resident_mb": 6114, "budget_used_mb": 4100, "budget_cached_mb": 3786, "budget_held_mb": 313, "segments": 71, "segments_mb": 2400, "pages_mb": 991, "conns": 25}
+{"t": 1792602911.8, "anon_mb": 5595, "file_mb": 24637}
+{"t": 1792602912.8, "anon_mb": 5753, "file_mb": 24434}
+{"t": 1792602913.8, "anon_mb": 5830, "file_mb": 24409}
+{"t": 1792602914.8, "anon_mb": 5728, "file_mb": 24501}
+{"t": 1792602915.8, "anon_mb": 5696, "file_mb": 24529, "alloc_mb": 4936, "resident_mb": 6109, "budget_used_mb": 3886, "budget_cached_mb": 3886, "budget_held_mb": 0, "segments": 43, "segments_mb": 2465, "pages_mb": 1060, "conns": 25}
+{"t": 1792602917.5, "anon_mb": 5824, "file_mb": 24377}
+{"t": 1792602918.5, "anon_mb": 5799, "file_mb": 24354}
+{"t": 1792602919.5, "anon_mb": 5736, "file_mb": 24450}
+{"t": 1792602920.5, "anon_mb": 5818, "file_mb": 24397}
+{"t": 1792602921.5, "anon_mb": 5650, "file_mb": 24557, "alloc_mb": 4955, "resident_mb": 5974, "budget_used_mb": 3980, "budget_cached_mb": 3980, "budget_held_mb": 0, "segments": 48, "segments_mb": 2501, "pages_mb": 1106, "conns": 25}
+{"t": 1792602923.3, "anon_mb": 5608, "file_mb": 24571}
+{"t": 1792602924.3, "anon_mb": 5879, "file_mb": 24309}
+{"t": 1792602925.3, "anon_mb": 5801, "file_mb": 24382}
+{"t": 1792602926.3, "anon_mb": 5783, "file_mb": 24377}
+{"t": 1792602927.3, "anon_mb": 5642, "file_mb": 24506, "alloc_mb": 4928, "resident_mb": 5930, "budget_used_mb": 4004, "budget_cached_mb": 4004, "budget_held_mb": 0, "segments": 60, "segments_mb": 2429, "pages_mb": 1164, "conns": 25}
+{"t": 1792602928.4, "anon_mb": 5835, "file_mb": 24333}
+{"t": 1792602929.4, "anon_mb": 5754, "file_mb": 24384}
+{"t": 1792602930.4, "anon_mb": 5741, "file_mb": 24408}
+{"t": 1792602931.4, "anon_mb": 5811, "file_mb": 24353}
+{"t": 1792602932.4, "anon_mb": 5817, "file_mb": 24345, "alloc_mb": 4929, "resident_mb": 6049, "budget_used_mb": 4126, "budget_cached_mb": 4033, "budget_held_mb": 93, "segments": 72, "segments_mb": 2405, "pages_mb": 1218, "conns": 25}
+{"t": 1792602933.8, "anon_mb": 5813, "file_mb": 24313}
+{"t": 1792602934.8, "anon_mb": 5935, "file_mb": 24194}
+{"t": 1792602935.8, "anon_mb": 5800, "file_mb": 24357}
+{"t": 1792602936.8, "anon_mb": 5914, "file_mb": 24221}
+{"t": 1792602937.8, "anon_mb": 6088, "file_mb": 24060, "alloc_mb": 4991, "resident_mb": 6205, "budget_used_mb": 4082, "budget_cached_mb": 4082, "budget_held_mb": 0, "segments": 40, "segments_mb": 2444, "pages_mb": 1228, "conns": 25}
+{"t": 1792602938.9, "anon_mb": 5914, "file_mb": 24231}
+{"t": 1792602939.9, "anon_mb": 5865, "file_mb": 24275}
+{"t": 1792602940.9, "anon_mb": 5714, "file_mb": 24377}
+{"t": 1792602942.0, "anon_mb": 5857, "file_mb": 24260}
+{"t": 1792602943.0, "anon_mb": 5726, "file_mb": 24345, "alloc_mb": 5036, "resident_mb": 6149, "budget_used_mb": 4057, "budget_cached_mb": 4057, "budget_held_mb": 0, "segments": 52, "segments_mb": 2418, "pages_mb": 1228, "conns": 25}
+{"t": 1792602944.3, "anon_mb": 5864, "file_mb": 24248}
+{"t": 1792602945.3, "anon_mb": 5929, "file_mb": 24178}
+{"t": 1792602946.3, "anon_mb": 5839, "file_mb": 24251}
+{"t": 1792602947.3, "anon_mb": 5825, "file_mb": 24286}
+{"t": 1792602948.3, "anon_mb": 5820, "file_mb": 24151, "alloc_mb": 4850, "resident_mb": 6030, "budget_used_mb": 4072, "budget_cached_mb": 4072, "budget_held_mb": 0, "segments": 50, "segments_mb": 2433, "pages_mb": 1228, "conns": 25}
+{"t": 1792602949.7, "anon_mb": 5924, "file_mb": 24147}
+{"t": 1792602950.7, "anon_mb": 5760, "file_mb": 24312}
+{"t": 1792602951.7, "anon_mb": 5839, "file_mb": 24247}
+{"t": 1792602952.7, "anon_mb": 6082, "file_mb": 24007}
+{"t": 1792602953.7, "anon_mb": 6039, "file_mb": 24044, "alloc_mb": 5000, "resident_mb": 6118, "budget_used_mb": 4166, "budget_cached_mb": 4033, "budget_held_mb": 132, "segments": 52, "segments_mb": 2395, "pages_mb": 1228, "conns": 25}
+{"t": 1792602955.1, "anon_mb": 5795, "file_mb": 24267}
+{"t": 1792602956.1, "anon_mb": 5646, "file_mb": 24425}
+{"t": 1792602957.1, "anon_mb": 5817, "file_mb": 24186}
+{"t": 1792602958.1, "anon_mb": 5815, "file_mb": 24235}
+{"t": 1792602959.1, "anon_mb": 5900, "file_mb": 24144, "alloc_mb": 5008, "resident_mb": 6168, "budget_used_mb": 4115, "budget_cached_mb": 4025, "budget_held_mb": 90, "segments": 56, "segments_mb": 2387, "pages_mb": 1228, "conns": 25}
+{"t": 1792602960.2, "anon_mb": 5755, "file_mb": 24289}
+{"t": 1792602961.2, "anon_mb": 5679, "file_mb": 24271}
+{"t": 1792602962.2, "anon_mb": 5733, "file_mb": 24312}
+{"t": 1792602963.2, "anon_mb": 5676, "file_mb": 24361}
+{"t": 1792602964.2, "anon_mb": 5894, "file_mb": 24129, "alloc_mb": 4951, "resident_mb": 6177, "budget_used_mb": 4092, "budget_cached_mb": 4092, "budget_held_mb": 0, "segments": 48, "segments_mb": 2453, "pages_mb": 1228, "conns": 25}
+{"t": 1792602965.5, "anon_mb": 6162, "file_mb": 23883}
+{"t": 1792602966.5, "anon_mb": 5975, "file_mb": 24071}
+{"t": 1792602967.5, "anon_mb": 6069, "file_mb": 23969}
+{"t": 1792602968.5, "anon_mb": 5862, "file_mb": 24178}
+{"t": 1792602969.5, "anon_mb": 5727, "file_mb": 24303, "alloc_mb": 4971, "resident_mb": 6049, "budget_used_mb": 4086, "budget_cached_mb": 4086, "budget_held_mb": 0, "segments": 46, "segments_mb": 2448, "pages_mb": 1228, "conns": 25}
+{"t": 1792602970.8, "anon_mb": 5844, "file_mb": 24184}
+{"t": 1792602971.8, "anon_mb": 5904, "file_mb": 24114}
+{"t": 1792602972.8, "anon_mb": 5793, "file_mb": 24147}
+{"t": 1792602973.8, "anon_mb": 5822, "file_mb": 24161}
+{"t": 1792602974.8, "anon_mb": 5854, "file_mb": 24157, "alloc_mb": 5070, "resident_mb": 6093, "budget_used_mb": 4024, "budget_cached_mb": 4024, "budget_held_mb": 0, "segments": 43, "segments_mb": 2385, "pages_mb": 1229, "conns": 25}
+{"t": 1792602977.0, "anon_mb": 5919, "file_mb": 24087}
+{"t": 1792602978.0, "anon_mb": 5860, "file_mb": 24140}
+{"t": 1792602979.0, "anon_mb": 5710, "file_mb": 24210}
+{"t": 1792602980.0, "anon_mb": 5809, "file_mb": 24185}
+{"t": 1792602981.0, "anon_mb": 5759, "file_mb": 24250, "alloc_mb": 5151, "resident_mb": 6258, "budget_used_mb": 4106, "budget_cached_mb": 3996, "budget_held_mb": 110, "segments": 61, "segments_mb": 2358, "pages_mb": 1228, "conns": 25}
+{"t": 1792602982.4, "anon_mb": 5735, "file_mb": 24190}
+{"t": 1792602983.4, "anon_mb": 5611, "file_mb": 24388}
+{"t": 1792602984.4, "anon_mb": 5593, "file_mb": 24400}
+{"t": 1792602985.4, "anon_mb": 5832, "file_mb": 24165}
+{"t": 1792602986.4, "anon_mb": 5887, "file_mb": 24104, "alloc_mb": 4969, "resident_mb": 6127, "budget_used_mb": 4117, "budget_cached_mb": 4037, "budget_held_mb": 80, "segments": 54, "segments_mb": 2399, "pages_mb": 1228, "conns": 25}
+{"t": 1792602987.6, "anon_mb": 5774, "file_mb": 24176}
+{"t": 1792602988.6, "anon_mb": 5921, "file_mb": 24046}
+{"t": 1792602989.6, "anon_mb": 5935, "file_mb": 24036}
+{"t": 1792602990.6, "anon_mb": 5891, "file_mb": 24085}
+{"t": 1792602991.6, "anon_mb": 5920, "file_mb": 24048, "alloc_mb": 5064, "resident_mb": 6313, "budget_used_mb": 4137, "budget_cached_mb": 4041, "budget_held_mb": 95, "segments": 41, "segments_mb": 2340, "pages_mb": 1228, "conns": 25}
+{"t": 1792602993.0, "anon_mb": 5741, "file_mb": 24213}
+{"t": 1792602994.0, "anon_mb": 6030, "file_mb": 23935}
+{"t": 1792602995.0, "anon_mb": 5824, "file_mb": 24147}
+{"t": 1792602996.0, "anon_mb": 5767, "file_mb": 24172}
+{"t": 1792602997.0, "anon_mb": 5934, "file_mb": 23940, "alloc_mb": 5178, "resident_mb": 6356, "budget_used_mb": 4178, "budget_cached_mb": 3951, "budget_held_mb": 227, "segments": 55, "segments_mb": 2313, "pages_mb": 1228, "conns": 25}
+{"t": 1792602998.6, "anon_mb": 5945, "file_mb": 24017}
+{"t": 1792602999.6, "anon_mb": 5891, "file_mb": 24057}
+{"t": 1792603000.6, "anon_mb": 5904, "file_mb": 24054}
+{"t": 1792603001.6, "anon_mb": 5793, "file_mb": 24105}
+{"t": 1792603002.6, "anon_mb": 6100, "file_mb": 23855, "alloc_mb": 5352, "resident_mb": 6475, "budget_used_mb": 4094, "budget_cached_mb": 4094, "budget_held_mb": 0, "segments": 42, "segments_mb": 2456, "pages_mb": 1228, "conns": 15}
+{"t": 1792603003.7, "anon_mb": 5902, "file_mb": 24001}
+{"t": 1792603004.7, "anon_mb": 5442, "file_mb": 24323}
+{"t": 1792603005.7, "anon_mb": 5146, "file_mb": 24323}
+{"t": 1792603006.7, "anon_mb": 4835, "file_mb": 24323}
+{"t": 1792603007.7, "anon_mb": 4675, "file_mb": 24323, "alloc_mb": 4559, "resident_mb": 4921, "budget_used_mb": 4076, "budget_cached_mb": 4076, "budget_held_mb": 0, "segments": 39, "segments_mb": 2438, "pages_mb": 1228, "conns": 0}
+{"t": 1792603008.7, "anon_mb": 4637, "file_mb": 24323}
+{"t": 1792603009.7, "anon_mb": 4617, "file_mb": 24323}
+{"t": 1792603010.7, "anon_mb": 4613, "file_mb": 24323}
+{"t": 1792603011.7, "anon_mb": 4613, "file_mb": 24323}
+{"t": 1792603012.7, "anon_mb": 4613, "file_mb": 24323, "alloc_mb": 4559, "resident_mb": 4871, "budget_used_mb": 4076, "budget_cached_mb": 4076, "budget_held_mb": 0, "segments": 39, "segments_mb": 2438, "pages_mb": 1228, "conns": 0}
+{"t": 1792603013.7, "anon_mb": 4613, "file_mb": 24323}
+{"t": 1792603014.7, "anon_mb": 4613, "file_mb": 24323}
+{"t": 1792603015.7, "anon_mb": 4613, "file_mb": 24323}
+{"t": 1792603016.7, "anon_mb": 4613, "file_mb": 24323}
+{"t": 1792603017.7, "anon_mb": 4613, "file_mb": 24323, "alloc_mb": 4559, "resident_mb": 4870, "budget_used_mb": 4076, "budget_cached_mb": 4076, "budget_held_mb": 0, "segments": 39, "segments_mb": 2438, "pages_mb": 1228, "conns": 0}
+{"t": 1792603018.7, "anon_mb": 4613, "file_mb": 24323}
+{"t": 1792603019.7, "anon_mb": 4613, "file_mb": 24323}
+{"t": 1792603020.7, "anon_mb": 4613, "file_mb": 24323}
+{"t": 1792603021.7, "anon_mb": 4613, "file_mb": 24323}
+{"t": 1792603022.7, "anon_mb": 4613, "file_mb": 24323, "alloc_mb": 4559, "resident_mb": 4870, "budget_used_mb": 4076, "budget_cached_mb": 4076, "budget_held_mb": 0, "segments": 39, "segments_mb": 2438, "pages_mb": 1228, "conns": 0}
+{"t": 1792603023.7, "anon_mb": 4613, "file_mb": 24323}
+{"t": 1792603024.7, "anon_mb": 5036, "file_mb": 24877}
+{"t": 1792603025.7, "anon_mb": 5396, "file_mb": 24538}
+{"t": 1792603026.7, "anon_mb": 5813, "file_mb": 24133}
+{"t": 1792603027.7, "anon_mb": 6220, "file_mb": 23727, "alloc_mb": 5068, "resident_mb": 6244, "budget_used_mb": 4093, "budget_cached_mb": 4093, "budget_held_mb": 0, "segments": 46, "segments_mb": 2454, "pages_mb": 1229, "conns": 100}
+{"t": 1792603032.9, "anon_mb": 5892, "file_mb": 24008}
+{"t": 1792603033.9, "anon_mb": 5893, "file_mb": 24035}
+{"t": 1792603034.9, "anon_mb": 5758, "file_mb": 24122}
+{"t": 1792603035.9, "anon_mb": 6162, "file_mb": 23767}
+{"t": 1792603036.9, "anon_mb": 5829, "file_mb": 24101, "alloc_mb": 5047, "resident_mb": 6356, "budget_used_mb": 4071, "budget_cached_mb": 4071, "budget_held_mb": 0, "segments": 49, "segments_mb": 2432, "pages_mb": 1228, "conns": 100}
+{"t": 1792603041.0, "anon_mb": 5895, "file_mb": 24006}
+{"t": 1792603042.0, "anon_mb": 5958, "file_mb": 23964}
+{"t": 1792603043.0, "anon_mb": 5936, "file_mb": 23865}
+{"t": 1792603044.0, "anon_mb": 5844, "file_mb": 24063}
+{"t": 1792603045.0, "anon_mb": 5937, "file_mb": 23928, "alloc_mb": 5233, "resident_mb": 6379, "budget_used_mb": 4159, "budget_cached_mb": 4094, "budget_held_mb": 65, "segments": 42, "segments_mb": 2456, "pages_mb": 1228, "conns": 100}
+{"t": 1792603050.0, "anon_mb": 5918, "file_mb": 23955}
+{"t": 1792603051.0, "anon_mb": 5987, "file_mb": 23855}
+{"t": 1792603052.0, "anon_mb": 5900, "file_mb": 23986}
+{"t": 1792603053.0, "anon_mb": 6129, "file_mb": 23747}
+{"t": 1792603054.0, "anon_mb": 5998, "file_mb": 23864, "alloc_mb": 4979, "resident_mb": 6167, "budget_used_mb": 4015, "budget_cached_mb": 4015, "budget_held_mb": 0, "segments": 84, "segments_mb": 2376, "pages_mb": 1228, "conns": 100}
+{"t": 1792603058.6, "anon_mb": 5868, "file_mb": 24011}
+{"t": 1792603059.6, "anon_mb": 5949, "file_mb": 23899}
+{"t": 1792603060.6, "anon_mb": 6121, "file_mb": 23762}
+{"t": 1792603061.6, "anon_mb": 5971, "file_mb": 23911}
+{"t": 1792603062.6, "anon_mb": 5806, "file_mb": 24076, "alloc_mb": 5173, "resident_mb": 6404, "budget_used_mb": 4165, "budget_cached_mb": 4072, "budget_held_mb": 92, "segments": 58, "segments_mb": 2434, "pages_mb": 1228, "conns": 100}
+{"t": 1792603067.2, "anon_mb": 5928, "file_mb": 23917}
+{"t": 1792603068.2, "anon_mb": 5755, "file_mb": 24065}
+{"t": 1792603069.2, "anon_mb": 5969, "file_mb": 23901}
+{"t": 1792603070.2, "anon_mb": 5927, "file_mb": 23940}
+{"t": 1792603071.2, "anon_mb": 6001, "file_mb": 23849, "alloc_mb": 5100, "resident_mb": 6216, "budget_used_mb": 4133, "budget_cached_mb": 4049, "budget_held_mb": 84, "segments": 63, "segments_mb": 2410, "pages_mb": 1228, "conns": 100}
+{"t": 1792603075.7, "anon_mb": 5887, "file_mb": 23972}
+{"t": 1792603076.7, "anon_mb": 6100, "file_mb": 23746}
+{"t": 1792603077.7, "anon_mb": 5792, "file_mb": 24059}
+{"t": 1792603078.7, "anon_mb": 5934, "file_mb": 23896}
+{"t": 1792603079.7, "anon_mb": 5819, "file_mb": 24035, "alloc_mb": 5074, "resident_mb": 6320, "budget_used_mb": 4065, "budget_cached_mb": 4065, "budget_held_mb": 0, "segments": 47, "segments_mb": 2426, "pages_mb": 1228, "conns": 100}
+{"t": 1792603085.7, "anon_mb": 5885, "file_mb": 23949}
+{"t": 1792603086.7, "anon_mb": 5769, "file_mb": 24048}
+{"t": 1792603087.7, "anon_mb": 5912, "file_mb": 23931}
+{"t": 1792603088.7, "anon_mb": 6063, "file_mb": 23751}
+{"t": 1792603089.7, "anon_mb": 6250, "file_mb": 23512, "alloc_mb": 4893, "resident_mb": 6027, "budget_used_mb": 4090, "budget_cached_mb": 4090, "budget_held_mb": 0, "segments": 48, "segments_mb": 2452, "pages_mb": 1228, "conns": 100}
+{"t": 1792603095.3, "anon_mb": 5933, "file_mb": 23896}
+{"t": 1792603096.3, "anon_mb": 5883, "file_mb": 23948}
+{"t": 1792603097.3, "anon_mb": 5886, "file_mb": 23932}
+{"t": 1792603098.3, "anon_mb": 5980, "file_mb": 23825}
+{"t": 1792603099.3, "anon_mb": 5863, "file_mb": 23934, "alloc_mb": 4948, "resident_mb": 6168, "budget_used_mb": 4058, "budget_cached_mb": 4058, "budget_held_mb": 0, "segments": 69, "segments_mb": 2420, "pages_mb": 1228, "conns": 100}
+{"t": 1792603105.3, "anon_mb": 6208, "file_mb": 23610}
+{"t": 1792603106.3, "anon_mb": 6194, "file_mb": 23616}
+{"t": 1792603107.3, "anon_mb": 6102, "file_mb": 23678}
+{"t": 1792603108.3, "anon_mb": 6123, "file_mb": 23687}
+{"t": 1792603109.3, "anon_mb": 5915, "file_mb": 23900, "alloc_mb": 5091, "resident_mb": 6301, "budget_used_mb": 4110, "budget_cached_mb": 4078, "budget_held_mb": 31, "segments": 46, "segments_mb": 2440, "pages_mb": 1228, "conns": 100}
+{"t": 1792603114.0, "anon_mb": 6126, "file_mb": 23685}
+{"t": 1792603115.0, "anon_mb": 5695, "file_mb": 24110}
+{"t": 1792603116.0, "anon_mb": 5951, "file_mb": 23858}
+{"t": 1792603117.0, "anon_mb": 5806, "file_mb": 23986}
+{"t": 1792603118.0, "anon_mb": 6003, "file_mb": 23786, "alloc_mb": 5110, "resident_mb": 6294, "budget_used_mb": 4095, "budget_cached_mb": 4094, "budget_held_mb": 1, "segments": 80, "segments_mb": 2455, "pages_mb": 1228, "conns": 100}
+{"t": 1792603122.4, "anon_mb": 6211, "file_mb": 23590}
+{"t": 1792603123.4, "anon_mb": 5958, "file_mb": 23792}
+{"t": 1792603124.4, "anon_mb": 6007, "file_mb": 23749}
+{"t": 1792603125.4, "anon_mb": 6110, "file_mb": 23687}
+{"t": 1792603126.4, "anon_mb": 5973, "file_mb": 23815, "alloc_mb": 5129, "resident_mb": 6224, "budget_used_mb": 4091, "budget_cached_mb": 4091, "budget_held_mb": 0, "segments": 51, "segments_mb": 2452, "pages_mb": 1228, "conns": 100}
+{"t": 1792603132.2, "anon_mb": 5946, "file_mb": 23838}
+{"t": 1792603133.2, "anon_mb": 5915, "file_mb": 23810}
+{"t": 1792603134.2, "anon_mb": 5982, "file_mb": 23798}
+{"t": 1792603135.2, "anon_mb": 5941, "file_mb": 23838}
+{"t": 1792603136.2, "anon_mb": 6091, "file_mb": 23689, "alloc_mb": 5068, "resident_mb": 6435, "budget_used_mb": 4024, "budget_cached_mb": 4024, "budget_held_mb": 0, "segments": 48, "segments_mb": 2385, "pages_mb": 1228, "conns": 100}
+{"t": 1792603140.5, "anon_mb": 6021, "file_mb": 23758}
+{"t": 1792603141.5, "anon_mb": 6134, "file_mb": 23622}
+{"t": 1792603142.5, "anon_mb": 5943, "file_mb": 23827}
+{"t": 1792603143.5, "anon_mb": 6113, "file_mb": 23623}
+{"t": 1792603144.5, "anon_mb": 6331, "file_mb": 23415, "alloc_mb": 4918, "resident_mb": 6159, "budget_used_mb": 4163, "budget_cached_mb": 4060, "budget_held_mb": 103, "segments": 58, "segments_mb": 2421, "pages_mb": 1228, "conns": 100}
+{"t": 1792603148.0, "anon_mb": 6072, "file_mb": 23660}
+{"t": 1792603149.0, "anon_mb": 6064, "file_mb": 23623}
+{"t": 1792603150.0, "anon_mb": 6197, "file_mb": 23560}
+{"t": 1792603151.0, "anon_mb": 5872, "file_mb": 23882}
+{"t": 1792603152.0, "anon_mb": 5821, "file_mb": 23909, "alloc_mb": 5080, "resident_mb": 6349, "budget_used_mb": 4094, "budget_cached_mb": 4094, "budget_held_mb": 0, "segments": 56, "segments_mb": 2455, "pages_mb": 1228, "conns": 100}
+{"t": 1792603157.3, "anon_mb": 5898, "file_mb": 23824}
+{"t": 1792603158.3, "anon_mb": 6038, "file_mb": 23701}
+{"t": 1792603159.3, "anon_mb": 6001, "file_mb": 23725}
+{"t": 1792603160.3, "anon_mb": 5901, "file_mb": 23816}
+{"t": 1792603161.3, "anon_mb": 6054, "file_mb": 23690, "alloc_mb": 4966, "resident_mb": 6082, "budget_used_mb": 4066, "budget_cached_mb": 4066, "budget_held_mb": 0, "segments": 57, "segments_mb": 2429, "pages_mb": 1228, "conns": 100}
+{"t": 1792603167.2, "anon_mb": 5915, "file_mb": 23790}
+{"t": 1792603168.2, "anon_mb": 6226, "file_mb": 23453}
+{"t": 1792603169.2, "anon_mb": 6219, "file_mb": 23476}
+{"t": 1792603170.2, "anon_mb": 6126, "file_mb": 23615}
+{"t": 1792603171.2, "anon_mb": 5986, "file_mb": 23706, "alloc_mb": 4910, "resident_mb": 6038, "budget_used_mb": 4095, "budget_cached_mb": 4095, "budget_held_mb": 0, "segments": 79, "segments_mb": 2457, "pages_mb": 1228, "conns": 100}
+{"t": 1792603175.5, "anon_mb": 5958, "file_mb": 23771}
+{"t": 1792603176.5, "anon_mb": 5910, "file_mb": 23733}
+{"t": 1792603177.5, "anon_mb": 5985, "file_mb": 23694}
+{"t": 1792603178.5, "anon_mb": 5763, "file_mb": 23946}
+{"t": 1792603179.5, "anon_mb": 6182, "file_mb": 23548, "alloc_mb": 4997, "resident_mb": 6288, "budget_used_mb": 4084, "budget_cached_mb": 4084, "budget_held_mb": 0, "segments": 86, "segments_mb": 2441, "pages_mb": 1229, "conns": 100}
+{"t": 1792603184.8, "anon_mb": 6044, "file_mb": 23668}
+{"t": 1792603185.8, "anon_mb": 5835, "file_mb": 23885}
+{"t": 1792603186.8, "anon_mb": 5870, "file_mb": 23773}
+{"t": 1792603187.8, "anon_mb": 5873, "file_mb": 23847}
+{"t": 1792603188.8, "anon_mb": 5899, "file_mb": 23745, "alloc_mb": 5010, "resident_mb": 6200, "budget_used_mb": 4075, "budget_cached_mb": 4075, "budget_held_mb": 0, "segments": 51, "segments_mb": 2436, "pages_mb": 1228, "conns": 100}
+{"t": 1792603193.8, "anon_mb": 5972, "file_mb": 23743}
+{"t": 1792603194.8, "anon_mb": 6034, "file_mb": 23676}
+{"t": 1792603195.8, "anon_mb": 6089, "file_mb": 23609}
+{"t": 1792603196.8, "anon_mb": 6052, "file_mb": 23611}
+{"t": 1792603197.8, "anon_mb": 6188, "file_mb": 23504, "alloc_mb": 5046, "resident_mb": 6328, "budget_used_mb": 4091, "budget_cached_mb": 4091, "budget_held_mb": 0, "segments": 49, "segments_mb": 2453, "pages_mb": 1228, "conns": 100}
+{"t": 1792603201.5, "anon_mb": 5862, "file_mb": 23769}
+{"t": 1792603202.5, "anon_mb": 5892, "file_mb": 23759}
+{"t": 1792603203.5, "anon_mb": 6114, "file_mb": 23586}
+{"t": 1792603204.5, "anon_mb": 6009, "file_mb": 23688}
+{"t": 1792603205.5, "anon_mb": 5866, "file_mb": 23785, "alloc_mb": 5127, "resident_mb": 6536, "budget_used_mb": 4002, "budget_cached_mb": 4002, "budget_held_mb": 0, "segments": 36, "segments_mb": 2363, "pages_mb": 1228, "conns": 15}
+{"t": 1792603209.6, "anon_mb": 6158, "file_mb": 23489}
+{"t": 1792603210.6, "anon_mb": 5581, "file_mb": 23829}
+{"t": 1792603211.6, "anon_mb": 5176, "file_mb": 23829}
+{"t": 1792603212.6, "anon_mb": 4849, "file_mb": 23829}
+{"t": 1792603213.6, "anon_mb": 4693, "file_mb": 23829, "alloc_mb": 4563, "resident_mb": 4942, "budget_used_mb": 4070, "budget_cached_mb": 4070, "budget_held_mb": 0, "segments": 34, "segments_mb": 2431, "pages_mb": 1229, "conns": 0}
+{"t": 1792603214.6, "anon_mb": 4644, "file_mb": 23829}
+{"t": 1792603215.6, "anon_mb": 4626, "file_mb": 23829}
+{"t": 1792603216.6, "anon_mb": 4626, "file_mb": 23829}
+{"t": 1792603217.6, "anon_mb": 4626, "file_mb": 23829}
+{"t": 1792603218.6, "anon_mb": 4626, "file_mb": 23829, "alloc_mb": 4563, "resident_mb": 4888, "budget_used_mb": 4070, "budget_cached_mb": 4070, "budget_held_mb": 0, "segments": 34, "segments_mb": 2431, "pages_mb": 1229, "conns": 0}
+{"t": 1792603219.6, "anon_mb": 4626, "file_mb": 23829}
+{"t": 1792603220.6, "anon_mb": 4626, "file_mb": 23829}
+{"t": 1792603221.6, "anon_mb": 4626, "file_mb": 23829}
+{"t": 1792603222.6, "anon_mb": 4626, "file_mb": 23829}
+{"t": 1792603223.6, "anon_mb": 4626, "file_mb": 23829, "alloc_mb": 4563, "resident_mb": 4888, "budget_used_mb": 4070, "budget_cached_mb": 4070, "budget_held_mb": 0, "segments": 34, "segments_mb": 2431, "pages_mb": 1229, "conns": 0}
+{"t": 1792603224.6, "anon_mb": 4626, "file_mb": 23829}
+{"t": 1792603225.6, "anon_mb": 4626, "file_mb": 23829}
+{"t": 1792603226.6, "anon_mb": 4626, "file_mb": 23829}
+{"t": 1792603227.6, "anon_mb": 4626, "file_mb": 23829}
+{"t": 1792603228.6, "anon_mb": 4626, "file_mb": 23829, "alloc_mb": 4563, "resident_mb": 4888, "budget_used_mb": 4070, "budget_cached_mb": 4070, "budget_held_mb": 0, "segments": 34, "segments_mb": 2431, "pages_mb": 1229, "conns": 0}
+{"t": 1792603229.6, "anon_mb": 4626, "file_mb": 23829}
+{"t": 1792603230.6, "anon_mb": 5170, "file_mb": 24485}
+{"t": 1792603231.6, "anon_mb": 5623, "file_mb": 24069}
+{"t": 1792603232.6, "anon_mb": 6111, "file_mb": 23582}
+{"t": 1792603233.6, "anon_mb": 6066, "file_mb": 23610, "alloc_mb": 4947, "resident_mb": 6259, "budget_used_mb": 4111, "budget_cached_mb": 4006, "budget_held_mb": 104, "segments": 39, "segments_mb": 2368, "pages_mb": 1228, "conns": 200}
+{"t": 1792603241.7, "anon_mb": 5954, "file_mb": 23706}
+{"t": 1792603242.7, "anon_mb": 6331, "file_mb": 23307}
+{"t": 1792603243.7, "anon_mb": 5962, "file_mb": 23627}
+{"t": 1792603244.7, "anon_mb": 6149, "file_mb": 23519}
+{"t": 1792603245.7, "anon_mb": 6041, "file_mb": 23599, "alloc_mb": 5003, "resident_mb": 6267, "budget_used_mb": 4066, "budget_cached_mb": 4066, "budget_held_mb": 0, "segments": 60, "segments_mb": 2427, "pages_mb": 1229, "conns": 200}
+{"t": 1792603255.3, "anon_mb": 6122, "file_mb": 23539}
+{"t": 1792603256.3, "anon_mb": 6076, "file_mb": 23603}
+{"t": 1792603257.3, "anon_mb": 6059, "file_mb": 23602}
+{"t": 1792603258.3, "anon_mb": 6145, "file_mb": 23515}
+{"t": 1792603259.3, "anon_mb": 6107, "file_mb": 23566, "alloc_mb": 5051, "resident_mb": 6385, "budget_used_mb": 4016, "budget_cached_mb": 4016, "budget_held_mb": 0, "segments": 41, "segments_mb": 2378, "pages_mb": 1228, "conns": 200}
+{"t": 1792603268.9, "anon_mb": 5991, "file_mb": 23471}
+{"t": 1792603269.9, "anon_mb": 5995, "file_mb": 23673}
+{"t": 1792603270.9, "anon_mb": 5794, "file_mb": 23852}
+{"t": 1792603271.9, "anon_mb": 6164, "file_mb": 23503}
+{"t": 1792603272.9, "anon_mb": 5953, "file_mb": 23691, "alloc_mb": 5124, "resident_mb": 6363, "budget_used_mb": 4079, "budget_cached_mb": 4079, "budget_held_mb": 0, "segments": 39, "segments_mb": 2441, "pages_mb": 1228, "conns": 200}
+{"t": 1792603282.2, "anon_mb": 6016, "file_mb": 23629}
+{"t": 1792603283.2, "anon_mb": 5942, "file_mb": 23718}
+{"t": 1792603284.2, "anon_mb": 5897, "file_mb": 23752}
+{"t": 1792603285.2, "anon_mb": 5995, "file_mb": 23646}
+{"t": 1792603286.2, "anon_mb": 6162, "file_mb": 23491, "alloc_mb": 5014, "resident_mb": 6287, "budget_used_mb": 4045, "budget_cached_mb": 4045, "budget_held_mb": 0, "segments": 62, "segments_mb": 2406, "pages_mb": 1228, "conns": 200}
+{"t": 1792603296.2, "anon_mb": 6105, "file_mb": 23529}
+{"t": 1792603297.2, "anon_mb": 6177, "file_mb": 23471}
+{"t": 1792603298.2, "anon_mb": 6232, "file_mb": 23400}
+{"t": 1792603299.2, "anon_mb": 6060, "file_mb": 23591}
+{"t": 1792603300.2, "anon_mb": 6099, "file_mb": 23497, "alloc_mb": 4967, "resident_mb": 6273, "budget_used_mb": 4019, "budget_cached_mb": 4019, "budget_held_mb": 0, "segments": 71, "segments_mb": 2380, "pages_mb": 1228, "conns": 200}
+{"t": 1792603309.1, "anon_mb": 6236, "file_mb": 23398}
+{"t": 1792603310.1, "anon_mb": 6092, "file_mb": 23545}
+{"t": 1792603311.1, "anon_mb": 6117, "file_mb": 23476}
+{"t": 1792603312.1, "anon_mb": 6050, "file_mb": 23575}
+{"t": 1792603313.1, "anon_mb": 6089, "file_mb": 23540, "alloc_mb": 4989, "resident_mb": 6438, "budget_used_mb": 4128, "budget_cached_mb": 4085, "budget_held_mb": 42, "segments": 67, "segments_mb": 2447, "pages_mb": 1228, "conns": 200}
+{"t": 1792603321.3, "anon_mb": 6231, "file_mb": 23401}
+{"t": 1792603322.3, "anon_mb": 6349, "file_mb": 23250}
+{"t": 1792603323.3, "anon_mb": 6175, "file_mb": 23462}
+{"t": 1792603324.3, "anon_mb": 6117, "file_mb": 23504}
+{"t": 1792603325.3, "anon_mb": 6141, "file_mb": 23493, "alloc_mb": 5108, "resident_mb": 6488, "budget_used_mb": 4026, "budget_cached_mb": 4026, "budget_held_mb": 0, "segments": 72, "segments_mb": 2388, "pages_mb": 1228, "conns": 200}
+{"t": 1792603334.1, "anon_mb": 6246, "file_mb": 23382}
+{"t": 1792603335.1, "anon_mb": 6151, "file_mb": 23426}
+{"t": 1792603336.1, "anon_mb": 6269, "file_mb": 23346}
+{"t": 1792603337.1, "anon_mb": 6031, "file_mb": 23565}
+{"t": 1792603338.1, "anon_mb": 6199, "file_mb": 23388, "alloc_mb": 5001, "resident_mb": 6353, "budget_used_mb": 4184, "budget_cached_mb": 4034, "budget_held_mb": 149, "segments": 41, "segments_mb": 2396, "pages_mb": 1228, "conns": 200}
+{"t": 1792603347.6, "anon_mb": 6195, "file_mb": 23424}
+{"t": 1792603348.6, "anon_mb": 6147, "file_mb": 23454}
+{"t": 1792603349.6, "anon_mb": 6183, "file_mb": 23427}
+{"t": 1792603350.6, "anon_mb": 6021, "file_mb": 23564}
+{"t": 1792603351.6, "anon_mb": 6062, "file_mb": 23554, "stats_error": "timed out", "conns": 200}
+{"t": 1792603362.6, "anon_mb": 5730, "file_mb": 23859}
+{"t": 1792603363.6, "anon_mb": 5687, "file_mb": 23877}
+{"t": 1792603364.6, "anon_mb": 5756, "file_mb": 23827}
+{"t": 1792603365.6, "anon_mb": 5696, "file_mb": 23845}
+{"t": 1792603366.6, "anon_mb": 5656, "file_mb": 23757, "stats_error": "timed out", "conns": 200}
+{"t": 1792603377.6, "anon_mb": 5633, "file_mb": 23898}
+{"t": 1792603378.6, "anon_mb": 5560, "file_mb": 23705}
+{"t": 1792603379.6, "anon_mb": 5939, "file_mb": 23581}
+{"t": 1792603380.6, "anon_mb": 5955, "file_mb": 23566}
+{"t": 1792603381.6, "anon_mb": 5865, "file_mb": 23638, "stats_error": "timed out", "conns": 200}
+{"t": 1792603392.7, "anon_mb": 5815, "file_mb": 23601}
+{"t": 1792603393.7, "anon_mb": 5591, "file_mb": 23890}
+{"t": 1792603394.7, "anon_mb": 5707, "file_mb": 23761}
+{"t": 1792603395.7, "anon_mb": 5820, "file_mb": 23650}
+{"t": 1792603396.7, "anon_mb": 5851, "file_mb": 23617, "stats_error": "timed out", "conns": 200}
+{"t": 1792603407.7, "anon_mb": 5834, "file_mb": 23505}
+{"t": 1792603408.7, "anon_mb": 5865, "file_mb": 23576}
+{"t": 1792603409.7, "anon_mb": 5766, "file_mb": 24243}
+{"t": 1792603410.7, "anon_mb": 5686, "file_mb": 24370}
+{"t": 1792603411.7, "anon_mb": 5349, "file_mb": 24686, "stats_error": "timed out", "conns": 47}
+{"t": 1792603422.7, "anon_mb": 5731, "file_mb": 24314}
+{"t": 1792603423.7, "anon_mb": 5585, "file_mb": 24367}
+{"t": 1792603424.7, "anon_mb": 5532, "file_mb": 24366}
+{"t": 1792603425.7, "anon_mb": 5528, "file_mb": 24452}
+{"t": 1792603426.7, "anon_mb": 5003, "file_mb": 24475, "alloc_mb": 4500, "resident_mb": 5279, "budget_used_mb": 4087, "budget_cached_mb": 4087, "budget_held_mb": 0, "segments": 47, "segments_mb": 3276, "pages_mb": 626, "conns": 0}
+{"t": 1792603427.7, "anon_mb": 4746, "file_mb": 24475}
+{"t": 1792603428.7, "anon_mb": 4510, "file_mb": 24475}
+{"t": 1792603429.7, "anon_mb": 4482, "file_mb": 24475}
+{"t": 1792603430.7, "anon_mb": 4464, "file_mb": 24475}
+{"t": 1792603431.7, "anon_mb": 4457, "file_mb": 24475, "alloc_mb": 4500, "resident_mb": 4754, "budget_used_mb": 4087, "budget_cached_mb": 4087, "budget_held_mb": 0, "segments": 47, "segments_mb": 3276, "pages_mb": 626, "conns": 0}
+{"t": 1792603432.8, "anon_mb": 4457, "file_mb": 24475}
+{"t": 1792603433.8, "anon_mb": 4457, "file_mb": 24475}
+{"t": 1792603434.8, "anon_mb": 4457, "file_mb": 24475}
+{"t": 1792603435.8, "anon_mb": 4457, "file_mb": 24475}
+{"t": 1792603436.8, "anon_mb": 4457, "file_mb": 24475, "alloc_mb": 4500, "resident_mb": 4754, "budget_used_mb": 4087, "budget_cached_mb": 4087, "budget_held_mb": 0, "segments": 47, "segments_mb": 3276, "pages_mb": 626, "conns": 0}
+{"t": 1792603437.8, "anon_mb": 4457, "file_mb": 24475}
+{"t": 1792603438.8, "anon_mb": 4457, "file_mb": 24475}
+{"t": 1792603439.8, "anon_mb": 4457, "file_mb": 24475}
+{"t": 1792603440.8, "anon_mb": 4457, "file_mb": 24475}
+{"t": 1792603441.8, "anon_mb": 4457, "file_mb": 24475, "alloc_mb": 4500, "resident_mb": 4754, "budget_used_mb": 4087, "budget_cached_mb": 4087, "budget_held_mb": 0, "segments": 47, "segments_mb": 3276, "pages_mb": 626, "conns": 0}
+{"t": 1792603442.8, "anon_mb": 4457, "file_mb": 24475}
+{"t": 1792603443.8, "anon_mb": 4457, "file_mb": 24475}
+{"t": 1792603444.8, "anon_mb": 4457, "file_mb": 24475}
+{"t": 1792603445.8, "anon_mb": 4457, "file_mb": 24475}
+{"t": 1792603446.8, "anon_mb": 4985, "file_mb": 25007, "stats_error": "timed out", "conns": 100}
+{"t": 1792603457.8, "anon_mb": 6044, "file_mb": 23910}
+{"t": 1792603458.8, "anon_mb": 5883, "file_mb": 24118}
+{"t": 1792603459.8, "anon_mb": 5582, "file_mb": 24088}
+{"t": 1792603460.8, "anon_mb": 5989, "file_mb": 24002}
+{"t": 1792603461.8, "anon_mb": 5613, "file_mb": 24142, "stats_error": "timed out", "conns": 100}
+{"t": 1792603472.9, "anon_mb": 5948, "file_mb": 23927}
+{"t": 1792603473.9, "anon_mb": 6083, "file_mb": 23862}
+{"t": 1792603474.9, "anon_mb": 5938, "file_mb": 23760}
+{"t": 1792603475.9, "anon_mb": 5839, "file_mb": 23940}
+{"t": 1792603476.9, "anon_mb": 5985, "file_mb": 23947, "stats_error": "timed out", "conns": 100}
+{"t": 1792603487.9, "anon_mb": 5938, "file_mb": 23899}
+{"t": 1792603488.9, "anon_mb": 6170, "file_mb": 23714}
+{"t": 1792603489.9, "anon_mb": 6054, "file_mb": 23753}
+{"t": 1792603490.9, "anon_mb": 6090, "file_mb": 23753}
+{"t": 1792603491.9, "anon_mb": 6135, "file_mb": 23690, "stats_error": "timed out", "conns": 100}
+{"t": 1792603502.9, "anon_mb": 6015, "file_mb": 23799}
+{"t": 1792603503.9, "anon_mb": 5938, "file_mb": 23770}
+{"t": 1792603504.9, "anon_mb": 6160, "file_mb": 23673}
+{"t": 1792603505.9, "anon_mb": 5990, "file_mb": 23746}
+{"t": 1792603506.9, "anon_mb": 6087, "file_mb": 23669, "stats_error": "timed out", "conns": 100}
+{"t": 1792603518.0, "anon_mb": 6049, "file_mb": 23748}
+{"t": 1792603519.0, "anon_mb": 6109, "file_mb": 23620}
+{"t": 1792603520.0, "anon_mb": 5667, "file_mb": 23861}
+{"t": 1792603521.0, "anon_mb": 5877, "file_mb": 23875}
+{"t": 1792603522.0, "anon_mb": 6042, "file_mb": 23743, "stats_error": "timed out", "conns": 100}
+{"t": 1792603533.0, "anon_mb": 6311, "file_mb": 23266}
+{"t": 1792603534.0, "anon_mb": 6148, "file_mb": 23399}
+{"t": 1792603535.0, "anon_mb": 6355, "file_mb": 23386}
+{"t": 1792603536.0, "anon_mb": 6103, "file_mb": 23572}
+{"t": 1792603537.0, "anon_mb": 6323, "file_mb": 23402, "stats_error": "timed out", "conns": 100}
+{"t": 1792603548.0, "anon_mb": 6227, "file_mb": 23448}
+{"t": 1792603549.0, "anon_mb": 6096, "file_mb": 23512}
+{"t": 1792603550.0, "anon_mb": 6184, "file_mb": 23531}
+{"t": 1792603551.0, "anon_mb": 6030, "file_mb": 23466}
+{"t": 1792603552.0, "anon_mb": 6124, "file_mb": 23558, "stats_error": "timed out", "conns": 100}
+{"t": 1792603563.1, "anon_mb": 6079, "file_mb": 23607}
+{"t": 1792603564.1, "anon_mb": 6011, "file_mb": 23583}
+{"t": 1792603565.1, "anon_mb": 5931, "file_mb": 23685}
+{"t": 1792603566.1, "anon_mb": 6122, "file_mb": 23562}
+{"t": 1792603567.1, "anon_mb": 6474, "file_mb": 23157, "stats_error": "timed out", "conns": 100}
+{"t": 1792603578.1, "anon_mb": 6048, "file_mb": 23525}
+{"t": 1792603579.1, "anon_mb": 5867, "file_mb": 23672}
+{"t": 1792603580.1, "anon_mb": 6007, "file_mb": 23563}
+{"t": 1792603581.1, "anon_mb": 5905, "file_mb": 23568}
+{"t": 1792603582.1, "anon_mb": 6425, "file_mb": 23242, "stats_error": "timed out", "conns": 100}
+{"t": 1792603593.1, "anon_mb": 6270, "file_mb": 23378}
+{"t": 1792603594.1, "anon_mb": 6320, "file_mb": 23333}
+{"t": 1792603595.1, "anon_mb": 6328, "file_mb": 23324}
+{"t": 1792603596.1, "anon_mb": 6340, "file_mb": 23278}
+{"t": 1792603597.1, "anon_mb": 6166, "file_mb": 23438, "stats_error": "timed out", "conns": 100}
+{"t": 1792603608.2, "anon_mb": 6083, "file_mb": 23443}
+{"t": 1792603609.2, "anon_mb": 5718, "file_mb": 23737}
+{"t": 1792603610.2, "anon_mb": 6359, "file_mb": 23279}
+{"t": 1792603611.2, "anon_mb": 6420, "file_mb": 23219}
+{"t": 1792603612.2, "anon_mb": 5875, "file_mb": 23516, "stats_error": "timed out", "conns": 100}
+{"t": 1792603623.2, "anon_mb": 6424, "file_mb": 23026}
+{"t": 1792603624.2, "anon_mb": 6647, "file_mb": 22837}
+{"t": 1792603625.2, "anon_mb": 6306, "file_mb": 23151}
+{"t": 1792603626.2, "anon_mb": 6311, "file_mb": 23316}
+{"t": 1792603627.2, "anon_mb": 6334, "file_mb": 23293, "stats_error": "timed out", "conns": 62}
+{"t": 1792603638.2, "anon_mb": 6515, "file_mb": 23060}
+{"t": 1792603639.2, "anon_mb": 5880, "file_mb": 23612}
+{"t": 1792603640.2, "anon_mb": 6401, "file_mb": 23092}
+{"t": 1792603641.2, "anon_mb": 6591, "file_mb": 22969}
+{"t": 1792603642.2, "anon_mb": 6306, "file_mb": 23179, "alloc_mb": 4941, "resident_mb": 6771, "budget_used_mb": 3916, "budget_cached_mb": 3916, "budget_held_mb": 0, "segments": 68, "segments_mb": 2498, "pages_mb": 1229, "conns": 15}
+{"t": 1792603650.5, "anon_mb": 6754, "file_mb": 22845}
+{"t": 1792603651.5, "anon_mb": 6502, "file_mb": 23102}
+{"t": 1792603652.5, "anon_mb": 6459, "file_mb": 23130}
+{"t": 1792603653.5, "anon_mb": 6430, "file_mb": 23161}
+{"t": 1792603654.5, "anon_mb": 6575, "file_mb": 22959, "alloc_mb": 5748, "resident_mb": 6913, "budget_used_mb": 4132, "budget_cached_mb": 3863, "budget_held_mb": 268, "segments": 26, "segments_mb": 2446, "pages_mb": 1228, "conns": 8}
+{"t": 1792603655.6, "anon_mb": 6467, "file_mb": 23119}
+{"t": 1792603656.6, "anon_mb": 6259, "file_mb": 23254}
+{"t": 1792603657.6, "anon_mb": 5884, "file_mb": 23340}
+{"t": 1792603658.6, "anon_mb": 6138, "file_mb": 23451}
+{"t": 1792603659.6, "anon_mb": 5553, "file_mb": 23736, "alloc_mb": 4459, "resident_mb": 5762, "budget_used_mb": 4005, "budget_cached_mb": 4005, "budget_held_mb": 0, "segments": 24, "segments_mb": 2587, "pages_mb": 1230, "conns": 0}
+{"t": 1792603660.6, "anon_mb": 5078, "file_mb": 23736}
+{"t": 1792603661.6, "anon_mb": 4771, "file_mb": 23736}
+{"t": 1792603662.6, "anon_mb": 4595, "file_mb": 23736}
+{"t": 1792603663.6, "anon_mb": 4542, "file_mb": 23736}
+{"t": 1792603664.6, "anon_mb": 4527, "file_mb": 23736, "alloc_mb": 4459, "resident_mb": 4809, "budget_used_mb": 4005, "budget_cached_mb": 4005, "budget_held_mb": 0, "segments": 24, "segments_mb": 2587, "pages_mb": 1230, "conns": 0}
+{"t": 1792603665.6, "anon_mb": 4527, "file_mb": 23736}
+{"t": 1792603666.6, "anon_mb": 4527, "file_mb": 23736}
+{"t": 1792603667.6, "anon_mb": 4527, "file_mb": 23736}
+{"t": 1792603668.6, "anon_mb": 4527, "file_mb": 23736}
+{"t": 1792603669.6, "anon_mb": 4527, "file_mb": 23736, "alloc_mb": 4459, "resident_mb": 4809, "budget_used_mb": 4005, "budget_cached_mb": 4005, "budget_held_mb": 0, "segments": 24, "segments_mb": 2587, "pages_mb": 1230, "conns": 0}
+{"t": 1792603670.6, "anon_mb": 4527, "file_mb": 23736}
+{"t": 1792603671.6, "anon_mb": 4527, "file_mb": 23736}
+{"t": 1792603672.6, "anon_mb": 4527, "file_mb": 23736}
+{"t": 1792603673.6, "anon_mb": 4527, "file_mb": 23736}
+{"t": 1792603674.6, "anon_mb": 4527, "file_mb": 23736, "alloc_mb": 4459, "resident_mb": 4809, "budget_used_mb": 4005, "budget_cached_mb": 4005, "budget_held_mb": 0, "segments": 24, "segments_mb": 2587, "pages_mb": 1230, "conns": 0}
+{"t": 1792603675.6, "anon_mb": 4527, "file_mb": 23736}
+{"t": 1792603676.6, "anon_mb": 4527, "file_mb": 23736}
+{"t": 1792603677.6, "anon_mb": 4527, "file_mb": 23736}
+{"t": 1792603678.6, "anon_mb": 4527, "file_mb": 23736}
+{"t": 1792603679.6, "anon_mb": 4806, "file_mb": 24821, "stats_error": "timed out", "conns": 100}
+{"t": 1792603690.7, "anon_mb": 6136, "file_mb": 23329}
+{"t": 1792603691.7, "anon_mb": 6228, "file_mb": 23387}
+{"t": 1792603692.7, "anon_mb": 6320, "file_mb": 23180}
+{"t": 1792603693.7, "anon_mb": 6017, "file_mb": 23462}
+{"t": 1792603694.7, "anon_mb": 6017, "file_mb": 23493, "stats_error": "timed out", "conns": 99}
+{"t": 1792603705.7, "anon_mb": 6063, "file_mb": 23497}
+{"t": 1792603706.7, "anon_mb": 6228, "file_mb": 23397}
+{"t": 1792603707.7, "anon_mb": 6299, "file_mb": 23303}
+{"t": 1792603708.7, "anon_mb": 6102, "file_mb": 23519}
+{"t": 1792603709.7, "anon_mb": 6225, "file_mb": 23295, "stats_error": "timed out", "conns": 98}
+{"t": 1792603720.7, "anon_mb": 6037, "file_mb": 23563}
+{"t": 1792603721.7, "anon_mb": 6206, "file_mb": 23281}
+{"t": 1792603722.7, "anon_mb": 6147, "file_mb": 23430}
+{"t": 1792603723.7, "anon_mb": 6360, "file_mb": 23258}
+{"t": 1792603724.7, "anon_mb": 6083, "file_mb": 23449, "stats_error": "timed out", "conns": 99}
+{"t": 1792603735.7, "anon_mb": 6049, "file_mb": 23510}
+{"t": 1792603736.7, "anon_mb": 6220, "file_mb": 23314}
+{"t": 1792603737.7, "anon_mb": 6440, "file_mb": 23174}
+{"t": 1792603738.7, "anon_mb": 6429, "file_mb": 23184}
+{"t": 1792603739.7, "anon_mb": 6269, "file_mb": 23201, "stats_error": "timed out", "conns": 100}
+{"t": 1792603750.8, "anon_mb": 6190, "file_mb": 23430}
+{"t": 1792603751.8, "anon_mb": 6176, "file_mb": 23338}
+{"t": 1792603752.8, "anon_mb": 6413, "file_mb": 23209}
+{"t": 1792603753.8, "anon_mb": 6349, "file_mb": 23257}
+{"t": 1792603754.8, "anon_mb": 6290, "file_mb": 23309, "stats_error": "timed out", "conns": 100}
+{"t": 1792603765.8, "anon_mb": 6260, "file_mb": 23361}
+{"t": 1792603766.8, "anon_mb": 6326, "file_mb": 23229}
+{"t": 1792603767.8, "anon_mb": 6397, "file_mb": 23165}
+{"t": 1792603768.8, "anon_mb": 6185, "file_mb": 23428}
+{"t": 1792603769.8, "anon_mb": 6317, "file_mb": 23280, "stats_error": "timed out", "conns": 100}
+{"t": 1792603780.8, "anon_mb": 6368, "file_mb": 23197}
+{"t": 1792603781.8, "anon_mb": 6080, "file_mb": 23493}
+{"t": 1792603782.8, "anon_mb": 6024, "file_mb": 23591}
+{"t": 1792603783.8, "anon_mb": 5892, "file_mb": 23728}
+{"t": 1792603784.8, "anon_mb": 6162, "file_mb": 23407, "stats_error": "timed out", "conns": 100}
+{"t": 1792603795.9, "anon_mb": 5928, "file_mb": 23689}
+{"t": 1792603796.9, "anon_mb": 6423, "file_mb": 23189}
+{"t": 1792603797.9, "anon_mb": 6318, "file_mb": 23294}
+{"t": 1792603798.9, "anon_mb": 6158, "file_mb": 23458}
+{"t": 1792603799.9, "anon_mb": 6537, "file_mb": 23063, "stats_error": "timed out", "conns": 100}
+{"t": 1792603810.9, "anon_mb": 6395, "file_mb": 23221}
+{"t": 1792603811.9, "anon_mb": 6276, "file_mb": 23337}
+{"t": 1792603812.9, "anon_mb": 6061, "file_mb": 23425}
+{"t": 1792603813.9, "anon_mb": 6212, "file_mb": 23381}
+{"t": 1792603814.9, "anon_mb": 6163, "file_mb": 23449, "stats_error": "timed out", "conns": 100}
+{"t": 1792603825.9, "anon_mb": 6589, "file_mb": 23015}
+{"t": 1792603826.9, "anon_mb": 6306, "file_mb": 23290}
+{"t": 1792603827.9, "anon_mb": 6306, "file_mb": 23307}
+{"t": 1792603828.9, "anon_mb": 6047, "file_mb": 23414}
+{"t": 1792603829.9, "anon_mb": 6081, "file_mb": 23328, "stats_error": "timed out", "conns": 98}
+{"t": 1792603841.0, "anon_mb": 6187, "file_mb": 23426}
+{"t": 1792603842.0, "anon_mb": 6134, "file_mb": 23453}
+{"t": 1792603843.0, "anon_mb": 6011, "file_mb": 23542}
+{"t": 1792603844.0, "anon_mb": 5977, "file_mb": 23543}
+{"t": 1792603845.0, "anon_mb": 5887, "file_mb": 23683, "stats_error": "timed out", "conns": 100}
+{"t": 1792603856.0, "anon_mb": 6242, "file_mb": 23278}
+{"t": 1792603857.0, "anon_mb": 6476, "file_mb": 22926}
+{"t": 1792603858.0, "anon_mb": 6545, "file_mb": 23028}
+{"t": 1792603859.0, "anon_mb": 6179, "file_mb": 23386}
+{"t": 1792603860.0, "anon_mb": 6138, "file_mb": 23347, "stats_error": "timed out", "conns": 73}
+{"t": 1792603871.0, "anon_mb": 6303, "file_mb": 23287}
+{"t": 1792603872.0, "anon_mb": 6205, "file_mb": 23292}
+{"t": 1792603873.0, "anon_mb": 6233, "file_mb": 23273}
+{"t": 1792603874.0, "anon_mb": 6192, "file_mb": 23354}
+{"t": 1792603875.0, "anon_mb": 6532, "file_mb": 22885, "alloc_mb": 5309, "resident_mb": 6764, "budget_used_mb": 4118, "budget_cached_mb": 4022, "budget_held_mb": 95, "segments": 100, "segments_mb": 2604, "pages_mb": 1229, "conns": 24}
+{"t": 1792603884.4, "anon_mb": 6458, "file_mb": 23141}
+{"t": 1792603885.4, "anon_mb": 6431, "file_mb": 23166}
+{"t": 1792603886.4, "anon_mb": 6424, "file_mb": 23162}
+{"t": 1792603887.4, "anon_mb": 6578, "file_mb": 23016}
+{"t": 1792603888.4, "anon_mb": 6178, "file_mb": 23420, "alloc_mb": 4636, "resident_mb": 6375, "budget_used_mb": 4076, "budget_cached_mb": 4076, "budget_held_mb": 0, "segments": 61, "segments_mb": 2656, "pages_mb": 1231, "conns": 13}
+{"t": 1792603889.4, "anon_mb": 5646, "file_mb": 23353}
+{"t": 1792603890.4, "anon_mb": 5168, "file_mb": 23353}
+{"t": 1792603891.4, "anon_mb": 4808, "file_mb": 23353}
+{"t": 1792603892.4, "anon_mb": 4648, "file_mb": 23353}
+{"t": 1792603893.4, "anon_mb": 4618, "file_mb": 23353, "alloc_mb": 4496, "resident_mb": 4872, "budget_used_mb": 4069, "budget_cached_mb": 4069, "budget_held_mb": 0, "segments": 54, "segments_mb": 2652, "pages_mb": 1228, "conns": 3}
+{"t": 1792603894.4, "anon_mb": 4611, "file_mb": 23353}
+{"t": 1792603895.4, "anon_mb": 4611, "file_mb": 23353}
+{"t": 1792603896.4, "anon_mb": 4609, "file_mb": 23353}
+{"t": 1792603897.4, "anon_mb": 4609, "file_mb": 23353}
+{"t": 1792603898.4, "anon_mb": 4609, "file_mb": 23353, "alloc_mb": 4493, "resident_mb": 4867, "budget_used_mb": 4069, "budget_cached_mb": 4069, "budget_held_mb": 0, "segments": 54, "segments_mb": 2652, "pages_mb": 1228, "conns": 0}
+{"t": 1792603899.5, "anon_mb": 4609, "file_mb": 23353}
+{"t": 1792603900.5, "anon_mb": 4609, "file_mb": 23353}
+{"t": 1792603901.5, "anon_mb": 4609, "file_mb": 23353}
+{"t": 1792603902.5, "anon_mb": 4609, "file_mb": 23353}
+{"t": 1792603903.5, "anon_mb": 4609, "file_mb": 23353, "alloc_mb": 4493, "resident_mb": 4866, "budget_used_mb": 4069, "budget_cached_mb": 4069, "budget_held_mb": 0, "segments": 54, "segments_mb": 2652, "pages_mb": 1228, "conns": 0}
+{"t": 1792603904.5, "anon_mb": 4609, "file_mb": 23353}
+{"t": 1792603905.5, "anon_mb": 4609, "file_mb": 23353}
+{"t": 1792603906.5, "anon_mb": 4607, "file_mb": 23353}
+{"t": 1792603907.5, "anon_mb": 4607, "file_mb": 23353}
+{"t": 1792603908.5, "anon_mb": 4607, "file_mb": 23353, "alloc_mb": 4493, "resident_mb": 4864, "budget_used_mb": 4069, "budget_cached_mb": 4069, "budget_held_mb": 0, "segments": 54, "segments_mb": 2652, "pages_mb": 1228, "conns": 0}
+{"t": 1792603909.5, "anon_mb": 4607, "file_mb": 23353}
+{"t": 1792603910.5, "anon_mb": 4607, "file_mb": 23353}
+{"t": 1792603911.5, "anon_mb": 4607, "file_mb": 23353}
+{"t": 1792603912.5, "anon_mb": 4607, "file_mb": 23353}
+{"t": 1792603913.5, "anon_mb": 4607, "file_mb": 23353, "alloc_mb": 4493, "resident_mb": 4864, "budget_used_mb": 4069, "budget_cached_mb": 4069, "budget_held_mb": 0, "segments": 54, "segments_mb": 2652, "pages_mb": 1228, "conns": 0}
+{"t": 1792603914.5, "anon_mb": 4607, "file_mb": 23353}
+{"t": 1792603915.5, "anon_mb": 4607, "file_mb": 23353}
+{"t": 1792603916.5, "anon_mb": 4607, "file_mb": 23353}
+{"t": 1792603917.5, "anon_mb": 4861, "file_mb": 24743}
+{"t": 1792603918.5, "anon_mb": 6200, "file_mb": 23398, "stats_error": "timed out", "conns": 100}
+{"t": 1792603929.5, "anon_mb": 6491, "file_mb": 23093}
+{"t": 1792603930.5, "anon_mb": 6318, "file_mb": 23103}
+{"t": 1792603931.5, "anon_mb": 6340, "file_mb": 23097}
+{"t": 1792603932.6, "anon_mb": 6219, "file_mb": 23375}
+{"t": 1792603933.6, "anon_mb": 6098, "file_mb": 23479, "stats_error": "timed out", "conns": 100}
+{"t": 1792603944.6, "anon_mb": 6605, "file_mb": 22946}
+{"t": 1792603945.6, "anon_mb": 6552, "file_mb": 23022}
+{"t": 1792603946.6, "anon_mb": 6530, "file_mb": 23047}
+{"t": 1792603947.6, "anon_mb": 6347, "file_mb": 23222}
+{"t": 1792603948.6, "anon_mb": 6440, "file_mb": 23136, "stats_error": "timed out", "conns": 100}
+{"t": 1792603959.6, "anon_mb": 6139, "file_mb": 23407}
+{"t": 1792603960.6, "anon_mb": 6410, "file_mb": 23143}
+{"t": 1792603961.6, "anon_mb": 6587, "file_mb": 22977}
+{"t": 1792603962.6, "anon_mb": 6350, "file_mb": 23214}
+{"t": 1792603963.6, "anon_mb": 6194, "file_mb": 23363, "stats_error": "timed out", "conns": 100}
+{"t": 1792603974.6, "anon_mb": 6469, "file_mb": 23078}
+{"t": 1792603975.6, "anon_mb": 6427, "file_mb": 22950}
+{"t": 1792603976.6, "anon_mb": 6268, "file_mb": 23279}
+{"t": 1792603977.6, "anon_mb": 6259, "file_mb": 23243}
+{"t": 1792603978.6, "anon_mb": 6147, "file_mb": 23198, "stats_error": "timed out", "conns": 100}
+{"t": 1792603989.7, "anon_mb": 6455, "file_mb": 23075}
+{"t": 1792603990.7, "anon_mb": 6458, "file_mb": 22984}
+{"t": 1792603991.7, "anon_mb": 6806, "file_mb": 22727}
+{"t": 1792603992.7, "anon_mb": 6478, "file_mb": 22917}
+{"t": 1792603993.7, "anon_mb": 6504, "file_mb": 23025, "stats_error": "timed out", "conns": 100}
+{"t": 1792604004.7, "anon_mb": 6444, "file_mb": 23087}
+{"t": 1792604005.7, "anon_mb": 6351, "file_mb": 23176}
+{"t": 1792604006.7, "anon_mb": 6531, "file_mb": 22997}
+{"t": 1792604007.7, "anon_mb": 6110, "file_mb": 23339}
+{"t": 1792604008.7, "anon_mb": 6242, "file_mb": 23141, "stats_error": "timed out", "conns": 100}
+{"t": 1792604019.7, "anon_mb": 6346, "file_mb": 23109}
+{"t": 1792604020.7, "anon_mb": 6395, "file_mb": 23125}
+{"t": 1792604021.7, "anon_mb": 6075, "file_mb": 23252}
+{"t": 1792604022.7, "anon_mb": 6398, "file_mb": 23072}
+{"t": 1792604023.7, "anon_mb": 6146, "file_mb": 23382, "stats_error": "timed out", "conns": 100}
+{"t": 1792604034.8, "anon_mb": 6253, "file_mb": 23224}
+{"t": 1792604035.8, "anon_mb": 6121, "file_mb": 23389}
+{"t": 1792604036.8, "anon_mb": 6383, "file_mb": 23132}
+{"t": 1792604037.8, "anon_mb": 6354, "file_mb": 23166}
+{"t": 1792604038.8, "anon_mb": 6322, "file_mb": 23196, "stats_error": "timed out", "conns": 75}
+{"t": 1792604049.8, "anon_mb": 6169, "file_mb": 23348}
+{"t": 1792604050.8, "anon_mb": 5972, "file_mb": 23365}
+{"t": 1792604051.8, "anon_mb": 6084, "file_mb": 23426}
+{"t": 1792604052.8, "anon_mb": 6263, "file_mb": 23197}
+{"t": 1792604053.8, "anon_mb": 6236, "file_mb": 23210, "stats_error": "timed out", "conns": 47}
+{"t": 1792604064.8, "anon_mb": 6449, "file_mb": 22999}
+{"t": 1792604065.8, "anon_mb": 6365, "file_mb": 23144}
+{"t": 1792604066.8, "anon_mb": 6193, "file_mb": 23268}
+{"t": 1792604067.8, "anon_mb": 6206, "file_mb": 23217}
+{"t": 1792604068.8, "anon_mb": 6211, "file_mb": 23243, "alloc_mb": 5170, "resident_mb": 6488, "budget_used_mb": 4074, "budget_cached_mb": 4071, "budget_held_mb": 2, "segments": 90, "segments_mb": 2649, "pages_mb": 1233, "conns": 15}
+{"t": 1792604077.7, "anon_mb": 6220, "file_mb": 23273}
+{"t": 1792604078.7, "anon_mb": 6048, "file_mb": 23430}
+{"t": 1792604079.7, "anon_mb": 6316, "file_mb": 23181}
+{"t": 1792604080.7, "anon_mb": 6228, "file_mb": 23262}
+{"t": 1792604081.7, "anon_mb": 5965, "file_mb": 23422, "alloc_mb": 4928, "resident_mb": 6337, "budget_used_mb": 3873, "budget_cached_mb": 3873, "budget_held_mb": 0, "segments": 66, "segments_mb": 2454, "pages_mb": 1228, "conns": 6}
+{"t": 1792604082.7, "anon_mb": 6228, "file_mb": 23230}
+{"t": 1792604083.7, "anon_mb": 6111, "file_mb": 23301}
+{"t": 1792604084.7, "anon_mb": 5565, "file_mb": 23713}
+{"t": 1792604085.7, "anon_mb": 5681, "file_mb": 23817}
+{"t": 1792604086.7, "anon_mb": 5168, "file_mb": 24001, "alloc_mb": 4447, "resident_mb": 5446, "budget_used_mb": 3990, "budget_cached_mb": 3990, "budget_held_mb": 0, "segments": 42, "segments_mb": 2571, "pages_mb": 1230, "conns": 0}
+{"t": 1792604087.7, "anon_mb": 4863, "file_mb": 24002}
+{"t": 1792604088.7, "anon_mb": 4643, "file_mb": 24002}
+{"t": 1792604089.7, "anon_mb": 4569, "file_mb": 24002}
+{"t": 1792604090.7, "anon_mb": 4538, "file_mb": 24002}
+{"t": 1792604091.7, "anon_mb": 4533, "file_mb": 24002, "alloc_mb": 4447, "resident_mb": 4827, "budget_used_mb": 3990, "budget_cached_mb": 3990, "budget_held_mb": 0, "segments": 42, "segments_mb": 2571, "pages_mb": 1230, "conns": 0}
+{"t": 1792604092.7, "anon_mb": 4533, "file_mb": 24002}
+{"t": 1792604093.7, "anon_mb": 4533, "file_mb": 24002}
+{"t": 1792604094.7, "anon_mb": 4533, "file_mb": 24002}
+{"t": 1792604095.7, "anon_mb": 4533, "file_mb": 24002}
+{"t": 1792604096.7, "anon_mb": 4533, "file_mb": 24002, "alloc_mb": 4447, "resident_mb": 4827, "budget_used_mb": 3990, "budget_cached_mb": 3990, "budget_held_mb": 0, "segments": 42, "segments_mb": 2571, "pages_mb": 1230, "conns": 0}
+{"t": 1792604097.8, "anon_mb": 4533, "file_mb": 24002}
+{"t": 1792604098.8, "anon_mb": 4533, "file_mb": 24002}
+{"t": 1792604099.8, "anon_mb": 4533, "file_mb": 24002}
+{"t": 1792604100.8, "anon_mb": 4533, "file_mb": 24002}
+{"t": 1792604101.8, "anon_mb": 4533, "file_mb": 24002, "alloc_mb": 4447, "resident_mb": 4827, "budget_used_mb": 3990, "budget_cached_mb": 3990, "budget_held_mb": 0, "segments": 42, "segments_mb": 2571, "pages_mb": 1230, "conns": 0}
+{"t": 1792604102.8, "anon_mb": 4533, "file_mb": 24002}
+{"t": 1792604103.8, "anon_mb": 4533, "file_mb": 24002}
+{"t": 1792604104.8, "anon_mb": 4533, "file_mb": 24002}
+{"t": 1792604105.8, "anon_mb": 4533, "file_mb": 24002}
+{"t": 1792604106.8, "anon_mb": 5431, "file_mb": 24075, "alloc_mb": 4601, "resident_mb": 5721, "budget_used_mb": 3851, "budget_cached_mb": 3851, "budget_held_mb": 0, "segments": 56, "segments_mb": 2434, "pages_mb": 1228, "conns": 100}
+{"t": 1792604108.4, "anon_mb": 5647, "file_mb": 23761}
+{"t": 1792604109.4, "anon_mb": 5205, "file_mb": 24069}
+{"t": 1792604110.4, "anon_mb": 4996, "file_mb": 24091}
+{"t": 1792604111.4, "anon_mb": 4785, "file_mb": 24091}
+{"t": 1792604112.4, "anon_mb": 4720, "file_mb": 24091, "alloc_mb": 4450, "resident_mb": 4952, "budget_used_mb": 4017, "budget_cached_mb": 4017, "budget_held_mb": 0, "segments": 58, "segments_mb": 2599, "pages_mb": 1228, "conns": 100}
+{"t": 1792604113.4, "anon_mb": 4710, "file_mb": 24091}
+{"t": 1792604114.4, "anon_mb": 4709, "file_mb": 24091}
+{"t": 1792604115.4, "anon_mb": 4705, "file_mb": 24091}
+{"t": 1792604116.4, "anon_mb": 4697, "file_mb": 24091}
+{"t": 1792604117.4, "anon_mb": 4694, "file_mb": 24091, "alloc_mb": 4451, "resident_mb": 4932, "budget_used_mb": 4017, "budget_cached_mb": 4017, "budget_held_mb": 0, "segments": 58, "segments_mb": 2599, "pages_mb": 1228, "conns": 100}
+{"t": 1792604118.5, "anon_mb": 4687, "file_mb": 24091}
+{"t": 1792604119.5, "anon_mb": 4680, "file_mb": 24091}
+{"t": 1792604120.5, "anon_mb": 4682, "file_mb": 24091}
+{"t": 1792604121.5, "anon_mb": 4679, "file_mb": 24091}
+{"t": 1792604122.5, "anon_mb": 4680, "file_mb": 24091, "alloc_mb": 4452, "resident_mb": 4921, "budget_used_mb": 4017, "budget_cached_mb": 4017, "budget_held_mb": 0, "segments": 58, "segments_mb": 2599, "pages_mb": 1228, "conns": 100}
+{"t": 1792604123.5, "anon_mb": 4679, "file_mb": 24091}
+{"t": 1792604124.5, "anon_mb": 4675, "file_mb": 24091}
+{"t": 1792604125.5, "anon_mb": 4679, "file_mb": 24091}
+{"t": 1792604126.5, "anon_mb": 4669, "file_mb": 24091}
+{"t": 1792604127.5, "anon_mb": 4671, "file_mb": 24091, "alloc_mb": 4457, "resident_mb": 4915, "budget_used_mb": 4017, "budget_cached_mb": 4017, "budget_held_mb": 0, "segments": 58, "segments_mb": 2599, "pages_mb": 1228, "conns": 100}
+{"t": 1792604128.6, "anon_mb": 4674, "file_mb": 24091}
+{"t": 1792604129.6, "anon_mb": 4674, "file_mb": 24091}
+{"t": 1792604130.6, "anon_mb": 4673, "file_mb": 24091}
+{"t": 1792604131.6, "anon_mb": 4672, "file_mb": 24091}
+{"t": 1792604132.6, "anon_mb": 4672, "file_mb": 24091, "alloc_mb": 4449, "resident_mb": 4916, "budget_used_mb": 4017, "budget_cached_mb": 4017, "budget_held_mb": 0, "segments": 58, "segments_mb": 2599, "pages_mb": 1228, "conns": 100}
+{"t": 1792604133.6, "anon_mb": 4675, "file_mb": 24091}
+{"t": 1792604134.6, "anon_mb": 4678, "file_mb": 24091}
+{"t": 1792604135.6, "anon_mb": 4678, "file_mb": 24091}
+{"t": 1792604136.6, "anon_mb": 4673, "file_mb": 24091}
+{"t": 1792604137.6, "anon_mb": 4671, "file_mb": 24091, "alloc_mb": 4451, "resident_mb": 4916, "budget_used_mb": 4017, "budget_cached_mb": 4017, "budget_held_mb": 0, "segments": 58, "segments_mb": 2599, "pages_mb": 1228, "conns": 100}
+{"t": 1792604138.7, "anon_mb": 4672, "file_mb": 24091}
+{"t": 1792604139.7, "anon_mb": 4677, "file_mb": 24091}
+{"t": 1792604140.7, "anon_mb": 4675, "file_mb": 24091}
+{"t": 1792604141.7, "anon_mb": 4677, "file_mb": 24091}
+{"t": 1792604142.7, "anon_mb": 4671, "file_mb": 24091, "alloc_mb": 4452, "resident_mb": 4915, "budget_used_mb": 4017, "budget_cached_mb": 4017, "budget_held_mb": 0, "segments": 58, "segments_mb": 2599, "pages_mb": 1228, "conns": 100}
+{"t": 1792604143.7, "anon_mb": 4670, "file_mb": 24091}
+{"t": 1792604144.7, "anon_mb": 4671, "file_mb": 24091}
+{"t": 1792604145.7, "anon_mb": 4674, "file_mb": 24091}
+{"t": 1792604146.7, "anon_mb": 4670, "file_mb": 24091}
+{"t": 1792604147.7, "anon_mb": 4674, "file_mb": 24091, "alloc_mb": 4452, "resident_mb": 4919, "budget_used_mb": 4017, "budget_cached_mb": 4017, "budget_held_mb": 0, "segments": 58, "segments_mb": 2599, "pages_mb": 1228, "conns": 100}
+{"t": 1792604148.8, "anon_mb": 4671, "file_mb": 24091}
+{"t": 1792604149.8, "anon_mb": 4673, "file_mb": 24091}
+{"t": 1792604150.8, "anon_mb": 4674, "file_mb": 24091}
+{"t": 1792604151.8, "anon_mb": 4671, "file_mb": 24091}
+{"t": 1792604152.8, "anon_mb": 4669, "file_mb": 24091, "alloc_mb": 4455, "resident_mb": 4912, "budget_used_mb": 4017, "budget_cached_mb": 4017, "budget_held_mb": 0, "segments": 58, "segments_mb": 2599, "pages_mb": 1228, "conns": 100}
+{"t": 1792604153.8, "anon_mb": 4672, "file_mb": 24091}
+{"t": 1792604154.8, "anon_mb": 4671, "file_mb": 24091}
+{"t": 1792604155.8, "anon_mb": 4671, "file_mb": 24091}
+{"t": 1792604156.8, "anon_mb": 4670, "file_mb": 24091}
+{"t": 1792604157.8, "anon_mb": 4667, "file_mb": 24091, "alloc_mb": 4447, "resident_mb": 4909, "budget_used_mb": 4017, "budget_cached_mb": 4017, "budget_held_mb": 0, "segments": 58, "segments_mb": 2599, "pages_mb": 1228, "conns": 100}
+{"t": 1792604158.9, "anon_mb": 4671, "file_mb": 24091}
+{"t": 1792604159.9, "anon_mb": 4672, "file_mb": 24091}
+{"t": 1792604160.9, "anon_mb": 4672, "file_mb": 24091}
+{"t": 1792604161.9, "anon_mb": 4669, "file_mb": 24091}
+{"t": 1792604162.9, "anon_mb": 4668, "file_mb": 24091, "alloc_mb": 4452, "resident_mb": 4910, "budget_used_mb": 4017, "budget_cached_mb": 4017, "budget_held_mb": 0, "segments": 58, "segments_mb": 2599, "pages_mb": 1228, "conns": 100}
+{"t": 1792604163.9, "anon_mb": 4665, "file_mb": 24091}
+{"t": 1792604164.9, "anon_mb": 4663, "file_mb": 24091}
+{"t": 1792604165.9, "anon_mb": 4660, "file_mb": 24091}
+{"t": 1792604166.9, "anon_mb": 4664, "file_mb": 24091}
+{"t": 1792604167.9, "anon_mb": 4673, "file_mb": 24091, "alloc_mb": 4451, "resident_mb": 4920, "budget_used_mb": 4017, "budget_cached_mb": 4017, "budget_held_mb": 0, "segments": 58, "segments_mb": 2599, "pages_mb": 1228, "conns": 100}
+{"t": 1792604169.0, "anon_mb": 4673, "file_mb": 24091}
+{"t": 1792604170.0, "anon_mb": 4672, "file_mb": 24091}
+{"t": 1792604171.0, "anon_mb": 4671, "file_mb": 24091}
+{"t": 1792604172.0, "anon_mb": 4670, "file_mb": 24091}
+{"t": 1792604173.0, "anon_mb": 4666, "file_mb": 24091, "alloc_mb": 4449, "resident_mb": 4911, "budget_used_mb": 4017, "budget_cached_mb": 4017, "budget_held_mb": 0, "segments": 58, "segments_mb": 2599, "pages_mb": 1228, "conns": 100}
+{"t": 1792604174.0, "anon_mb": 4669, "file_mb": 24091}
+{"t": 1792604175.0, "anon_mb": 4668, "file_mb": 24091}
+{"t": 1792604176.0, "anon_mb": 4670, "file_mb": 24091}
+{"t": 1792604177.0, "anon_mb": 4671, "file_mb": 24091}
+{"t": 1792604178.0, "anon_mb": 4672, "file_mb": 24091, "alloc_mb": 4454, "resident_mb": 4916, "budget_used_mb": 4017, "budget_cached_mb": 4017, "budget_held_mb": 0, "segments": 58, "segments_mb": 2599, "pages_mb": 1228, "conns": 100}
+{"t": 1792604179.1, "anon_mb": 4674, "file_mb": 24091}
+{"t": 1792604180.1, "anon_mb": 4674, "file_mb": 24091}
+{"t": 1792604181.1, "anon_mb": 4670, "file_mb": 24091}
+{"t": 1792604182.1, "anon_mb": 4666, "file_mb": 24091}
+{"t": 1792604183.1, "anon_mb": 4668, "file_mb": 24091, "alloc_mb": 4453, "resident_mb": 4913, "budget_used_mb": 4017, "budget_cached_mb": 4017, "budget_held_mb": 0, "segments": 58, "segments_mb": 2599, "pages_mb": 1228, "conns": 100}
+{"t": 1792604184.1, "anon_mb": 4670, "file_mb": 24091}
+{"t": 1792604185.1, "anon_mb": 4673, "file_mb": 24091}
+{"t": 1792604186.1, "anon_mb": 4673, "file_mb": 24091}
+{"t": 1792604187.1, "anon_mb": 4671, "file_mb": 24091}
+{"t": 1792604188.1, "anon_mb": 4670, "file_mb": 24091, "alloc_mb": 4453, "resident_mb": 4914, "budget_used_mb": 4017, "budget_cached_mb": 4017, "budget_held_mb": 0, "segments": 58, "segments_mb": 2599, "pages_mb": 1228, "conns": 100}
+{"t": 1792604189.2, "anon_mb": 4669, "file_mb": 24091}
+{"t": 1792604190.2, "anon_mb": 4668, "file_mb": 24091}
+{"t": 1792604191.2, "anon_mb": 4669, "file_mb": 24091}
+{"t": 1792604192.2, "anon_mb": 4667, "file_mb": 24091}
+{"t": 1792604193.2, "anon_mb": 4665, "file_mb": 24091, "alloc_mb": 4452, "resident_mb": 4912, "budget_used_mb": 4017, "budget_cached_mb": 4017, "budget_held_mb": 0, "segments": 58, "segments_mb": 2599, "pages_mb": 1228, "conns": 100}
+{"t": 1792604194.2, "anon_mb": 4667, "file_mb": 24091}
+{"t": 1792604195.2, "anon_mb": 4667, "file_mb": 24091}
+{"t": 1792604196.2, "anon_mb": 4664, "file_mb": 24091}
+{"t": 1792604197.2, "anon_mb": 4665, "file_mb": 24091}
+{"t": 1792604198.2, "anon_mb": 4666, "file_mb": 24091, "alloc_mb": 4451, "resident_mb": 4910, "budget_used_mb": 4017, "budget_cached_mb": 4017, "budget_held_mb": 0, "segments": 58, "segments_mb": 2599, "pages_mb": 1228, "conns": 100}
+{"t": 1792604199.3, "anon_mb": 4667, "file_mb": 24091}
+{"t": 1792604200.3, "anon_mb": 4669, "file_mb": 24091}
+{"t": 1792604201.3, "anon_mb": 4668, "file_mb": 24091}
+{"t": 1792604202.3, "anon_mb": 4667, "file_mb": 24091}
+{"t": 1792604203.3, "anon_mb": 4667, "file_mb": 24091, "alloc_mb": 4449, "resident_mb": 4913, "budget_used_mb": 4017, "budget_cached_mb": 4017, "budget_held_mb": 0, "segments": 58, "segments_mb": 2599, "pages_mb": 1228, "conns": 100}
+{"t": 1792604204.3, "anon_mb": 4663, "file_mb": 24091}
+{"t": 1792604205.3, "anon_mb": 4662, "file_mb": 24091}
+{"t": 1792604206.3, "anon_mb": 4666, "file_mb": 24091}
+{"t": 1792604207.3, "anon_mb": 4671, "file_mb": 24091}
+{"t": 1792604208.3, "anon_mb": 4669, "file_mb": 24091, "alloc_mb": 4446, "resident_mb": 4909, "budget_used_mb": 4017, "budget_cached_mb": 4017, "budget_held_mb": 0, "segments": 58, "segments_mb": 2599, "pages_mb": 1228, "conns": 100}
+{"t": 1792604209.4, "anon_mb": 4666, "file_mb": 24091}
+{"t": 1792604210.4, "anon_mb": 4668, "file_mb": 24091}
+{"t": 1792604211.4, "anon_mb": 4671, "file_mb": 24091}
+{"t": 1792604212.4, "anon_mb": 4670, "file_mb": 24091}
+{"t": 1792604213.4, "anon_mb": 4669, "file_mb": 24091, "alloc_mb": 4455, "resident_mb": 4913, "budget_used_mb": 4017, "budget_cached_mb": 4017, "budget_held_mb": 0, "segments": 58, "segments_mb": 2599, "pages_mb": 1228, "conns": 100}
+{"t": 1792604214.4, "anon_mb": 4667, "file_mb": 24091}
+{"t": 1792604215.4, "anon_mb": 4664, "file_mb": 24091}
+{"t": 1792604216.4, "anon_mb": 4663, "file_mb": 24091}
+{"t": 1792604217.4, "anon_mb": 4670, "file_mb": 24091}
+{"t": 1792604218.4, "anon_mb": 4667, "file_mb": 24091, "alloc_mb": 4449, "resident_mb": 4910, "budget_used_mb": 4017, "budget_cached_mb": 4017, "budget_held_mb": 0, "segments": 58, "segments_mb": 2599, "pages_mb": 1228, "conns": 100}
+{"t": 1792604219.5, "anon_mb": 4658, "file_mb": 24091}
+{"t": 1792604220.5, "anon_mb": 4667, "file_mb": 24091}
+{"t": 1792604221.5, "anon_mb": 4672, "file_mb": 24091}
+{"t": 1792604222.5, "anon_mb": 4671, "file_mb": 24091}
+{"t": 1792604223.5, "anon_mb": 4665, "file_mb": 24091, "alloc_mb": 4457, "resident_mb": 4910, "budget_used_mb": 4017, "budget_cached_mb": 4017, "budget_held_mb": 0, "segments": 58, "segments_mb": 2599, "pages_mb": 1228, "conns": 100}
+{"t": 1792604224.5, "anon_mb": 4671, "file_mb": 24091}
+{"t": 1792604225.5, "anon_mb": 4672, "file_mb": 24091}
+{"t": 1792604226.5, "anon_mb": 4671, "file_mb": 24091}
+{"t": 1792604227.5, "anon_mb": 4644, "file_mb": 24091}
+{"t": 1792604228.5, "anon_mb": 4600, "file_mb": 24091, "alloc_mb": 4423, "resident_mb": 4827, "budget_used_mb": 4017, "budget_cached_mb": 4017, "budget_held_mb": 0, "segments": 58, "segments_mb": 2599, "pages_mb": 1228, "conns": 0}
+{"t": 1792604229.6, "anon_mb": 4576, "file_mb": 24091}
+{"t": 1792604230.6, "anon_mb": 4574, "file_mb": 24091}
+{"t": 1792604231.6, "anon_mb": 4574, "file_mb": 24091}
+{"t": 1792604232.6, "anon_mb": 4574, "file_mb": 24091}
+{"t": 1792604233.6, "anon_mb": 4574, "file_mb": 24091, "alloc_mb": 4423, "resident_mb": 4805, "budget_used_mb": 4017, "budget_cached_mb": 4017, "budget_held_mb": 0, "segments": 58, "segments_mb": 2599, "pages_mb": 1228, "conns": 0}
+{"t": 1792604234.6, "anon_mb": 4565, "file_mb": 24091}
+{"t": 1792604235.6, "anon_mb": 4565, "file_mb": 24091}
+{"t": 1792604236.6, "anon_mb": 4565, "file_mb": 24091}
+{"t": 1792604237.6, "anon_mb": 4565, "file_mb": 24091}
+{"t": 1792604238.6, "anon_mb": 4565, "file_mb": 24091, "alloc_mb": 4423, "resident_mb": 4796, "budget_used_mb": 4017, "budget_cached_mb": 4017, "budget_held_mb": 0, "segments": 58, "segments_mb": 2599, "pages_mb": 1228, "conns": 0}
+{"t": 1792604239.6, "anon_mb": 4565, "file_mb": 24091}
+{"t": 1792604240.6, "anon_mb": 4565, "file_mb": 24091}
+{"t": 1792604241.6, "anon_mb": 4565, "file_mb": 24091}
+{"t": 1792604242.6, "anon_mb": 4565, "file_mb": 24091}
+{"t": 1792604243.6, "anon_mb": 4565, "file_mb": 24091, "alloc_mb": 4423, "resident_mb": 4796, "budget_used_mb": 4017, "budget_cached_mb": 4017, "budget_held_mb": 0, "segments": 58, "segments_mb": 2599, "pages_mb": 1228, "conns": 0}
+{"t": 1792604244.6, "anon_mb": 4565, "file_mb": 24091}
+{"t": 1792604245.6, "anon_mb": 4565, "file_mb": 24091}
+{"t": 1792604246.6, "anon_mb": 5028, "file_mb": 24424}
+{"t": 1792604247.6, "anon_mb": 5605, "file_mb": 23894}
+{"t": 1792604248.6, "anon_mb": 5808, "file_mb": 23692, "stats_error": "timed out", "conns": 100}
+{"t": 1792604259.6, "anon_mb": 5752, "file_mb": 23611}
+{"t": 1792604260.6, "anon_mb": 5889, "file_mb": 23577}
+{"t": 1792604261.6, "anon_mb": 5712, "file_mb": 23779}
+{"t": 1792604262.6, "anon_mb": 5771, "file_mb": 23628}
+{"t": 1792604263.6, "anon_mb": 5818, "file_mb": 23591, "alloc_mb": 4883, "resident_mb": 6019, "budget_used_mb": 4083, "budget_cached_mb": 3943, "budget_held_mb": 139, "segments": 54, "segments_mb": 2525, "pages_mb": 1228, "conns": 100}
+{"t": 1792604269.4, "anon_mb": 5757, "file_mb": 23664}
+{"t": 1792604270.4, "anon_mb": 5651, "file_mb": 23623}
+{"t": 1792604271.4, "anon_mb": 5784, "file_mb": 23696}
+{"t": 1792604272.4, "anon_mb": 5503, "file_mb": 23936}
+{"t": 1792604273.4, "anon_mb": 5731, "file_mb": 23746, "alloc_mb": 5082, "resident_mb": 6129, "budget_used_mb": 4064, "budget_cached_mb": 4064, "budget_held_mb": 0, "segments": 70, "segments_mb": 2645, "pages_mb": 1228, "conns": 100}
+{"t": 1792604277.9, "anon_mb": 5582, "file_mb": 23679}
+{"t": 1792604278.9, "anon_mb": 5890, "file_mb": 23543}
+{"t": 1792604279.9, "anon_mb": 5691, "file_mb": 23769}
+{"t": 1792604280.9, "anon_mb": 5854, "file_mb": 23624}
+{"t": 1792604281.9, "anon_mb": 5740, "file_mb": 23665, "alloc_mb": 4778, "resident_mb": 5927, "budget_used_mb": 4092, "budget_cached_mb": 3994, "budget_held_mb": 98, "segments": 80, "segments_mb": 2576, "pages_mb": 1228, "conns": 100}
+{"t": 1792604283.8, "anon_mb": 5874, "file_mb": 23599}
+{"t": 1792604284.8, "anon_mb": 5681, "file_mb": 23672}
+{"t": 1792604285.8, "anon_mb": 5325, "file_mb": 23893}
+{"t": 1792604286.8, "anon_mb": 5121, "file_mb": 23893}
+{"t": 1792604287.8, "anon_mb": 4892, "file_mb": 23893, "alloc_mb": 4550, "resident_mb": 5121, "budget_used_mb": 4068, "budget_cached_mb": 4068, "budget_held_mb": 0, "segments": 37, "segments_mb": 2649, "pages_mb": 1228, "conns": 100}
+{"t": 1792604288.8, "anon_mb": 4757, "file_mb": 23893}
+{"t": 1792604289.8, "anon_mb": 4743, "file_mb": 23893}
+{"t": 1792604290.8, "anon_mb": 4723, "file_mb": 23893}
+{"t": 1792604291.8, "anon_mb": 4721, "file_mb": 23893}
+{"t": 1792604292.8, "anon_mb": 4720, "file_mb": 23893, "alloc_mb": 4551, "resident_mb": 4989, "budget_used_mb": 4068, "budget_cached_mb": 4068, "budget_held_mb": 0, "segments": 37, "segments_mb": 2649, "pages_mb": 1228, "conns": 100}
+{"t": 1792604293.9, "anon_mb": 4716, "file_mb": 23893}
+{"t": 1792604294.9, "anon_mb": 4714, "file_mb": 23893}
+{"t": 1792604295.9, "anon_mb": 4712, "file_mb": 23893}
+{"t": 1792604296.9, "anon_mb": 4711, "file_mb": 23893}
+{"t": 1792604297.9, "anon_mb": 4708, "file_mb": 23893, "alloc_mb": 4549, "resident_mb": 4977, "budget_used_mb": 4068, "budget_cached_mb": 4068, "budget_held_mb": 0, "segments": 37, "segments_mb": 2649, "pages_mb": 1228, "conns": 100}
+{"t": 1792604298.9, "anon_mb": 4708, "file_mb": 23893}
+{"t": 1792604299.9, "anon_mb": 4704, "file_mb": 23893}
+{"t": 1792604300.9, "anon_mb": 4704, "file_mb": 23893}
+{"t": 1792604301.9, "anon_mb": 4703, "file_mb": 23893}
+{"t": 1792604302.9, "anon_mb": 4700, "file_mb": 23893, "alloc_mb": 4550, "resident_mb": 4968, "budget_used_mb": 4068, "budget_cached_mb": 4068, "budget_held_mb": 0, "segments": 37, "segments_mb": 2649, "pages_mb": 1228, "conns": 100}
+{"t": 1792604304.0, "anon_mb": 4700, "file_mb": 23893}
+{"t": 1792604305.0, "anon_mb": 4699, "file_mb": 23893}
+{"t": 1792604306.0, "anon_mb": 4699, "file_mb": 23893}
+{"t": 1792604307.0, "anon_mb": 4699, "file_mb": 23893}
+{"t": 1792604308.0, "anon_mb": 4697, "file_mb": 23893, "alloc_mb": 4548, "resident_mb": 4965, "budget_used_mb": 4068, "budget_cached_mb": 4068, "budget_held_mb": 0, "segments": 37, "segments_mb": 2649, "pages_mb": 1228, "conns": 100}
+{"t": 1792604309.0, "anon_mb": 4696, "file_mb": 23893}
+{"t": 1792604310.0, "anon_mb": 4695, "file_mb": 23893}
+{"t": 1792604311.0, "anon_mb": 4694, "file_mb": 23893}
+{"t": 1792604312.0, "anon_mb": 4693, "file_mb": 23893}
+{"t": 1792604313.0, "anon_mb": 4692, "file_mb": 23893, "alloc_mb": 4551, "resident_mb": 4960, "budget_used_mb": 4068, "budget_cached_mb": 4068, "budget_held_mb": 0, "segments": 37, "segments_mb": 2649, "pages_mb": 1228, "conns": 100}
+{"t": 1792604314.1, "anon_mb": 4690, "file_mb": 23893}
+{"t": 1792604315.1, "anon_mb": 4690, "file_mb": 23893}
+{"t": 1792604316.1, "anon_mb": 4688, "file_mb": 23893}
+{"t": 1792604317.1, "anon_mb": 4688, "file_mb": 23893}
+{"t": 1792604318.1, "anon_mb": 4688, "file_mb": 23893, "alloc_mb": 4552, "resident_mb": 4955, "budget_used_mb": 4068, "budget_cached_mb": 4068, "budget_held_mb": 0, "segments": 37, "segments_mb": 2649, "pages_mb": 1228, "conns": 100}
+{"t": 1792604319.1, "anon_mb": 4685, "file_mb": 23893}
+{"t": 1792604320.1, "anon_mb": 4685, "file_mb": 23893}
+{"t": 1792604321.1, "anon_mb": 4685, "file_mb": 23893}
+{"t": 1792604322.1, "anon_mb": 4685, "file_mb": 23893}
+{"t": 1792604323.1, "anon_mb": 4686, "file_mb": 23893, "alloc_mb": 4550, "resident_mb": 4956, "budget_used_mb": 4068, "budget_cached_mb": 4068, "budget_held_mb": 0, "segments": 37, "segments_mb": 2649, "pages_mb": 1228, "conns": 100}
+{"t": 1792604324.2, "anon_mb": 4685, "file_mb": 23893}
+{"t": 1792604325.2, "anon_mb": 4685, "file_mb": 23893}
+{"t": 1792604326.2, "anon_mb": 4683, "file_mb": 23893}
+{"t": 1792604327.2, "anon_mb": 4683, "file_mb": 23893}
+{"t": 1792604328.2, "anon_mb": 4682, "file_mb": 23893, "alloc_mb": 4551, "resident_mb": 4953, "budget_used_mb": 4068, "budget_cached_mb": 4068, "budget_held_mb": 0, "segments": 37, "segments_mb": 2649, "pages_mb": 1228, "conns": 100}
+{"t": 1792604329.2, "anon_mb": 4683, "file_mb": 23893}
+{"t": 1792604330.2, "anon_mb": 4684, "file_mb": 23893}
+{"t": 1792604331.2, "anon_mb": 4684, "file_mb": 23893}
+{"t": 1792604332.2, "anon_mb": 4685, "file_mb": 23893}
+{"t": 1792604333.2, "anon_mb": 4684, "file_mb": 23893, "alloc_mb": 4549, "resident_mb": 4956, "budget_used_mb": 4068, "budget_cached_mb": 4068, "budget_held_mb": 0, "segments": 37, "segments_mb": 2649, "pages_mb": 1228, "conns": 100}
+{"t": 1792604334.3, "anon_mb": 4683, "file_mb": 23893}
+{"t": 1792604335.3, "anon_mb": 4681, "file_mb": 23893}
+{"t": 1792604336.3, "anon_mb": 4681, "file_mb": 23893}
+{"t": 1792604337.3, "anon_mb": 4680, "file_mb": 23893}
+{"t": 1792604338.3, "anon_mb": 4680, "file_mb": 23893, "alloc_mb": 4550, "resident_mb": 4952, "budget_used_mb": 4068, "budget_cached_mb": 4068, "budget_held_mb": 0, "segments": 37, "segments_mb": 2649, "pages_mb": 1228, "conns": 100}
+{"t": 1792604339.3, "anon_mb": 4679, "file_mb": 23893}
+{"t": 1792604340.3, "anon_mb": 4679, "file_mb": 23893}
+{"t": 1792604341.3, "anon_mb": 4677, "file_mb": 23893}
+{"t": 1792604342.3, "anon_mb": 4678, "file_mb": 23893}
+{"t": 1792604343.3, "anon_mb": 4678, "file_mb": 23893, "alloc_mb": 4550, "resident_mb": 4951, "budget_used_mb": 4068, "budget_cached_mb": 4068, "budget_held_mb": 0, "segments": 37, "segments_mb": 2649, "pages_mb": 1228, "conns": 100}
+{"t": 1792604344.4, "anon_mb": 4678, "file_mb": 23893}
+{"t": 1792604345.4, "anon_mb": 4678, "file_mb": 23893}
+{"t": 1792604346.4, "anon_mb": 4678, "file_mb": 23893}
+{"t": 1792604347.4, "anon_mb": 4678, "file_mb": 23893}
+{"t": 1792604348.4, "anon_mb": 4678, "file_mb": 23893, "alloc_mb": 4551, "resident_mb": 4951, "budget_used_mb": 4068, "budget_cached_mb": 4068, "budget_held_mb": 0, "segments": 37, "segments_mb": 2649, "pages_mb": 1228, "conns": 100}
+{"t": 1792604349.5, "anon_mb": 4677, "file_mb": 23893}
+{"t": 1792604350.5, "anon_mb": 4676, "file_mb": 23893}
+{"t": 1792604351.5, "anon_mb": 4677, "file_mb": 23893}
+{"t": 1792604352.5, "anon_mb": 4677, "file_mb": 23893}
+{"t": 1792604353.5, "anon_mb": 4677, "file_mb": 23893, "alloc_mb": 4551, "resident_mb": 4951, "budget_used_mb": 4068, "budget_cached_mb": 4068, "budget_held_mb": 0, "segments": 37, "segments_mb": 2649, "pages_mb": 1228, "conns": 100}
+{"t": 1792604354.5, "anon_mb": 4677, "file_mb": 23893}
+{"t": 1792604355.5, "anon_mb": 4676, "file_mb": 23893}
+{"t": 1792604356.5, "anon_mb": 4676, "file_mb": 23893}
+{"t": 1792604357.5, "anon_mb": 4676, "file_mb": 23893}
+{"t": 1792604358.5, "anon_mb": 4675, "file_mb": 23893, "alloc_mb": 4550, "resident_mb": 4948, "budget_used_mb": 4068, "budget_cached_mb": 4068, "budget_held_mb": 0, "segments": 37, "segments_mb": 2649, "pages_mb": 1228, "conns": 100}
+{"t": 1792604359.5, "anon_mb": 4674, "file_mb": 23893}
+{"t": 1792604360.5, "anon_mb": 4675, "file_mb": 23893}
+{"t": 1792604361.5, "anon_mb": 4675, "file_mb": 23893}
+{"t": 1792604362.5, "anon_mb": 4675, "file_mb": 23893}
+{"t": 1792604363.5, "anon_mb": 4675, "file_mb": 23893, "alloc_mb": 4551, "resident_mb": 4948, "budget_used_mb": 4068, "budget_cached_mb": 4068, "budget_held_mb": 0, "segments": 37, "segments_mb": 2649, "pages_mb": 1228, "conns": 100}
+{"t": 1792604364.6, "anon_mb": 4674, "file_mb": 23893}
+{"t": 1792604365.6, "anon_mb": 4674, "file_mb": 23893}
+{"t": 1792604366.6, "anon_mb": 4674, "file_mb": 23893}
+{"t": 1792604367.6, "anon_mb": 4671, "file_mb": 23893}
+{"t": 1792604368.6, "anon_mb": 4653, "file_mb": 23893, "alloc_mb": 4528, "resident_mb": 4912, "budget_used_mb": 4068, "budget_cached_mb": 4068, "budget_held_mb": 0, "segments": 37, "segments_mb": 2649, "pages_mb": 1228, "conns": 0}
+{"t": 1792604369.6, "anon_mb": 4631, "file_mb": 23893}
+{"t": 1792604370.6, "anon_mb": 4626, "file_mb": 23893}
+{"t": 1792604371.6, "anon_mb": 4626, "file_mb": 23893}
+{"t": 1792604372.6, "anon_mb": 4626, "file_mb": 23893}
+{"t": 1792604373.6, "anon_mb": 4626, "file_mb": 23893, "alloc_mb": 4528, "resident_mb": 4893, "budget_used_mb": 4068, "budget_cached_mb": 4068, "budget_held_mb": 0, "segments": 37, "segments_mb": 2649, "pages_mb": 1228, "conns": 0}
+{"t": 1792604374.6, "anon_mb": 4624, "file_mb": 23893}
+{"t": 1792604375.6, "anon_mb": 4623, "file_mb": 23893}
+{"t": 1792604376.6, "anon_mb": 4623, "file_mb": 23893}
+{"t": 1792604377.6, "anon_mb": 4623, "file_mb": 23893}
+{"t": 1792604378.6, "anon_mb": 4623, "file_mb": 23893, "alloc_mb": 4528, "resident_mb": 4889, "budget_used_mb": 4068, "budget_cached_mb": 4068, "budget_held_mb": 0, "segments": 37, "segments_mb": 2649, "pages_mb": 1228, "conns": 0}
+{"t": 1792604379.7, "anon_mb": 4623, "file_mb": 23893}
+{"t": 1792604380.7, "anon_mb": 4623, "file_mb": 23893}
+{"t": 1792604381.7, "anon_mb": 4623, "file_mb": 23893}
+{"t": 1792604382.7, "anon_mb": 4623, "file_mb": 23893}
+{"t": 1792604383.7, "anon_mb": 4623, "file_mb": 23893, "alloc_mb": 4528, "resident_mb": 4889, "budget_used_mb": 4068, "budget_cached_mb": 4068, "budget_held_mb": 0, "segments": 37, "segments_mb": 2649, "pages_mb": 1228, "conns": 0}
+{"t": 1792604384.7, "anon_mb": 4623, "file_mb": 23893}
+{"t": 1792604385.7, "anon_mb": 4623, "file_mb": 23893}
+{"t": 1792604386.7, "anon_mb": 3924, "file_mb": 23900}

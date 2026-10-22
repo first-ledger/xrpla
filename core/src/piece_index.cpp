@@ -4,6 +4,7 @@
 // indexes, so both backends answer history queries identically.
 #include "piece_history.hpp"
 #include "piece_format.hpp"
+#include "progress.hpp"
 #include "wire.hpp"
 #include <xrpl/basics/strHex.h>
 #include <xrpl/protocol/AccountID.h>
@@ -22,6 +23,7 @@
 #include <chrono>
 #include <exception>
 #include <fstream>
+#include <iostream>
 #include <map>
 #include <mutex>
 #include <queue>
@@ -1020,6 +1022,15 @@ Json index_pieces(fs::path const& cache, unsigned jobs, Json const& selection, I
     // servers holding it mapped keep the old inode until they reopen the cache, which the
     // caller has them do once the files are in place (`rebuilt`: selection.json rewritten).
     Json rebuilt = Json::array();
+    // Progress every minute while the work lasts (a first sync indexes for hours): the step under
+    // way and how many of the selection's ranges are done.
+    std::atomic<char const*> step{"snapshot states"};
+    std::atomic<std::size_t> ranges_done{0};
+    auto const ranges_total = selection.at("ranges").size();
+    Progress progress(std::chrono::seconds(60), [&] {
+        std::cerr << Json{{"event", "sync_progress"}, {"phase", "index"}, {"step", step.load()}, {"ranges", ranges_done.load()},
+                          {"ranges_total", ranges_total}, {"cache", cache.string()}}.dump() << std::endl;
+    });
     auto usable = [&](fs::path const& path, auto&& open) {
         if (!fs::exists(path)) return false;
         try {
@@ -1062,6 +1073,7 @@ Json index_pieces(fs::path const& cache, unsigned jobs, Json const& selection, I
     if (!missing.owners.empty() || !missing.holders.empty() || !missing.issuers.empty())
         for (auto& built : build_snapshot_maps(cache, snapshot, missing, jobs)) results.push_back(std::move(built));
     else results.push_back({{"snapshot", seq}, {"nfts", "present"}});
+    step = "ranges";
     for (auto const& range : selection.at("ranges")) {
         auto sha = range.at("sha256").get<std::string>();
         auto source = from_hex(sha);
@@ -1089,6 +1101,7 @@ Json index_pieces(fs::path const& cache, unsigned jobs, Json const& selection, I
             check_seek();  // one for the replaced query index names its checksum, and is rebuilt
             if (!seek_usable) item["seek"] = build_seek(target, source, seek);
             results.push_back(item);
+            ++ranges_done;
             continue;
         }
         Json item{{"object", range.at("object")}, {"status", "present"}};
@@ -1105,6 +1118,7 @@ Json index_pieces(fs::path const& cache, unsigned jobs, Json const& selection, I
             if (!had_seek) rebuilt.push_back(seek.filename().string());
         }
         results.push_back(item);
+        ++ranges_done;
     }
     // A re-sync can drop ranges or move the base snapshot, and an optional index can be turned
     // off: their files go too. A sync indexes a selection before switching selection.json to

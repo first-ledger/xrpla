@@ -131,7 +131,14 @@ All settings, with defaults and accepted values, are in
 
 1. **Syncs the piece cache** (`STORAGE/cache`): downloads the snapshot and the pieces and
    bundles the selected ledgers need, checks each against the signed catalog, and builds the
-   query indexes. A failed sync is retried every 30 seconds (`sync_failed`).
+   query indexes. While it works it logs `sync_progress` once a minute: while downloading,
+   the objects and bytes done out of the total, the speed and `eta_seconds`; then, while
+   indexing, the step and how many ranges are done. It ends with a summary line (`generation`,
+   `fetched_bytes`, `seconds`). A failed sync is retried every 30 seconds (`sync_failed`).
+
+   ```sh
+   journalctl -u xrpla -f | grep sync_progress
+   ```
 2. **Starts an interim server** on your listeners that answers from the piece cache alone.
 3. **Builds the spool** (`STORAGE/spool`, event `spool_restored`): the ledger state at the
    publication's tip, built from its newest snapshot. On the 16-thread test machine this took
@@ -237,7 +244,7 @@ history; the release notes say so.
 |---|---|
 | `xrpla setup` refuses the storage directory | Read its message: it lists what it found (files owned by another user, ACLs, group-writable entries, a network file system, ...) and, for what a root-run profile leaves, prints the commands that fix it. Details: [SETUP.md](../SETUP.md#the-service-account-and-its-directories). |
 | Setup warns that `ExecStart` is not an installed program | You ran setup from a build tree. Install XRPLA under `/usr` and run setup again. |
-| Nothing listens for a long time after the first start | The first sync is still downloading or indexing; watch the log. |
+| Nothing listens for a long time after the first start | The first sync is still downloading or indexing: its `sync_progress` lines, once a minute, show how far it has got and `eta_seconds` for the download. |
 | `follower_stuck` repeats | The node cannot fetch or verify a ledger from peers. Check outbound access to port 51235; set `[peers] endpoints` to peers you know. |
 | A method answers `notSupported` | `mpt_holders` / `nfts_by_issuer`: the index is turned off in `[index]`. `submit` and other current-ledger methods: set `[serve] forward`. |
 | Requests answer `tooBusy` | Raise `[serve] threads` (about one per core for a busy server). |

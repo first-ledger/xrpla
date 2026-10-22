@@ -1,13 +1,28 @@
 #include "history_reader.hpp"
+#include <random>
 using namespace xrpla::history;
+
+// `--parts`: every ledger decoded alone on one archive, as its transactions alone in a shuffled order, then interleaving
+// the whole record, its transactions alone and its object changes alone (ascending, then shuffled), so each resumes from
+// the cursors the other parts left. Each must match the page decode (checked against its canonical digest): the whole
+// record exactly, the transactions-only form up to its object changes (then a count of none), the patches-only form
+// from them on. Returns the decodes checked.
+static U partsCheck(V data){Archive pages(data);std::vector<std::pair<U,S>> rows;for(U i=0;i<pages.pages();++i)for(auto& row:pages.decodePage(i))rows.push_back(std::move(row));
+ auto transactionsPart=[](V record){auto patches=Archive::patchesOf(record);return S(record.substr(0,record.size()-patches.size()))+S(4,'\0');};
+ Part const cycle[]={Part::all,Part::transactions,Part::patches};U checks=0;
+ for(U pass=0;pass<3;++pass){Archive a(data);std::vector<std::size_t> order(rows.size());std::iota(order.begin(),order.end(),std::size_t(0));if(pass!=1){std::mt19937_64 random(pass);std::shuffle(order.begin(),order.end(),random);}
+  for(std::size_t k=0;k<order.size();++k){auto const& [seq,record]=rows[order[k]];Part part=pass?cycle[(k+pass)%3]:Part::transactions;auto got=a.decodeLedger(seq,part);
+   if(part==Part::all)require(got==record,"One-ledger record differs");else if(part==Part::transactions)require(got==transactionsPart(record),"One-ledger transactions differ");else require(Archive::patchesOf(got)==Archive::patchesOf(record),"One-ledger patches differ");++checks;}}
+ return checks;}
 
 // `--ledger`: one ledger decoded alone; its patches-only form must match a patches-only page decode through it.
 static S oneLedger(Archive& a,U sequence){auto patches=a.decodePage(a.pageOf(sequence),true,sequence);require(!patches.empty()&&patches.back().first==sequence&&Archive::patchesOf(patches.back().second)==Archive::patchesOf(a.decodeLedger(sequence,true)),"One-ledger patches differ");return a.decodeLedger(sequence);}
 
 int main(int argc,char** argv){try{
- require(sodium_init()>=0,"Sodium initialization");std::vector<S> paths;U jobs=1,repeat=1;S output;std::vector<U> queries;bool single=false,ledgerOnly=false;U sequence=0;
- for(int i=1;i<argc;++i){S a=argv[i];auto next=[&](){require(i+1<argc,"Missing argument");return S(argv[++i]);};if(a=="--jobs")jobs=std::stoull(next());else if(a=="--repeat")repeat=std::stoull(next());else if(a=="--output")output=next();else if(a=="--hash-engine"){auto e=next();require(e=="openssl"||e=="sodium","Hash engine");opensslHashes=e=="openssl";}else if(a=="--read"){single=true;sequence=std::stoull(next());}else if(a=="--ledger"){single=ledgerOnly=true;sequence=std::stoull(next());}else if(a=="--query")queries.push_back(std::stoull(next()));else paths.push_back(a);}
+ require(sodium_init()>=0,"Sodium initialization");std::vector<S> paths;U jobs=1,repeat=1;S output;std::vector<U> queries;bool single=false,ledgerOnly=false,parts=false;U sequence=0;
+ for(int i=1;i<argc;++i){S a=argv[i];auto next=[&](){require(i+1<argc,"Missing argument");return S(argv[++i]);};if(a=="--jobs")jobs=std::stoull(next());else if(a=="--repeat")repeat=std::stoull(next());else if(a=="--output")output=next();else if(a=="--hash-engine"){auto e=next();require(e=="openssl"||e=="sodium","Hash engine");opensslHashes=e=="openssl";}else if(a=="--read"){single=true;sequence=std::stoull(next());}else if(a=="--ledger"){single=ledgerOnly=true;sequence=std::stoull(next());}else if(a=="--query")queries.push_back(std::stoull(next()));else if(a=="--parts")parts=true;else paths.push_back(a);}
  require(!paths.empty()&&jobs>=1&&jobs<=16&&repeat>=1&&repeat<=20,"Argument bounds");require(output.empty()||paths.size()==1,"Output requires one input");require(!single||paths.size()==1,"Read requires one input");
+ if(parts){require(paths.size()==1&&!single,"Parts check requires one input");auto data=load(paths[0]);std::cout<<Json({{"passed",true},{"checks",partsCheck(data)}}).dump()<<'\n';return 0;}
  auto start=Clock::now();std::vector<S> inputs;for(auto const& p:paths)inputs.push_back(load(p));double loadSeconds=elapsed(start);std::vector<Json> results(paths.size());std::vector<double> times;std::exception_ptr error;std::mutex errorMutex;S restored;
  for(U pass=0;pass<repeat;++pass){std::atomic<U> next{0};start=Clock::now();auto work=[&](){try {while(true){U i=next++;if(i>=inputs.size())break;Archive a(inputs[i]);auto raw=ledgerOnly?oneLedger(a,sequence):single?a.read(sequence):a.restore();Json result={{"first",a.first},{"ledgers",single?1:a.count},{"transactions",a.transactions},{"raw_bytes",raw.size()},{"sha256",hex(sha(raw))}};if(!pass)results[i]=result;else require(results[i]==result,"Repeated decode differs");if(!output.empty())restored=std::move(raw);}}catch(...){std::lock_guard lock(errorMutex);if(!error)error=std::current_exception();}};
   std::vector<std::thread> threads;for(U j=0;j<std::min<U>(jobs,inputs.size());++j)threads.emplace_back(work);for(auto& t:threads)t.join();if(error)std::rethrow_exception(error);times.push_back(elapsed(start));

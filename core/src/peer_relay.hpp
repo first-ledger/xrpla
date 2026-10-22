@@ -8,7 +8,8 @@ namespace xrpla::core {
 // key it names, and current (a validation signed within the last three minutes, a proposal
 // whose close time is within three minutes of now), as xrpld charges a peer that relays one
 // that is not. It then goes, as received, to every open session except those that sent it and
-// those that asked not to hear its validator (TMSquelch). A copy seen again is a duplicate,
+// those that asked not to hear its validator (TMSquelch), and those with 16 MiB or more
+// waiting to be sent (backlogged_skips in status()). A copy seen again is a duplicate,
 // neither checked nor relayed again. As xrpld's reduce-relay does, once a validator's messages
 // come from more than `sources` peers, the others are asked to stop sending them for five to
 // ten minutes; validators whose messages are not relayed are squelched on every peer.

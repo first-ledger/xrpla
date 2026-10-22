@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(xrpla VERSION 0.4.0 LANGUAGES CXX)
+project(xrpla VERSION 0.4.1 LANGUAGES CXX)
 
 option(XRPLA_WITH_LIBXRPL "Build canonical verification, RocksDB storage, and queries" ON)
 option(XRPLA_SYSTEM_DEPS "Use distro dependencies for transport-only development" OFF)

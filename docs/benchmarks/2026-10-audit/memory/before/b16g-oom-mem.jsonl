@@ -1,0 +1,12 @@
+{"t": 1792591109.6, "rss_mb": 18695, "alloc_mb": 16308, "active_mb": 16339, "resident_mb": 16463, "budget_used_mb": 14350, "segments": 300, "segments_mb": 14325, "pages_mb": 24, "blocks_mb": 0, "conns": 0}
+{"t": 1792591111.6, "rss_mb": 22657, "alloc_mb": 20012, "active_mb": 20141, "resident_mb": 22433, "budget_used_mb": 16340, "segments": 290, "segments_mb": 17957, "pages_mb": 170, "blocks_mb": 31, "conns": 100}
+{"t": 1792591120.3, "rss_mb": 25035, "alloc_mb": 19621, "active_mb": 19796, "resident_mb": 22150, "budget_used_mb": 16337, "segments": 286, "segments_mb": 18393, "pages_mb": 316, "blocks_mb": 54, "conns": 100}
+{"t": 1792591129.4, "rss_mb": 24961, "alloc_mb": 20625, "active_mb": 20804, "resident_mb": 23415, "budget_used_mb": 16373, "segments": 312, "segments_mb": 16659, "pages_mb": 433, "blocks_mb": 90, "conns": 100}
+{"t": 1792591137.2, "rss_mb": 25554, "alloc_mb": 20744, "active_mb": 20943, "resident_mb": 23624, "budget_used_mb": 16324, "segments": 276, "segments_mb": 18272, "pages_mb": 569, "blocks_mb": 127, "conns": 100}
+{"t": 1792591146.5, "rss_mb": 25864, "alloc_mb": 19688, "active_mb": 19880, "resident_mb": 21950, "budget_used_mb": 16362, "segments": 261, "segments_mb": 16690, "pages_mb": 680, "blocks_mb": 157, "conns": 100}
+{"t": 1792591154.1, "rss_mb": 26243, "alloc_mb": 20088, "active_mb": 20293, "resident_mb": 22567, "budget_used_mb": 16363, "segments": 281, "segments_mb": 18067, "pages_mb": 814, "blocks_mb": 187, "conns": 100}
+{"t": 1792591161.9, "rss_mb": 25000, "alloc_mb": 19991, "active_mb": 20230, "resident_mb": 22335, "budget_used_mb": 16363, "segments": 255, "segments_mb": 16347, "pages_mb": 949, "blocks_mb": 211, "conns": 100}
+{"t": 1792591169.6, "rss_mb": 25669, "alloc_mb": 20175, "active_mb": 20434, "resident_mb": 23246, "budget_used_mb": 16328, "segments": 305, "segments_mb": 17560, "pages_mb": 1096, "blocks_mb": 253, "conns": 100}
+{"t": 1792591178.3, "rss_mb": 26268, "alloc_mb": 19200, "active_mb": 19450, "resident_mb": 21883, "budget_used_mb": 16253, "segments": 291, "segments_mb": 16790, "pages_mb": 1211, "blocks_mb": 284, "conns": 100}
+{"t": 1792591183.9, "rss_mb": 25114, "alloc_mb": 19909, "active_mb": 20177, "resident_mb": 22271, "budget_used_mb": 16374, "segments": 287, "segments_mb": 16165, "pages_mb": 1332, "blocks_mb": 335, "conns": 100}
+{"t": 1792591192.0, "rss_mb": 26653, "stats_error": "Remote end closed connection without response", "conns": 0}

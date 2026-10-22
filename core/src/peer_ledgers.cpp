@@ -90,11 +90,18 @@ struct PeerLedgers::Impl {
     std::function<void(Bytes const&)> on_validation, on_manifest;
     using clock = std::chrono::steady_clock;
     // A request's replies, from any of the peers it went to (a copy goes to another peer when the
-    // first is slow): the first good one is used.
+    // first is slow): the first good one is used. Once one is (`done`), later ones are dropped as
+    // they come rather than kept, each up to 64 MiB, until the request returns.
     struct Replies {
         std::mutex mutex;
         std::condition_variable arrived;
         std::deque<std::pair<std::uint64_t, protocol::TMLedgerData>> received;  // copy, reply
+        bool done = false;
+        void finish() {
+            std::lock_guard lock(mutex);
+            done = true;
+            received.clear();
+        }
     };
     // A copy of a request out to a peer. Requests carry no cookie (xrpld takes one as a request
     // it relays for another of its peers, and charges nothing for it): a reply is the copy's
@@ -205,6 +212,7 @@ struct PeerLedgers::Impl {
                 }
                 if (!replies) continue;  // answered already by another peer, or given up on
                 std::lock_guard lock(replies->mutex);
+                if (replies->done) continue;
                 replies->received.emplace_back(copy, std::move(data));
                 replies->arrived.notify_all();
             } else if (message->type == protocol::mtVALIDATION || message->type == protocol::mtPROPOSE_LEDGER || message->type == protocol::mtSQUELCH) {
@@ -446,7 +454,7 @@ struct PeerLedgers::Impl {
         auto strike = [&](Sent const& sent, char const* why) {
             if (!(sequence && sent.slot->lacks(sequence)) && sent.slot->missed(sent.at)) sent.slot->session->close(why);
         };
-        auto give_up = [&] { for (auto const& sent : out) settle(*sent.slot, sent.copy); };
+        auto give_up = [&] { replies->finish(); for (auto const& sent : out) settle(*sent.slot, sent.copy); };
         while (!stopping) {
             if (out.empty()) {
                 if (sends >= 6) break;

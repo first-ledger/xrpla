@@ -173,8 +173,12 @@ void no_symlinks(fs::path const& path) {
 // write stamps the current time, which still shows.
 // Lines are appended, a changed object's after its old one (the later line wins), and objects
 // a sync no longer selects are removed from the cache: the file is rewritten (compacted) when
-// first read and whenever it has grown past twice its live lines (and a thousand more),
-// keeping only the newest line of each object still present. A line dropped only means a hash
+// first read and once the lines appended since number as many as the objects it lists (and a thousand),
+// keeping only the newest line of each object still present. Counting lines against the
+// objects listed never fired: each object a sync adds is a new name, and the list grew by one
+// line and one object alike, so removed objects stayed listed (and in memory) until a restart.
+// Each compaction checks every object listed, so this costs one check an append, and what a
+// removed object leaves is at most the live list again. A line dropped only means a hash
 // on the next check. Downloads into a root run under a DirectoryLock over it (sync_pieces,
 // fetch), so no other process appends while it is rewritten.
 class Verified {
@@ -204,12 +208,14 @@ public:
             std::ofstream out(root / ".verified", std::ios::app | std::ios::binary);
             out << object.object << ' ' << line << '\n';
         }
-        if (++list.lines >= 2 * list.stamps.size() + 1024) compact(root, list);
+        ++list.lines;
+        if (++list.appended >= std::max<std::size_t>(list.stamps.size(), 1024)) compact(root, list);
     }
 private:
     struct List {
         std::map<std::string, std::string> stamps;  // object key: its stamp
         std::size_t lines = 0;  // in the file
+        std::size_t appended = 0;  // of them, added since it was last compacted
         bool ready = false;  // read (and compacted) from the file
         bool loading = false;  // being read by one caller, with the lock released
         std::uint64_t failures = 0;  // reads that failed
@@ -280,6 +286,7 @@ private:
             auto status = fs::symlink_status(root / item.first);
             return !fs::is_regular_file(status);
         });
+        list.appended = 0;
         if (list.lines == list.stamps.size()) return;
         std::string text;
         for (auto const& [object, line] : list.stamps) text += object + ' ' + line + '\n';

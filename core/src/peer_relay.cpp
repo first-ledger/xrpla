@@ -39,6 +39,11 @@ constexpr auto source_idle = std::chrono::minutes(5);
 // What xrpld charges a peer that relays a message whose signature fails or cannot be one
 // (kFeeInvalidSignature), or one too short to be a validation (kFeeMalformedRequest).
 constexpr double invalid_signature_fee = 2000, malformed_fee = 200;
+// A session with this much waiting to be sent is skipped by relays. xrpld queues relays to any
+// peer and drops one whose queue stays long (PeerImp::onTimer); this node also fails a session
+// at 24 MiB waiting (PeerSession), which relays must not bring about: a peer that far behind
+// would take the message late, and one not reading never.
+constexpr std::size_t relay_backlog = 16u << 20;
 Bytes raw(r::uint256 const& value) { return Bytes(reinterpret_cast<char const*>(value.data()), value.size()); }
 }
 
@@ -91,7 +96,7 @@ struct PeerRelay::Impl {
         }
     };
     Counts validations, proposals;
-    std::atomic<std::uint64_t> squelches_sent{0}, squelches_received{0}, squelched_skips{0};
+    std::atomic<std::uint64_t> squelches_sent{0}, squelches_received{0}, squelched_skips{0}, backlogged_skips{0};
 
     // What was seen over five minutes ago is forgotten; squelches past their time every minute.
     void expire(Clock::time_point now) {  // mutex held
@@ -190,7 +195,8 @@ struct PeerRelay::Impl {
             source(session, validator, is_trusted, now);
         });
     }
-    // To every open session but those that sent it and those that squelched its validator.
+    // To every open session but those that sent it, those that squelched its validator and
+    // those with a long send queue.
     void relay(int type, std::string const& payload, Bytes const& key, Bytes const& validator, bool is_trusted, Counts& counts) {
         std::vector<std::uint64_t> skip;
         std::map<std::uint64_t, Clock::time_point> squelchers;
@@ -208,6 +214,7 @@ struct PeerRelay::Impl {
             auto id = session.info().id;
             if (std::find(skip.begin(), skip.end(), id) != skip.end()) return;
             if (auto it = squelchers.find(id); it != squelchers.end() && it->second > now) { ++squelched_skips; return; }
+            if (session.queued_bytes() >= relay_backlog) { ++backlogged_skips; return; }
             try { session.send_raw(type, payload); ++counts.sent; counts.bytes += payload.size() + 6; } catch (std::exception const&) {}
         });
     }
@@ -331,8 +338,15 @@ std::optional<Bytes> PeerRelay::receive(PeerSession& from, int type, std::string
 void PeerRelay::ended(std::uint64_t session) {
     auto& m = *impl_;
     std::lock_guard lock(m.mutex);
-    for (auto& [validator, s] : m.sources) { s.kept.erase(session); s.stopped.erase(session); }
-    for (auto& [validator, sessions] : m.squelched) sessions.erase(session);
+    // Entries left empty go too, as expire() removes them.
+    for (auto it = m.sources.begin(); it != m.sources.end();) {
+        it->second.kept.erase(session); it->second.stopped.erase(session);
+        it = it->second.kept.empty() && it->second.stopped.empty() ? m.sources.erase(it) : std::next(it);
+    }
+    for (auto it = m.squelched.begin(); it != m.squelched.end();) {
+        it->second.erase(session);
+        it = it->second.empty() ? m.squelched.erase(it) : std::next(it);
+    }
 }
 void PeerRelay::charges(std::function<void(PeerSession&, double)> charge) {
     std::lock_guard lock(impl_->mutex);
@@ -350,6 +364,7 @@ Json PeerRelay::status() const {
     return {{"relay", m.options.relay}, {"relay_validations", name(m.options.validations)}, {"relay_proposals", name(m.options.proposals)},
             {"squelch", m.options.squelch}, {"sources", m.options.sources}, {"validators", validators},
             {"validations", m.validations.json()}, {"proposals", m.proposals.json()},
-            {"squelches_sent", m.squelches_sent.load()}, {"squelches_received", m.squelches_received.load()}, {"squelched_skips", m.squelched_skips.load()}};
+            {"squelches_sent", m.squelches_sent.load()}, {"squelches_received", m.squelches_received.load()}, {"squelched_skips", m.squelched_skips.load()},
+            {"backlogged_skips", m.backlogged_skips.load()}};
 }
 }

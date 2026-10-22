@@ -319,6 +319,29 @@ class PieceQueries(unittest.TestCase):
         for nft in sorted(self.survey()['nfts'])[:100]:
             self.same('nft_history', nft_id=nft, limit=5)
 
+    def test_transaction_reads_match_whole_ledgers(self):
+        # tx, account_tx and nft_history decode their ledgers without object changes, and a ledger
+        # decoded whole serves them from then on. On a server of its own, so the order is known:
+        # every read first from transaction-only decodes, then each ledger they name decoded whole
+        # (its diff), then every read again from the whole ledgers; both equal to the store's.
+        server = Server(self.pieces_dir, self.tail_args)
+        try:
+            found = self.survey()
+            reads = [('tx', {'transaction': tx, 'binary': binary, 'api_version': 2}) for tx, _ in found['txs'][:200] for binary in (False, True)]
+            reads += [('account_tx', {'account': account, 'limit': 400, 'forward': True, 'binary': binary, 'api_version': 2})
+                      for account in sorted(found['accounts'])[:20] for binary in (False, True)]
+            reads += [('nft_history', {'nft_id': nft, 'limit': 100, 'forward': True, 'api_version': 2}) for nft in sorted(found['nfts'])[:20]]
+            cold = [server.call(method, params) for method, params in reads]
+            ledgers = {seq for _, seq in found['txs'][:200]}
+            for (method, params), answer in zip(reads, cold):
+                if method != 'tx': ledgers.update(entry['ledger_index'] for entry in answer.get('transactions', []))
+            for seq in sorted(ledgers): server.call('ledger', {'ledger_index': seq, 'diff': True, 'binary': True})
+            for (method, params), answer in zip(reads, cold):
+                self.assertEqual(server.call(method, params), answer, f'{method} {json.dumps(params)}')
+                self.assertEqual(answer, self.store.call(method, params), f'{method} {json.dumps(params)}')
+        finally:
+            server.close()
+
     def test_nft_history_as_clio(self):
         # Clio 2.8's nft_history (NFTHistory.cpp): a marker follows every full page, whether or not
         # more remain (forward the last entry's TransactionIndex plus one, back the last entry's);

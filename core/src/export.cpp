@@ -1568,9 +1568,10 @@ struct QuorumWatcher {
         {
             std::lock_guard lock(mutex);
             committed_unl.emplace(ledger, unl);
-            if (!quorum) return;
+            if (!quorum) { forget_before(ledger); return; }
             quorum->negative_unl(ledger, std::move(unl));
             judge_again();
+            forget_before(ledger);  // after judging again, which records the ledgers the quorum still holds
             ++changes;
         }
         changed.notify_all();
@@ -1676,6 +1677,21 @@ struct QuorumWatcher {
     }
     void judge_again() {
         for (auto const& counted : quorum->ledgers()) record(counted);
+    }
+    // The ledgers before the committed one `ledger` (under the lock): nothing asks for them again
+    // (a batch starts after it, and ends, and finds the hashes leading to its end, later still),
+    // and kept until the caps they filled some 40 MB in four days of following the tip. The
+    // newest of each stays: newest() and tally() read it. The caps (100000, some four days) stay
+    // for a follower stalled behind validations that still arrive: every ledger after its
+    // committed one is then needed, as a batch ends at the first validated ledger it knows past
+    // `limit` (end_for), so a smaller cap would make the batch that catches up larger.
+    void forget_before(std::uint32_t ledger) {
+        for (auto* ledgers : {&validated, &provisional, &chain}) {
+            if (ledgers->empty()) continue;
+            auto end = ledgers->lower_bound(ledger);
+            if (end == ledgers->end()) end = std::prev(end);
+            ledgers->erase(ledgers->begin(), end);
+        }
     }
     static std::shared_ptr<QuorumWatcher> start(PublishOptions const& options) {
         auto watcher = std::make_shared<QuorumWatcher>();

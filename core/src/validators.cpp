@@ -398,6 +398,8 @@ std::optional<ValidationQuorum::Counted> ValidationQuorum::add(Bytes const& seri
         if (!current || sequence > newest.ledger_index) newest = {sequence, key, now, full};
         // Only full validations count for a ledger (xrpld's checkAccept counts those alone).
         if (!full) return std::nullopt;
+        // Trimmed before this ledger's entry is taken: forget_old may erase it.
+        if (++counted_ % trim_every == 0) forget_old();
         auto& signers = ledgers_[key];
         signers.ledger_index = sequence;
         signers.masters.insert(*master);
