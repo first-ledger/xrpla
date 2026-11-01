@@ -174,7 +174,8 @@ two node databases do not share or hold differently.
 profile = "connected"
 
 [node]
-rpc = "http://127.0.0.1:5005"          # xrpld JSON-RPC; local or remote
+rpc = "http://127.0.0.1:5005"          # local xrpld admin port: not rate-limited
+# fallback = ["wss://api.example.com"] # ledgers the primary no longer holds; http(s) or ws(s)
 # grpc = "grpc://127.0.0.1:50051"      # optional: ledger diffs over gRPC
 # validations = "ws://127.0.0.1:6006"  # with [validators]
 # delay_ms = 0                         # pause before each request (raise for a shared public node)
@@ -225,8 +226,9 @@ With a `[publication]` section (`name`, or `source` and `publisher_key`) instead
 connected mode keeps the publication's whole history, as `mirror` and `standalone` do: the
 piece cache follows the publication, the spool starts from its newest snapshot, and the node
 supplies only the ledgers after the publication's tip. A node usually keeps about a day of
-ledgers while a publication can be one piece (50,000 ledgers) behind the network; any ledgers
-the node no longer holds are first fetched from the peer network (`publish --peers`). The
+ledgers while a publication can be one piece (50,000 ledgers) behind the network. Ledgers the
+primary no longer holds are fetched from `[node] fallback` (the next node that still has them).
+Ledgers none of the nodes hold are first fetched from the peer network (`publish --peers`). The
 spool is rebuilt from each newer snapshot the publication gains, while the follower keeps
 running until the swap. Nothing is sealed locally, so no Python pipeline runs.
 

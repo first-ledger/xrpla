@@ -12,6 +12,7 @@
 #include <xrpla/core/operations.hpp>
 #include <toml++/toml.h>
 #include <algorithm>
+#include <optional>
 #include <set>
 #include <atomic>
 #include <charconv>
@@ -321,6 +322,28 @@ void keep_synced(core::SyncOptions sync, fs::path pointer, std::chrono::seconds 
         }
     }).detach();
 }
+// The node to follow, then each fallback (a URL or a list). The first is the primary: a local
+// xrpld's admin port, which is not rate-limited. Later ones are asked for ledgers it no longer holds.
+std::vector<std::string> node_endpoints(toml::table const& config) {
+    std::vector<std::string> urls{required(config, "node.rpc")};
+    auto node = config.at_path("node.fallback");
+    if (!node) return urls;
+    auto add = [&](std::optional<std::string> url) {
+        if (!url || url->empty()) throw Error("Config node.fallback must be a URL or an array of URLs");
+        urls.push_back(*url);
+    };
+    if (auto one = node.value<std::string>()) add(one);
+    else if (auto const* many = node.as_array()) {
+        if (many->empty()) throw Error("Config node.fallback must be a URL or an array of URLs");
+        for (auto const& item : *many) add(item.value<std::string>());
+    } else throw Error("Config node.fallback must be a URL or an array of URLs");
+    return urls;
+}
+void add_fallback(std::vector<std::string>& args, std::vector<std::string> const& urls) {
+    std::string list;
+    for (std::size_t i = 1; i < urls.size(); ++i) list += (list.empty() ? "" : ",") + urls[i];
+    if (!list.empty()) { args.push_back("--fallback"); args.push_back(list); }
+}
 // connected: tools/live_publisher.py follows the node into a spool (`xrpla publish`, a few
 // seconds behind) and seals complete pieces into a local bucket signed by this machine's key;
 // a piece cache is kept in step with that bucket and served with the spool as a live tail.
@@ -353,7 +376,8 @@ int run_connected(toml::table const& config) {
         tools = XRPLA_SOURCE_TOOLS;
     }
     auto knob = [&](char const* name, std::int64_t fallback) { return std::to_string(integer(config, std::string("connected.") + name).value_or(fallback)); };
-    std::vector<std::string> args{"python3", (tools / "live_publisher.py").string(), "--node", required(config, "node.rpc"),
+    auto endpoints = node_endpoints(config);
+    std::vector<std::string> args{"python3", (tools / "live_publisher.py").string(), "--node", endpoints.front(),
         "--workdir", work.string(), "--spool-seed", spool_seed.string(), "--xrpla", exe.string(), "--bucket", bucket.string(),
         "--signing-key", local_seed.string(),
         "--decoder", (bin / "xrpla_history_decode").string(), "--snapshot-tool", (bin / "xrpla_snapshot").string(),
@@ -361,6 +385,7 @@ int run_connected(toml::table const& config) {
         "--merge-chunks", "--poll-seconds", knob("poll_seconds", 3), "--batch-ledgers", "64",
         "--publish-seconds", knob("publish_seconds", 60), "--piece-ledgers", knob("piece_ledgers", 50000),
         "--bundle-pieces", knob("bundle_pieces", 20), "--delay-ms", node_delay(config)};
+    add_fallback(args, endpoints);
     if (auto grpc = text(config, "node.grpc"); !grpc.empty()) { args.push_back("--grpc-source"); args.push_back(grpc); }
     if (auto list = text(config, "validators.list"); !list.empty()) {
         for (auto const& [flag, value] : {std::pair{"--validator-list", list}, {"--validator-list-key", required(config, "validators.list_key")},
@@ -371,7 +396,7 @@ int run_connected(toml::table const& config) {
         std::uint32_t start = 0;
         if (auto first = ledger(config, "connected.start")) start = *first;
         else {
-            auto response = core::RpcClient{required(config, "node.rpc"), {}, 0}.call("ledger", {{"ledger_index", "validated"}});
+            auto response = core::call_sources(endpoints, "ledger", {{"ledger_index", "validated"}}, 0, 5, {});
             auto index = response.at("ledger_index");
             start = index.is_string() ? static_cast<std::uint32_t>(std::stoul(index.get<std::string>())) : index.get<std::uint32_t>();
         }
@@ -417,12 +442,25 @@ int run_child(std::vector<std::string> args) {
     return WIFEXITED(status) ? WEXITSTATUS(status) : 128;
 }
 // The first ledger of a node's newest contiguous range of complete ledgers.
-std::uint32_t node_first_ledger(std::string const& rpc) {
-    auto info = core::RpcClient{rpc, {}, 0}.call("server_info");
+std::uint32_t node_first_ledger(std::string const& url) {
+    auto info = core::call_sources({url}, "server_info", Json::object(), 0, 5, {});
     auto ranges = info.at("info").at("complete_ledgers").get<std::string>();
     auto last = ranges.substr(ranges.rfind(',') == std::string::npos ? 0 : ranges.rfind(',') + 1);
     if (last.empty() || last == "empty") throw Error("The node has no complete ledgers yet");
     return static_cast<std::uint32_t>(std::stoul(last.substr(0, last.find('-'))));
+}
+// The earliest ledger any of the nodes still holds. One that cannot be asked is skipped.
+std::uint32_t earliest_complete(std::vector<std::string> const& urls) {
+    std::optional<std::uint32_t> earliest;
+    std::string errors;
+    for (auto const& url : urls) {
+        try {
+            auto first = node_first_ledger(url);
+            earliest = earliest ? std::min(*earliest, first) : first;
+        } catch (std::exception const& error) { errors += url + ": " + error.what() + "; "; }
+    }
+    if (!earliest) throw Error("No node reported complete ledgers (" + errors + ")");
+    return *earliest;
 }
 std::string peer_list(toml::table const& config) {
     std::string list;
@@ -546,16 +584,17 @@ int run_mirrored(toml::table const& config, std::string const& profile) {
             from_network.push_back(arg);
     auto args = from_network;
     std::atomic<bool> stopping{false};  // set once the service stops: a restart under way gives up
-    // A node keeps recent ledgers only; ledgers between the spool's tip and its first come
-    // from peers (the publication may be up to a piece behind the network).
+    // A node keeps recent ledgers only. Ledgers it no longer holds come from the fallback
+    // nodes while the follower runs. Ledgers none of them hold (a publication up to a piece
+    // behind every node's history) come from peers.
+    auto endpoints = node_endpoints(config);
     auto fill_gap = [&] {
         if (from_peers) return;
-        auto rpc = required(config, "node.rpc");
         for (;;) {
             if (stopping) return;
             try {
                 auto tip = Json::parse(read_file(spool / "manifest.json", 16 << 20)).at("tip").at("seq").get<std::uint32_t>();
-                auto first = node_first_ledger(rpc);
+                auto first = earliest_complete(endpoints);
                 if (tip + 1 >= first) break;
                 std::cerr << Json{{"event", "filling_gap_from_peers"}, {"from", tip + 1}, {"until", first}}.dump() << std::endl;
                 auto fill = from_network;
@@ -567,7 +606,8 @@ int run_mirrored(toml::table const& config, std::string const& profile) {
     };
     if (!from_peers) {
         args = common;
-        for (auto const& arg : std::vector<std::string>{"--source", required(config, "node.rpc"), "--delay-ms", node_delay(config)}) args.push_back(arg);
+        for (auto const& arg : std::vector<std::string>{"--source", endpoints.front(), "--delay-ms", node_delay(config)}) args.push_back(arg);
+        add_fallback(args, endpoints);
         if (auto grpc = text(config, "node.grpc"); !grpc.empty()) { args.push_back("--grpc-source"); args.push_back(grpc); }
         if (auto list = text(config, "validators.list"); !list.empty())
             for (auto const& arg : std::vector<std::string>{"--validator-list", list, "--validator-list-key", required(config, "validators.list_key"),
@@ -1533,7 +1573,19 @@ int setup_connected(fs::path const& config_path, fs::path const& unit_dir, toml:
     auto list = offered_publications(p);
     auto network = ask_network(p, list, config);
     auto [list_url, list_key] = core::network_validator_list(core::parse_network(network));
-    node.insert("rpc", p.ask("Node JSON-RPC URL", "http://127.0.0.1:5005"));
+    node.insert("rpc", p.ask("Node JSON-RPC URL (a local xrpld's admin port is not rate-limited)", "http://127.0.0.1:5005"));
+    if (auto extra = p.ask("Fallback nodes for ledgers the primary no longer holds (comma-separated http(s):// or ws(s)://, empty: none)"); !extra.empty()) {
+        toml::array list;
+        std::stringstream stream(extra);
+        for (std::string url; std::getline(stream, url, ',');) {
+            auto begin = url.find_first_not_of(" \t");
+            if (begin == std::string::npos) continue;
+            auto end = url.find_last_not_of(" \t");
+            list.push_back(url.substr(begin, end - begin + 1));
+        }
+        if (list.empty()) throw Error("Fallback nodes were empty");
+        node.insert("fallback", list);
+    }
     if (auto grpc = p.ask("Node gRPC URL for ledger diffs (empty: JSON-RPC only)"); !grpc.empty()) node.insert("grpc", grpc);
     if (p.yes("Accept only ledgers a quorum of validators signed, rather than the node's word (recommended for a remote node)?", false)) {
         toml::table validators;

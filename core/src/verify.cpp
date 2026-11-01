@@ -106,6 +106,9 @@ class PersistentNodes final : public r::node_store::Database {
     fs::path path_;
     static std::unique_ptr<rocksdb::DB> open(fs::path const& path) {
         rocksdb::Options options; options.create_if_missing = true; options.max_open_files = 512;
+        // RocksDB 10.5.1 segfaults while scanning table properties of an existing
+        // store (Version::UpdateAccumulatedStats). Nothing here reads those stats.
+        options.skip_stats_update_on_db_open = true;
         // A bulk-loaded snapshot is compacted once, as one manual compaction: split it.
         options.max_subcompactions = std::clamp(std::thread::hardware_concurrency() / 2, 1u, 16u);
         // Bulk loads write from many threads: flush several memtables at once rather than stall.

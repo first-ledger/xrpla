@@ -210,6 +210,7 @@ class Runner:
             if a.validator_list: command += ['--validator-list', a.validator_list, '--validator-list-key', a.validator_list_key]
         else:
             command += ['--source', a.node, '--jobs', str(a.rpc_jobs)]
+            if getattr(a, 'fallback', None): command += ['--fallback', a.fallback]
             if a.grpc_source: command += ['--grpc-source', a.grpc_source]
             if a.grpc_jobs: command += ['--grpc-jobs', str(a.grpc_jobs)]
             if a.history_peers: command += ['--history-peers', a.history_peers]
@@ -430,11 +431,12 @@ def main():
         a = h.parse_args(); raise SystemExit(health(a.workdir, a.max_age))
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     source = p.add_mutually_exclusive_group(required=True)
-    source.add_argument('--node', help='the node: grpc://HOST:PORT (xrpld gRPC) or http(s):// JSON-RPC (xrpld or Clio); docs/SETUP.md')
+    source.add_argument('--node', help='the node to follow for new ledgers: grpc://HOST:PORT, http(s):// JSON-RPC, or ws(s):// (a local xrpld admin port is not rate-limited); docs/SETUP.md')
     source.add_argument('--peers', help="default (the network's hubs) or HOST:PORT,...: follow the peer network instead of a node "
                         "(xrpla publish --peers; the spool must exist and be within the peers' history of the network)")
     p.add_argument('--peer-identity', type=Path, help='with --peers: the node key file used toward peers (default: a new key each run)')
     p.add_argument('--network-id', type=int, default=0, help='with --peers: the network (0: mainnet, whose validator list is built in)')
+    p.add_argument('--fallback', help='comma-separated http(s):// or ws(s):// nodes tried when --node does not hold a ledger (a local node keeps little history) or cannot be reached')
     p.add_argument('--grpc-source', help='xrpld gRPC URL beside a JSON-RPC --node (gRPC then serves ledgers and state)')
     p.add_argument('--grpc-jobs', type=int, help='with --grpc-source: fetch ledgers on this many connections to it as well as on --rpc-jobs to --node (xrpla publish --grpc-jobs)')
     p.add_argument('--history-peers', help="default (peers the network's crawl lists as holding the ledger), none, or HOST:PORT,...: where raw transaction trees come from for ledgers a gRPC node omits, a few of 2013 (xrpla publish --history-peers; default: none)")

@@ -149,8 +149,9 @@ into `STORAGE/bucket` and signed with this machine's own key (`STORAGE/keys/loca
 server answers from those pieces and the spool.
 
 **With a publication** XRPLA keeps the publication's whole history, as mirror and standalone do,
-and the node supplies only the ledgers after the publication's tip. Ledgers the node no longer
-holds are fetched from the peer network first (`[peers]` settings apply then).
+and the node supplies only the ledgers after the publication's tip. Ledgers the primary no
+longer holds are fetched from `[node] fallback`; ledgers none of the nodes hold are fetched
+from the peer network first (`[peers]` settings apply then).
 
 A local node can be trusted as it is. With a remote one, set `[validators]` so ledgers are
 accepted only once a quorum of the list's validators signed them.
