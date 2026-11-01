@@ -1,0 +1,3 @@
+{"mix": "only_account_tx_pages", "clients": 100, "slow_readers": 0, "seconds": 120, "requests": 429, "per_second": 3.6, "errors": {}, "ms_p50": 34450, "ms_p95": 52749, "ms_p99": 58846, "ms_max": 107442, "received_mb": 131}
+{"mix": "only_ledger_txs", "clients": 100, "slow_readers": 0, "seconds": 120, "requests": 323414, "per_second": 2695.1, "errors": {}, "ms_p50": 35, "ms_p95": 47, "ms_p99": 61, "ms_max": 1202, "received_mb": 44774}
+{"mix": "only_ledger_data", "clients": 100, "slow_readers": 0, "seconds": 120, "requests": 252392, "per_second": 2103.3, "errors": {}, "ms_p50": 32, "ms_p95": 39, "ms_p99": 50, "ms_max": 18638, "received_mb": 34023}

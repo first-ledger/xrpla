@@ -20,6 +20,9 @@ struct RpcClient {
     // A connection to any other address is refused. A forwarding server pins its upstream to the
     // addresses it checked (server.cpp). No request goes through a proxy.
     std::string resolve;
+    // The largest answer taken; a larger one fails the call as a transport error does. An
+    // extraction's ledger with its transactions, or a state page, runs to hundreds of MB.
+    std::size_t max_response = 512ULL << 20;
     Json call(std::string const& method, Json params = Json::object()) const;
     std::vector<Json> call_many(std::string const& method, std::vector<Json> const& params, unsigned jobs) const;
     // Whether this thread's last call reached the server: true when it answered (whatever it
@@ -237,6 +240,10 @@ struct SyncOptions {
     std::uint32_t snapshots_every = 0;
 };
 Json sync_pieces(SyncOptions const&);
+// Hands the memory freed since to the system: jemalloc's arenas purged (linked on Linux;
+// CMakeLists.txt), else glibc's trimmed. It walks every arena, so it follows the frees of a
+// whole history, tail or store replaced, never a request.
+void release_freed_memory();
 Json prune_store(fs::path const&, std::uint32_t);
 Json compact_store(fs::path const&, bool native);
 // backend applies to rippled imports: "nudb" (default, what most operators run) or "rocksdb".

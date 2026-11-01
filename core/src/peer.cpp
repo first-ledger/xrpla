@@ -450,6 +450,7 @@ struct PeerSession::Impl : std::enable_shared_from_this<Impl> {
     // Owned by the I/O thread.
     std::string received;
     std::size_t consumed = 0;
+    std::size_t skipping = 0;  // bytes still to come of a message dropped as it arrives
     std::array<char, 65536> chunk{};
     std::deque<std::string> outbox;
     std::size_t outbox_bytes = 0;
@@ -463,6 +464,7 @@ struct PeerSession::Impl : std::enable_shared_from_this<Impl> {
     mutable std::mutex mutex;
     std::condition_variable arrived;
     std::deque<Message> inbox;
+    std::size_t inbox_bytes = 0;
     std::string failure;
     bool closed = false;
 
@@ -565,31 +567,76 @@ struct PeerSession::Impl : std::enable_shared_from_this<Impl> {
         if (!wanted.contains(type)) return;
         enqueue(type, std::move(payload));
     }
-    // Queues a wanted message for receive(); a session whose messages are not being read ends.
+    // Queues a wanted message for receive(); a session whose messages are not being read (100,000
+    // waiting, or 32 MiB of them; any one message fits an empty queue) ends.
     void enqueue(int type, std::string payload) {
         bool full;
         {
             std::lock_guard lock(mutex);
-            full = inbox.size() >= 100000;
-            if (!full) inbox.push_back({type, std::move(payload)});
+            full = inbox.size() >= 100000 || (!inbox.empty() && inbox_bytes + payload.size() > (32u << 20));
+            if (!full) { inbox_bytes += payload.size(); inbox.push_back({type, std::move(payload)}); }
         }
         if (full) { fail("Peer messages are not being read"); return; }
         arrived.notify_all();
     }
-    // Delivers the complete frames received so far; false after a malformed one.
+    // The largest payload taken of a message type; 0 for one neither answered nor wanted, which
+    // is dropped as it arrives and never held. xrpld takes any message up to 64 MiB
+    // (kMaximumMessageSize), the size of the ledger data replies this node asks for; what peers
+    // send unasked is far smaller (a validation or proposal is a few hundred bytes, a request for
+    // 12,288 tree nodes about 430 KB, the network's manifests a few hundred KB), so these caps,
+    // with ample headroom, bound what a peer can have this node hold. A peer that sends more is
+    // not speaking the protocol, and its session ends.
+    std::size_t largest(int type) const {
+        constexpr std::size_t protocol_limit = 64u << 20;
+        switch (type) {
+            case protocol::mtPING: case protocol::mtPROOF_PATH_REQ: case protocol::mtREPLAY_DELTA_REQ: return 64u << 10;
+            case protocol::mtGET_LEDGER: return 2u << 20;
+            // A query for 12,288 objects is about 1 MB; replies come only to this node's own queries.
+            case protocol::mtGET_OBJECTS: return wanted.contains(type) ? protocol_limit : 4u << 20;
+            default: break;
+        }
+        if (!wanted.contains(type)) return 0;
+        switch (type) {
+            case protocol::mtVALIDATION: case protocol::mtPROPOSE_LEDGER: case protocol::mtSTATUS_CHANGE:
+            case protocol::mtSQUELCH: case protocol::mtENDPOINTS: return 1u << 20;
+            case protocol::mtMANIFESTS: return 8u << 20;
+            default: return protocol_limit;
+        }
+    }
+    // Delivers the complete frames received so far; false after a malformed or oversized one.
     bool parse() {
-        while (received.size() - consumed >= 6) {
+        std::size_t awaiting = 0;  // the frame of a message still arriving
+        for (;;) {
+            if (skipping) {
+                auto n = std::min(skipping, received.size() - consumed);
+                consumed += n; skipping -= n;
+                if (skipping) break;
+            }
+            if (received.size() - consumed < 6) break;
             auto const* p = reinterpret_cast<unsigned char const*>(received.data() + consumed);
             // No compression is offered, so the top six bits of the length are always clear.
             if (p[0] & 0xfc) { fail("Peer sent a compressed or malformed message"); return false; }
             std::size_t size = be32(p) & 0x03ffffff;
-            if (received.size() - consumed < 6 + size) break;
             int type = p[4] << 8 | p[5];
+            auto limit = largest(type);
+            if (!limit) {
+                ++messages_in; bytes_in += 6 + size;
+                consumed += 6; skipping = size;
+                continue;
+            }
+            if (size > limit) { fail("Peer sent an oversized message"); return false; }
+            if (received.size() - consumed < 6 + size) { awaiting = 6 + size; break; }
             ++messages_in; bytes_in += 6 + size;
             deliver(type, received.substr(consumed + 6, size));
             consumed += 6 + size;
         }
         if (consumed > (1 << 20) || consumed == received.size()) { received.erase(0, consumed); consumed = 0; }
+        // Room for a large message is made at once when half of it is here (growing by doubling
+        // would leave up to twice its size); once read, a buffer far larger than what it holds is
+        // given back (erase() keeps the capacity, which would otherwise stay for the session's life).
+        auto needed = std::max(received.size(), consumed + awaiting);
+        if (awaiting && 2 * (received.size() - consumed) >= awaiting) received.reserve(needed);
+        else if (received.capacity() > (1u << 20) && received.capacity() / 4 > needed) received.shrink_to_fit();
         return true;
     }
     void read() {
@@ -599,23 +646,27 @@ struct PeerSession::Impl : std::enable_shared_from_this<Impl> {
             if (parse()) read();
         });
     }
+    // The payload is copied once, into a frame made its size.
     static std::string frame(int type, std::string const& payload) {
         if (payload.size() >= (1u << 26)) throw Error("Peer message too large");
-        std::string out(6, '\0');
+        std::string out;
+        out.reserve(6 + payload.size());
         auto size = static_cast<std::uint32_t>(payload.size());
-        for (int i = 0; i < 4; ++i) out[i] = static_cast<char>(size >> (24 - 8 * i));
-        out[4] = static_cast<char>(type >> 8); out[5] = static_cast<char>(type);
-        return out + payload;
+        for (int i = 0; i < 4; ++i) out.push_back(static_cast<char>(size >> (24 - 8 * i)));
+        out.push_back(static_cast<char>(type >> 8)); out.push_back(static_cast<char>(type));
+        out.append(payload);
+        return out;
     }
     // A peer whose queue stays long is dropped by the timer (tick()); responders stop adding
-    // replies at 192 messages or 16 MiB (PeerRequester::backlogged), so what still comes is
-    // relayed messages. 64 MiB waiting is a peer not reading at all: dropped at once.
+    // replies, each at most about 8 MiB, at 192 messages or 16 MiB (PeerRequester::backlogged),
+    // and relays skip a queue of 16 MiB (PeerRelay), so little else comes. 24 MiB waiting is a
+    // peer not reading at all: dropped at once.
     void queue(std::string bytes) {
         if (outbox.size() < 128) long_queue = 0;  // as xrpld's send(): a queue that empties now and then is read
         outbox_bytes += bytes.size();
         outbox.push_back(std::move(bytes));
         queued_messages = outbox.size(); queued_bytes = outbox_bytes;
-        if (outbox_bytes > (64u << 20)) { fail("Peer is not reading"); return; }
+        if (outbox_bytes > (24u << 20)) { fail("Peer is not reading"); return; }
         if (outbox.size() == 1) write();
     }
     void write() {
@@ -713,6 +764,7 @@ void PeerSession::close(std::string const& why) {
 }
 bool PeerSession::open() const { std::lock_guard lock(impl_->mutex); return !impl_->closed; }
 std::string PeerSession::failure() const { std::lock_guard lock(impl_->mutex); return impl_->failure; }
+std::size_t PeerSession::queued_bytes() const { return impl_->queued_bytes; }
 PeerSession::Traffic PeerSession::traffic() const {
     auto& m = *impl_;
     return {m.messages_in.load(), m.bytes_in.load(), m.messages_out.load(), m.bytes_out.load()};
@@ -727,7 +779,12 @@ std::optional<PeerSession::Message> PeerSession::receive(std::chrono::millisecon
     auto& m = *impl_;
     std::unique_lock lock(m.mutex);
     m.arrived.wait_for(lock, timeout, [&] { return !m.inbox.empty() || m.closed; });
-    if (!m.inbox.empty()) { auto message = std::move(m.inbox.front()); m.inbox.pop_front(); return message; }
+    if (!m.inbox.empty()) {
+        auto message = std::move(m.inbox.front());
+        m.inbox.pop_front();
+        m.inbox_bytes -= message.payload.size();
+        return message;
+    }
     if (m.closed) throw Error(m.failure);
     return std::nullopt;
 }

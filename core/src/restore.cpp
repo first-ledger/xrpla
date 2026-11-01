@@ -1,12 +1,14 @@
 // `xrpla restore`: a piece publication into an xrpld node database, an xrpla store or Clio.
 #include "store.hpp"
 #include "piece_feed.hpp"
+#include "progress.hpp"
 #include "replay.hpp"
 #include <xrpla/core/operations.hpp>
 #include <algorithm>
 #include <array>
 #include <atomic>
 #include <chrono>
+#include <cmath>
 #include <deque>
 #include <exception>
 #include <future>
@@ -239,27 +241,59 @@ Json sync_pieces(SyncOptions const& options) {
         for (auto const& part : parsed.at("parts")) add(part);
     }
     // Several objects at a time: a snapshot is hundreds of parts.
-    std::atomic<std::size_t> next{0};
+    std::atomic<std::size_t> next{0}, finished{0};
     std::atomic<std::uint64_t> fetched{0};
     std::exception_ptr failure; std::mutex failed;
+    // What this sync has to fetch, for its progress: objects not yet in the cache whole.
+    std::uint64_t to_fetch = 0; std::size_t missing = 0;
+    for (auto const& object : objects) {
+        auto path = options.cache / object.object;
+        if (!fs::exists(path) || fs::file_size(path) != object.size) { to_fetch += object.size; ++missing; }
+    }
+    // Each thread's object under way, whose staging file (Source::download) shows its bytes so far:
+    // a bundle is tens of GB, too long to report only when it is whole.
+    unsigned const threads_used = std::max(1u, options.jobs);
+    std::vector<std::atomic<std::size_t>> current(threads_used);
+    for (auto& slot : current) slot = objects.size();
     // Objects can share a hash (snapshot parts whose keys did not change between two kept
     // snapshots), and a transfer stages in a file named by its hash: those transfers
     // take turns, as download_all's do.
     std::mutex transfer_locks[64];
-    auto work = [&] {
+    auto work = [&](unsigned slot) {
         for (std::size_t i; (i = next++) < objects.size();) {
             try {
                 auto path = options.cache / objects[i].object;
                 std::lock_guard transfer(transfer_locks[std::hash<std::string>{}(objects[i].sha256) % 64]);
                 bool present = fs::exists(path) && fs::file_size(path) == objects[i].size;
+                if (!present) current[slot] = i;
                 source.download(objects[i], options.cache);
-                if (!present) fetched += objects[i].size;
+                current[slot] = objects.size();
+                if (!present) { fetched += objects[i].size; ++finished; }
             } catch (...) { std::lock_guard lock(failed); if (!failure) failure = std::current_exception(); next = objects.size(); }
         }
     };
-    std::vector<std::thread> threads;
-    for (unsigned i = 0; i < std::max(1u, options.jobs); ++i) threads.emplace_back(work);
-    for (auto& t : threads) t.join();
+    {
+        auto began = std::chrono::steady_clock::now();
+        Progress progress(std::chrono::seconds(60), [&] {
+            std::uint64_t done = fetched;
+            for (auto const& slot : current) {
+                std::size_t i = slot;
+                if (i >= objects.size()) continue;
+                std::error_code ec;
+                auto staged = fs::file_size(options.cache / ".staging" / (objects[i].sha256 + ".part"), ec);
+                if (!ec) done += std::min<std::uint64_t>(staged, objects[i].size);
+            }
+            double seconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - began).count();
+            double rate = done / std::max(seconds, 1.0);
+            Json line{{"event", "sync_progress"}, {"phase", "download"}, {"objects", finished.load()}, {"objects_total", missing},
+                      {"bytes", done}, {"bytes_total", to_fetch}, {"mb_per_second", std::round(rate / 1e5) / 10}, {"cache", options.cache.string()}};
+            if (rate > 0 && to_fetch > done) line["eta_seconds"] = static_cast<std::uint64_t>((to_fetch - done) / rate);
+            std::cerr << line.dump() << std::endl;
+        });
+        std::vector<std::thread> threads;
+        for (unsigned i = 0; i < threads_used; ++i) threads.emplace_back(work, i);
+        for (auto& t : threads) t.join();
+    }
     if (failure) std::rethrow_exception(failure);
     Json selection{{"catalog", feed.catalog()}, {"snapshot", entry}, {"ranges", feed.ranges()},
                    {"first", entry.at("seq").get<std::uint32_t>() + 1}, {"last", feed.last()}};

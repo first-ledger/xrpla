@@ -19,6 +19,9 @@ jobs:
   package:
     if: github.event_name == 'push'
     runs-on: ubuntu-24.04
+    # A build from no cache takes about 45 minutes; a hung step should not hold a release for
+    # GitHub's 6-hour default.
+    timeout-minutes: 180
     steps:
       - name: Free disk space
         run: |
@@ -58,6 +61,7 @@ jobs:
   release:
     needs: package
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     permissions:
       contents: write
     steps:
@@ -78,6 +82,7 @@ jobs:
     needs: release
     if: always() && (needs.release.result == 'success' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     permissions:
       contents: read
       pages: write
@@ -106,7 +111,12 @@ jobs:
             echo "::error::the APT_SIGNING_KEY secret is not set (docs/guides/release.md)"
             exit 1
           fi
-          sudo apt-get update && sudo apt-get install -y --no-install-recommends apt-utils dpkg-dev gnupg
+          # The runner image has these; installing only when one is missing keeps a hung package
+          # mirror (the 0.4.1 release waited hours on one) out of the release.
+          if ! command -v apt-ftparchive >/dev/null || ! command -v dpkg-deb >/dev/null || ! command -v gpg >/dev/null; then
+            sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 update
+            sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 install -y --no-install-recommends apt-utils dpkg-dev gnupg
+          fi
           printf '%s\n' "$APT_SIGNING_KEY" | gpg --batch --import
           if [ -n "$APT_SIGNING_PASSPHRASE" ]; then
             echo "allow-preset-passphrase" >> ~/.gnupg/gpg-agent.conf

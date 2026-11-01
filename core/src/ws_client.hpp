@@ -18,6 +18,9 @@ public:
     // has: no name is looked up, and the host still names the server for TLS and the handshake.
     WsClient(std::string const& url, std::string const& address, std::chrono::milliseconds timeout);
     ~WsClient();
+    // The largest message received (Beast's default: 16 MB); a larger one ends the read in an
+    // error.
+    void read_message_max(std::size_t bytes);
     void send(Json const& message);
     // The next message; one that is not JSON is an Error.
     Json receive();

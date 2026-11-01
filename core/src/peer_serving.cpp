@@ -46,6 +46,15 @@ std::string base64(Bytes const& data) {
     return out;
 }
 std::string upper(std::string text) { for (auto& c : text) c = static_cast<char>(std::toupper(static_cast<unsigned char>(c))); return text; }
+// The data one reply carries at most. xrpld bounds its replies by node count alone, under its
+// 64 MiB message limit (kMaximumMessageSize); a reply that stops early is one it sends too (past
+// kSoftMaxReplyNodes), and the asking side asks again for what it still lacks. A reply this
+// size is copied a few times on its way out and waits in the peer's send queue, so it is kept
+// well under that queue's limits (PeerSession).
+constexpr std::size_t reply_budget = 8u << 20;
+// Requests waiting or running hold what peers sent until answered: at most this much from one
+// peer (an xrpld asks for a few hundred nodes at a time, a few KB), and from all.
+constexpr std::size_t peer_request_bytes = 4u << 20, request_bytes = 32u << 20;
 // Reads the trees of a node store the follower's verifier writes, through caches of its own.
 class ServingFamily final : public r::Family {
     beast::Journal journal_{beast::Journal::getNullSink()};
@@ -81,8 +90,9 @@ struct LedgerServer::Impl {
     std::shared_ptr<r::node_store::Database> store;
     std::shared_ptr<ServingFamily> family;
     // libxrpl's node caches evict only when swept (xrpld sweeps them on a timer): without it,
-    // every node served stays cached.
-    std::chrono::steady_clock::time_point swept = std::chrono::steady_clock::now();
+    // every node served stays cached. Swept every 30 s by whichever thread finds it due (a
+    // worker, waking for it while idle, or add()).
+    std::atomic<std::chrono::steady_clock::rep> swept{std::chrono::steady_clock::now().time_since_epoch().count()};
     // Held by each request in progress, and exclusively while the store changes: once
     // node_store() returns, nothing here holds the old store (the follower may reopen it).
     std::shared_mutex serving;
@@ -90,13 +100,14 @@ struct LedgerServer::Impl {
     // leaves requests unanswered when it is loaded. One peer (address_group) has at most
     // `peer_jobs` waiting or running, and at most one fetch pack, of which `packs_limit` run
     // at once (each takes a worker up to a second), so no peer keeps the workers to itself.
-    struct Job { std::function<void()> run; std::string peer; bool pack = false; };
-    struct Load { unsigned jobs = 0, packs = 0; };
+    struct Job { std::function<void()> run; std::string peer; bool pack = false; std::size_t bytes = 0; };
+    struct Load { unsigned jobs = 0, packs = 0; std::size_t bytes = 0; };
     static constexpr unsigned peer_jobs = 64;
     std::mutex queue_mutex;
     std::condition_variable wake;
     std::deque<Job> jobs;
     std::map<std::string, Load> load;
+    std::size_t queued_bytes = 0;  // the requests of `jobs` and those running, as sent
     unsigned packs = 0, packs_limit = 1;
     bool stopping = false;
     std::vector<std::thread> workers;
@@ -108,6 +119,7 @@ struct LedgerServer::Impl {
     struct Balance { double value = 0; std::chrono::steady_clock::time_point at{}; std::uint64_t dropped = 0; };
     std::mutex charge_mutex;
     std::map<std::string, Balance> balances;
+    std::chrono::steady_clock::time_point balances_pruned{};  // past 4096 balances, at most once a second
     std::set<std::string> reserved;  // never charged
     static std::string address_of(PeerRequester const& from) { return from.address.empty() ? from.endpoint : address_group(from.address); }
     static double decayed(Balance const& balance, std::chrono::steady_clock::time_point now) {
@@ -176,8 +188,10 @@ struct LedgerServer::Impl {
                 // Once a session: what it asked before the drop took effect is charged, not logged again.
                 if (balance.dropped != from.session || !from.session) { first = true; balance.dropped = from.session; balance.value += 6000; }
             }
-            if (balances.size() > 4096)
+            if (balances.size() > 4096 && now - balances_pruned >= std::chrono::seconds(1)) {
+                balances_pruned = now;
                 for (auto it = balances.begin(); it != balances.end();) it = decayed(it->second, now) < 1 ? balances.erase(it) : std::next(it);
+            }
         }
         if (first) {
             ++dropped;
@@ -247,6 +261,18 @@ struct LedgerServer::Impl {
         if (seq < ledgers.begin()->first) return "ledger_older";
         return "ledger_unknown";
     }
+    void sweep() {
+        auto now = std::chrono::steady_clock::now();
+        auto last = swept.load();
+        if (now - std::chrono::steady_clock::time_point(std::chrono::steady_clock::duration(last)) < std::chrono::seconds(30)) return;
+        if (!swept.compare_exchange_strong(last, now.time_since_epoch().count())) return;  // another thread sweeps
+        // Not while the store is replaced (node_store()): the family would keep the old one open.
+        std::shared_lock working(serving, std::try_to_lock);
+        if (!working) return;
+        std::shared_ptr<ServingFamily> reader;
+        { std::shared_lock lock(mutex); reader = family; }
+        if (reader) reader->sweep();
+    }
     // Each takes a request already charged its base fee (LedgerServer::request).
     void get_ledger(protocol::TMGetLedger const& request, PeerRequester const& from);
     void get_objects(protocol::TMGetObjectByHash const& request, PeerRequester const& from);
@@ -258,8 +284,8 @@ struct LedgerServer::Impl {
 // xrpld's PeerImp::processLedgerRequest: the header and tree roots (liBASE), or each asked-for
 // tree node with its children (getNodeFat), no node started past 8,192 and none past 12,288
 // (Tuning kSoftMaxReplyNodes, kHardMaxReplyNodes: an xrpld charges a reply with more as
-// invalid data); nothing when the ledger is not served (an error-only reply would be charged by
-// the asking xrpld).
+// invalid data) or past `reply_budget`; nothing when the ledger is not served (an error-only
+// reply would be charged by the asking xrpld).
 void LedgerServer::Impl::get_ledger(protocol::TMGetLedger const& request, PeerRequester const& from) {
     auto type = request.itype();
     if (type == protocol::liTS_CANDIDATE) { decline(from, "tx_set"); return; }  // consensus sets: none here
@@ -305,15 +331,17 @@ void LedgerServer::Impl::get_ledger(protocol::TMGetLedger const& request, PeerRe
             ids.push_back(*id);
         }
         std::vector<r::SHAMapNodeData> data;
+        std::size_t size = 0;
         for (auto const& id : ids) {
-            if (reply.nodes_size() >= 8192) break;
+            if (reply.nodes_size() >= 8192 || size >= reply_budget) break;
             data.clear();
             try { map.map->getNodeFat(id, data, true, depth); } catch (std::exception const&) {}  // a node no longer stored
             for (auto const& [node_id, is_leaf, blob] : data) {
-                if (reply.nodes_size() >= 12288) break;
+                if (reply.nodes_size() >= 12288 || size >= reply_budget) break;
                 auto* node = reply.add_nodes();
                 node->set_nodeid(node_id.getRawString());
                 node->set_nodedata(blob.data(), blob.size());
+                size += node->nodeid().size() + blob.size();
             }
         }
     }
@@ -322,7 +350,8 @@ void LedgerServer::Impl::get_ledger(protocol::TMGetLedger const& request, PeerRe
 }
 
 // xrpld's processGetObjectByHash: each object found (a served ledger's header, or a tree node in
-// the node-store format, with its hash prefix), always answered; fetch packs apart.
+// the node-store format, with its hash prefix) until `reply_budget`, always answered; fetch
+// packs apart.
 void LedgerServer::Impl::get_objects(protocol::TMGetObjectByHash const& request, PeerRequester const& from) {
     if (request.type() == protocol::TMGetObjectByHash::otFETCH_PACK) { fetch_pack(request, from); return; }
     if (request.has_ledgerhash() && request.ledgerhash().size() != 32) { charge(from, 200); return; }
@@ -334,7 +363,9 @@ void LedgerServer::Impl::get_objects(protocol::TMGetObjectByHash const& request,
     std::shared_ptr<r::node_store::Database> db;
     { std::shared_lock lock(mutex); db = store; }
     std::uint64_t hits = 0, misses = 0;
+    std::size_t size = 0;
     for (auto const& object : request.objects()) {
+        if (size >= reply_budget) break;
         std::string data;
         if (object.has_hash() && object.hash().size() == 32) {
             if (auto header = by_hash(object.hash())) data = std::string("LWR\0", 4) + header->raw;
@@ -345,6 +376,7 @@ void LedgerServer::Impl::get_objects(protocol::TMGetObjectByHash const& request,
         }
         if (data.empty()) { ++misses; continue; }
         ++hits;
+        size += object.hash().size() + data.size();
         auto* found = reply.add_objects();
         found->set_hash(object.hash());
         found->set_data(std::move(data));
@@ -359,7 +391,8 @@ void LedgerServer::Impl::get_objects(protocol::TMGetObjectByHash const& request,
 }
 
 // xrpld's makeFetchPack: from the asked-for ledger back, each parent's header, the state nodes
-// it has that its child lacks and its transaction nodes, until 512 objects or a second.
+// it has that its child lacks (16,384 at most) and its transaction nodes (512), until 512
+// objects or a second; here also until `reply_budget`, checked at each node added.
 void LedgerServer::Impl::fetch_pack(protocol::TMGetObjectByHash const& request, PeerRequester const& from) {
     if (!request.has_ledgerhash() || request.ledgerhash().size() != 32) { charge(from, 200); return; }
     auto have = by_hash(request.ledgerhash());
@@ -369,13 +402,15 @@ void LedgerServer::Impl::fetch_pack(protocol::TMGetObjectByHash const& request, 
     reply.set_query(false);
     reply.set_type(protocol::TMGetObjectByHash::otFETCH_PACK);
     reply.set_ledgerhash(request.ledgerhash());
+    std::size_t size = 0;
     auto add = [&](Bytes const& hash, std::string data, std::uint32_t seq) {
+        size += hash.size() + data.size();
         auto* object = reply.add_objects();
         object->set_hash(hash); object->set_data(std::move(data)); object->set_ledgerseq(seq);
     };
     auto have_state = tree(r::SHAMapType::STATE, have->account_hash, have->sequence);
     try {
-        while (have_state && reply.objects_size() < 512 && std::chrono::steady_clock::now() - started < std::chrono::seconds(1)) {
+        while (have_state && reply.objects_size() < 512 && size < reply_budget && std::chrono::steady_clock::now() - started < std::chrono::seconds(1)) {
             auto want = by_seq(have->sequence - 1);
             if (!want || want->hash != have->parent_hash) break;
             auto want_state = tree(r::SHAMapType::STATE, want->account_hash, want->sequence);
@@ -386,7 +421,7 @@ void LedgerServer::Impl::fetch_pack(protocol::TMGetObjectByHash const& request, 
                 r::Serializer s;
                 node.serializeWithPrefix(s);
                 add(bytes(node.getHash().asUInt256()), std::string(static_cast<char const*>(s.data()), s.size()), want->sequence);
-                return ++count < 16384;
+                return ++count < 16384 && size < reply_budget;
             });
             if (auto transactions = tree(r::SHAMapType::TRANSACTION, want->transaction_hash, want->sequence)) {
                 int tx_count = 0;
@@ -394,7 +429,7 @@ void LedgerServer::Impl::fetch_pack(protocol::TMGetObjectByHash const& request, 
                     r::Serializer s;
                     node.serializeWithPrefix(s);
                     add(bytes(node.getHash().asUInt256()), std::string(static_cast<char const*>(s.data()), s.size()), want->sequence);
-                    return ++tx_count < 512;
+                    return ++tx_count < 512 && size < reply_budget;
                 });
             }
             have = want;
@@ -406,7 +441,9 @@ void LedgerServer::Impl::fetch_pack(protocol::TMGetObjectByHash const& request, 
 }
 
 // Ledger replay (only when both sides negotiated it): a key's path from leaf to root, or a
-// ledger's header and transactions. xrpld never sends an error reply; it charges instead.
+// ledger's header and transactions. xrpld never sends an error reply; it charges instead. A
+// ledger's transactions go in full or not at all (only all of them match its header), so one
+// whose transactions are past `reply_budget` is not answered.
 void LedgerServer::Impl::proof_path(std::string const& payload, PeerRequester const& from) {
     protocol::TMProofPathRequest request;
     if (!from.ledger_replay || !request.ParseFromString(payload) || request.key().size() != 32 || request.ledgerhash().size() != 32 ||
@@ -437,11 +474,16 @@ void LedgerServer::Impl::replay_delta(std::string const& payload, PeerRequester 
     if (!key256(from_hex(header->transaction_hash)).isZero()) {
         auto map = tree(r::SHAMapType::TRANSACTION, header->transaction_hash, header->sequence);
         if (!map) { charge(from, 10); decline(from, "replay_delta"); return; }
+        std::size_t size = 0;
         try {
             map.map->visitLeaves([&](boost::intrusive_ptr<r::SHAMapItem const> const& item) {
+                if (size > reply_budget) return;
+                size += item->slice().size();
+                if (size > reply_budget) { reply.clear_transaction(); return; }
                 reply.add_transaction(item->slice().data(), item->slice().size());
             });
         } catch (std::exception const&) { charge(from, 10); decline(from, "replay_delta"); return; }
+        if (size > reply_budget) { decline(from, "replay_delta"); return; }
     }
     send(from, protocol::mtREPLAY_DELTA_RESPONSE, reply, static_cast<std::size_t>(reply.transaction_size()));
 }
@@ -457,16 +499,20 @@ LedgerServer::LedgerServer(std::size_t window, unsigned threads) : impl_(std::ma
                 Impl::Job job;
                 {
                     std::unique_lock lock(m.queue_mutex);
-                    m.wake.wait(lock, [&] { return m.stopping || !m.jobs.empty(); });
+                    m.wake.wait_for(lock, std::chrono::seconds(30), [&] { return m.stopping || !m.jobs.empty(); });
                     if (m.stopping) return;
+                    if (m.jobs.empty()) { lock.unlock(); m.sweep(); continue; }
                     job = std::move(m.jobs.front());
                     m.jobs.pop_front();
                 }
+                m.sweep();
                 try { job.run(); } catch (std::exception const&) {}
                 std::lock_guard lock(m.queue_mutex);
+                m.queued_bytes -= job.bytes;
                 auto it = m.load.find(job.peer);
                 if (it == m.load.end()) continue;
                 --it->second.jobs;
+                it->second.bytes -= job.bytes;
                 if (job.pack) { --it->second.packs; --m.packs; }
                 if (!it->second.jobs) m.load.erase(it);
             }
@@ -490,17 +536,12 @@ void LedgerServer::node_store(std::shared_ptr<xrpl::node_store::Database> store)
 void LedgerServer::add(Header const& header) {
     auto& m = *impl_;
     std::shared_ptr<r::node_store::Database> db;
-    std::shared_ptr<ServingFamily> reader;
     {
         std::shared_lock lock(m.mutex);
         if (!m.ledgers.empty() && header.sequence <= m.ledgers.rbegin()->first) return;
         db = m.store;
-        reader = m.family;
     }
-    if (reader && std::chrono::steady_clock::now() - m.swept >= std::chrono::seconds(30)) {
-        m.swept = std::chrono::steady_clock::now();
-        reader->sweep();
-    }
+    m.sweep();
     // Served only once both its trees are stored (an earlier ledger's may have been compacted
     // away, or applied before its transaction tree was kept).
     if (!db) return;
@@ -553,7 +594,9 @@ void LedgerServer::greet(PeerSession& session) const {
 // Each request is charged its base fee as it arrives (xrpld's, on the asking session's thread),
 // so one refused for a full queue costs the peer as much as one answered; what its answer
 // costs beyond that is charged by the worker. A peer whose send queue is long is not answered
-// (xrpld's kDropSendQueue), here and again when a worker takes the request.
+// (xrpld's kDropSendQueue), here and again when a worker takes the request. One too large to
+// answer is charged here as the worker would charge it, so it is never held while it waits; a
+// queue holding `peer_request_bytes` of the peer's requests, or `request_bytes` of all, is full.
 void LedgerServer::request(int type, std::string const& payload, PeerRequester const& from) {
     auto& m = *impl_;
     ++m.requests;
@@ -561,44 +604,62 @@ void LedgerServer::request(int type, std::string const& payload, PeerRequester c
     if (own) ++m.reserved_requests;
     std::function<void()> run;
     double fee = 250;
+    double oversized = 0;  // what the worker would charge for a request too large to answer
     bool pack = false;
     if (type == protocol::mtGET_LEDGER) {
         auto request = std::make_shared<protocol::TMGetLedger>();
         if (!request->ParseFromString(payload)) { m.charge(from, 200); return; }
         fee = request->has_requestcookie() ? 1 : 250;  // one relayed for another of its peers: not charged
+        if (request->itype() != protocol::liTS_CANDIDATE && request->itype() != protocol::liBASE && request->nodeids_size() > 12288) oversized = 200;
         run = [&m, request, from] { m.get_ledger(*request, from); };
     } else if (type == protocol::mtGET_OBJECTS) {
         auto request = std::make_shared<protocol::TMGetObjectByHash>();
         if (!request->ParseFromString(payload)) { m.charge(from, 200); return; }
         if (request->type() == protocol::TMGetObjectByHash::otTRANSACTIONS) { m.decline(from, "transactions"); return; }  // transaction relay: not offered
         pack = request->type() == protocol::TMGetObjectByHash::otFETCH_PACK;
-        if (pack) fee = 2000;
+        if (pack) {
+            fee = 2000;
+            // A fetch pack is made from the ledger hash alone: the objects listed are not kept.
+            auto bare = std::make_shared<protocol::TMGetObjectByHash>();
+            bare->set_type(request->type());
+            bare->set_query(request->query());
+            if (request->has_ledgerhash()) bare->set_ledgerhash(request->ledgerhash());
+            request = std::move(bare);
+        } else if (request->objects_size() > 12288) {
+            oversized = request->has_ledgerhash() && request->ledgerhash().size() != 32 ? 200 : 400;
+        }
         run = [&m, request, from] { m.get_objects(*request, from); };
-    } else if (type == protocol::mtPROOF_PATH_REQ) {
-        run = [&m, payload, from] { m.proof_path(payload, from); };
-    } else if (type == protocol::mtREPLAY_DELTA_REQ) {
-        run = [&m, payload, from] { m.replay_delta(payload, from); };
+    } else if (type == protocol::mtPROOF_PATH_REQ || type == protocol::mtREPLAY_DELTA_REQ) {
+        // Two hashes, a key and a type: anything much longer is no request the worker would answer.
+        if (payload.size() > 4096) oversized = 200;
+        if (type == protocol::mtPROOF_PATH_REQ) run = [&m, payload, from] { m.proof_path(payload, from); };
+        else run = [&m, payload, from] { m.replay_delta(payload, from); };
     } else return;
     if (m.charge(from, fee)) return;
     if (from.backlogged && from.backlogged()) { m.decline(from, "send_queue"); return; }
+    if (oversized) { m.charge(from, oversized); return; }
     auto peer = Impl::address_of(from);
+    auto bytes = pack ? 0 : payload.size();  // what the job holds
     {
         std::lock_guard lock(m.queue_mutex);
         if (m.stopping) return;
         auto& load = m.load[peer];
-        bool full = m.jobs.size() >= 4096 || (!own && load.jobs >= Impl::peer_jobs) || (pack && (load.packs || m.packs >= m.packs_limit));
+        bool full = m.jobs.size() >= 4096 || m.queued_bytes + bytes > request_bytes ||
+                    (!own && (load.jobs >= Impl::peer_jobs || load.bytes + bytes > peer_request_bytes)) ||
+                    (pack && (load.packs || m.packs >= m.packs_limit));
         if (full) {
             if (!load.jobs) m.load.erase(peer);
             ++m.busy;
             return;
         }
         ++load.jobs;
+        load.bytes += bytes; m.queued_bytes += bytes;
         if (pack) { ++load.packs; ++m.packs; }
         m.jobs.push_back({[&m, run = std::move(run), from] {
             if (from.backlogged && from.backlogged()) { m.decline(from, "send_queue"); return; }
             std::shared_lock working(m.serving);
             run();
-        }, peer, pack});
+        }, peer, pack, bytes});
     }
     m.wake.notify_one();
 }

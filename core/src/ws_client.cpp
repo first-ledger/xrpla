@@ -102,6 +102,9 @@ WsClient::WsClient(std::string const& url, std::string const& address, std::chro
     impl_->open(url, address, timeout);
 }
 WsClient::~WsClient() = default;
+void WsClient::read_message_max(std::size_t bytes) {
+    impl_->with_stream([&](auto& s) { s.read_message_max(bytes); });
+}
 void WsClient::send(Json const& message) {
     auto text = message.dump();
     impl_->with_stream([&](auto& s) {

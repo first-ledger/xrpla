@@ -125,10 +125,22 @@ struct Container {
 
 // XTXI fingerprint index (tools/tx_fingerprint_index.py): hash -> candidate (ledger, record position).
 class TxIndex {
-    V bitmap_, samples_, fingerprints_, locations_;
+    V bitmap_, samples_, fingerprints_, locations_, counts_;
     unsigned q_ = 0, fbits_ = 0, lbits_ = 0;
-    U first_ = 0, n_ = 0;
-    std::vector<U> starts_;
+    U first_ = 0, n_ = 0, ledgers_ = 0;
+    // Where the varint counts of every `stride`-th ledger start, and the entries before it. A
+    // start per ledger would be 8 bytes each, about 0.8 GB for all of history outside the cache
+    // budget; these are a 64th of that, and a lookup decodes at most stride - 1 counts.
+    struct Checkpoint { U at, total; };
+    static constexpr U stride = 64;
+    std::vector<Checkpoint> checkpoints_;
+    // Walks ledger counts from the checkpoint at or before ledger offset `i`, to `i`.
+    Checkpoint seek(U i) const {
+        if (i >= ledgers_) throw Error("Ledger outside transaction index");
+        auto c = checkpoints_[i / stride];
+        for (U k = i - i % stride; k < i; ++k) c.total += varint(counts_, c.at);
+        return c;
+    }
     static U bits(V buf, U at, unsigned width) {
         if (!width) return 0;
         U first = at / 8, last = (at + width - 1) / 8;
@@ -154,15 +166,22 @@ public:
         bitmap_ = parts[0]; samples_ = parts[1]; fingerprints_ = parts[2]; locations_ = parts[3];
         if (bitmap_.size() != (n_ + (U(1) << q_) + 7) / 8 || samples_.size() != 8 * (((U(1) << q_) + sample - 1) / sample) ||
             fingerprints_.size() != (n_ * fbits_ + 7) / 8 || locations_.size() != (n_ * lbits_ + 7) / 8) throw Error("Index section sizes differ");
-        starts_.reserve(ledgers + 1);
+        counts_ = parts[4];
+        // Each count takes at least a byte, so a ledger total beyond the section's bytes is invalid
+        // and cannot size the reservation.
+        if (ledgers > counts_.size()) throw Error("Ledger counts differ from entries");
+        checkpoints_.reserve((ledgers + stride - 1) / stride);
         U total = 0, pos = 0;
-        for (U i = 0; i < ledgers; ++i) { starts_.push_back(total); total += varint(parts[4], pos); }
-        starts_.push_back(total);
-        if (pos != parts[4].size() || total != n_) throw Error("Ledger counts differ from entries");
+        for (U i = 0; i < ledgers; ++i) {
+            if (i % stride == 0) checkpoints_.push_back({pos, total});
+            total += varint(counts_, pos);
+        }
+        if (pos != counts_.size() || total != n_) throw Error("Ledger counts differ from entries");
+        ledgers_ = ledgers;
     }
     U first() const { return first_; }
-    U ledgers() const { return starts_.empty() ? 0 : starts_.size() - 1; }
-    U count(U ledger) const { U i = ledger - first_; return starts_.at(i + 1) - starts_.at(i); }
+    U ledgers() const { return ledgers_; }
+    U count(U ledger) const { auto c = seek(ledger - first_); return varint(counts_, c.at); }
     std::vector<std::pair<U, U>> candidates(V hash) const {
         if (hash.size() != 32) throw Error("Hash length");
         std::vector<std::pair<U, U>> out;
@@ -178,9 +197,18 @@ public:
             if (bits(fingerprints_, entry * fbits_, fbits_) == fingerprint) {
                 U ordinal = bits(locations_, entry * lbits_, lbits_);
                 if (ordinal >= n_) throw Error("Location out of range");
-                auto it = std::upper_bound(starts_.begin(), starts_.end(), ordinal) - 1;
-                U ledger = static_cast<U>(it - starts_.begin());
-                out.emplace_back(first_ + ledger, ordinal - *it);
+                // The last checkpoint at or below the entry precedes its ledger (counts only add),
+                // and the next one, above it, follows: the ledger is within this stride.
+                auto it = std::upper_bound(checkpoints_.begin(), checkpoints_.end(), ordinal, [](U n, Checkpoint const& c) { return n < c.total; }) - 1;
+                auto c = *it;
+                U ledger = static_cast<U>(it - checkpoints_.begin()) * stride;
+                for (;; ++ledger) {
+                    if (ledger >= ledgers_) throw Error("Location out of range");
+                    U n = varint(counts_, c.at);
+                    if (ordinal < c.total + n) break;
+                    c.total += n;
+                }
+                out.emplace_back(first_ + ledger, ordinal - c.total);
             }
             ++pos; ++entry;
         }

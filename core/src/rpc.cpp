@@ -1054,14 +1054,14 @@ Json handle(History const& store, std::string const& method, Json const& p) {
                 with_owner_funds(entry, s.record);
                 transactions.push_back(std::move(entry));
             }
-            ledger["transactions"] = transactions;
+            ledger["transactions"] = std::move(transactions);
         }
         if (boolean(p, "diff")) {
             auto binary = boolean(p, "binary"); ledger["diff"] = Json::array();
             for (auto const& patch : store.ledger_record(h.sequence).patches)
                 ledger["diff"].push_back({{"object_id", upper(to_hex(patch.key))}, {"object", patch.object.empty() || binary ? Json(upper(to_hex(patch.object))) : object_json(patch)}});
         }
-        result["ledger"] = ledger; return result;
+        result["ledger"] = std::move(ledger); return result;
     }
     if (method == "ledger_data") {
         // rippled's ledger_data: pages of `limit` visited objects (2048 binary, 256 JSON at most);
@@ -1365,6 +1365,10 @@ Json rpc_request(fs::path const& dir, std::string const& method, Json const& par
             // cannot be reached).
             RpcClient upstream{forward, {}, 0};
             upstream.attempts = 1; upstream.forwarded_for = client; upstream.resolve = resolve;
+            // A public client's answers are paged by xrpld (its open ledger, ledger_data pages,
+            // server_definitions), well under 32 MB: a larger one is refused as an upstream not
+            // answering is, rather than held for each of the forwarding lane's requests at once.
+            upstream.max_response = 32ULL << 20;
             auto request = public_request(method, params);
             try { result = upstream.call(method, request); }
             catch (std::exception const& error) {

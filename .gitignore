@@ -32,3 +32,4 @@ __pycache__/
 !/docs/internal/PARITY-PLAN.md
 !/docs/benchmarks/
 !/docs/benchmarks/**/*.md
+/.claude/

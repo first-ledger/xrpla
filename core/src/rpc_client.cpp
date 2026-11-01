@@ -17,11 +17,17 @@
 namespace xrpla::core {
 namespace {
 namespace net = boost::asio;
+// An answer as it arrives, refused (the transfer ends in CURLE_WRITE_ERROR) past `max` bytes
+// (RpcClient::max_response).
+struct Receiving {
+    Bytes& bytes;
+    std::size_t max;
+};
 std::size_t receive(char* data, std::size_t size, std::size_t count, void* p) noexcept {
-    auto& bytes = *static_cast<Bytes*>(p);
+    auto& to = *static_cast<Receiving*>(p);
     auto n = size * count;
-    if (n > 512ULL * 1024 * 1024 - bytes.size()) return 0;
-    try { bytes.append(data, n); return n; } catch (...) { return 0; }
+    if (to.bytes.size() > to.max || n > to.max - to.bytes.size()) return 0;
+    try { to.bytes.append(data, n); return n; } catch (...) { return 0; }
 }
 // An IPv4 address written as IPv6 (::ffff:a.b.c.d) is the IPv4 address it is.
 net::ip::address unmapped(net::ip::address const& address) {
@@ -90,6 +96,7 @@ Json RpcClient::call(std::string const& method, Json params) const {
     for (unsigned attempt = 0; attempt < tries; ++attempt) {
         if (delay_ms || attempt) std::this_thread::sleep_for(std::chrono::milliseconds{delay_ms + (attempt ? 500U << attempt : 0)});
         Bytes response;
+        Receiving receiving{response, max_response};
         // Reset options, retaining the per-worker connection cache. Its connections were opened
         // under the pin they were made with: when the pin changes (the upstream checked again at
         // other addresses), a new handle, with none, is used, so no request goes on a connection
@@ -121,7 +128,7 @@ Json RpcClient::call(std::string const& method, Json params) const {
         curl_easy_setopt(curl.get(), CURLOPT_POSTFIELDS, body.data());
         curl_easy_setopt(curl.get(), CURLOPT_POSTFIELDSIZE_LARGE, static_cast<curl_off_t>(body.size()));
         curl_easy_setopt(curl.get(), CURLOPT_WRITEFUNCTION, receive);
-        curl_easy_setopt(curl.get(), CURLOPT_WRITEDATA, &response);
+        curl_easy_setopt(curl.get(), CURLOPT_WRITEDATA, &receiving);
         curl_easy_setopt(curl.get(), CURLOPT_FOLLOWLOCATION, 0L);
         curl_easy_setopt(curl.get(), CURLOPT_CONNECTTIMEOUT, 15L);
         curl_easy_setopt(curl.get(), CURLOPT_TIMEOUT, 60L);

@@ -103,6 +103,10 @@ class History(unittest.TestCase):
                     for row in rows:
                         subprocess.run([CPP,str(p),'--ledger',str(row[0]),'--output',str(out)],capture_output=True,check=True)
                         self.assertEqual(out.read_bytes(),hc.raw_record(row))
+                    # Each ledger alone as its transactions only (shuffled), and interleaved with whole and patches-only decodes
+                    # on the same reader (ascending, shuffled): the parts resume from each other's cursors.
+                    run=subprocess.run([CPP,str(p),'--parts'],capture_output=True,text=True,check=True)
+                    self.assertEqual(json.loads(run.stdout),{'passed':True,'checks':3*len(rows)})
             run=subprocess.run([CPP,*paths,'--jobs','3','--repeat','2'],capture_output=True,text=True,check=True)
             self.assertEqual(json.loads(run.stdout)['ledgers'],len(rows)*6)
             data=bytearray(data);data[18]^=1;data[-32:]=hashlib.sha256(data[:-32]).digest();p=d/'bad';p.write_bytes(data)

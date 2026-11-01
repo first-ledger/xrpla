@@ -376,6 +376,8 @@ Probe probe_http(std::string const& url, Upstream const& upstream, net::ip::addr
 Probe probe_ws(std::string const& url, Upstream const&, net::ip::address const& address, std::chrono::steady_clock::time_point until) {
     try {
         WsClient client(url, address.to_string(), before(until, std::chrono::seconds(15)));
+        // get_counts answers in kilobytes; nothing larger is read from an upstream being judged.
+        client.read_message_max(1 << 20);
         client.send({{"id", 1}, {"command", "get_counts"}});
         auto answer = client.receive(before(until, std::chrono::seconds(15)));
         if (!answer.is_object() || answer.value("type", "") != "response") return {UpstreamRole::unknown, "get_counts answered no response"};
@@ -541,6 +543,7 @@ Json unchecked_upstream() {
     return answer;
 }
 struct StreamHub;
+struct WsSession;
 struct Server {
     ServeOptions options;
     // Whether the upstreams may be sent requests: declared before the lanes, whose threads ask.
@@ -555,6 +558,19 @@ struct Server {
     unsigned refused = 0;
     std::optional<std::chrono::steady_clock::time_point> refusal_logged;
     std::atomic<unsigned> running{0};  // requests a worker is answering now
+    // The WebSocket sessions open, and the bytes queued for them to write (replies and stream
+    // messages; each session counts its own, WsSession::queued). Past max_ws_queued, the session
+    // holding the most is disconnected (shed): a thousand clients each within their own limit
+    // could otherwise hold tens of GB. Declared before the io_context, as the counts above.
+    // A stream message is one string shared by every session it goes to, so it counts once
+    // however many queue it (`ws_streamed`: how many entries hold each, by address; the string
+    // lives while any does): counted per session, a thousand transaction subscribers each a
+    // ledger behind passed the limit with a few MB in memory and healthy sessions were shed.
+    std::set<WsSession*> ws_sessions;
+    std::atomic<std::size_t> ws_queued{0};
+    std::unordered_map<std::string const*, unsigned> ws_streamed;
+    static constexpr std::size_t max_ws_queued = 2ULL << 30;
+    void shed();
     net::io_context io;
     // Requests run on lanes, each with its own threads and its own limit: a slow kind can make
     // only its own lane busy. Quick requests (quick() above) have half as many threads as heavy
@@ -693,7 +709,8 @@ struct Rendered {
     struct Version {
         bool rendered = false;
         std::vector<std::shared_ptr<std::string const>> transactions;
-        std::unordered_map<std::string, std::vector<std::uint32_t>> accounts, books;
+        std::unordered_map<::xrpl::AccountID, std::vector<std::uint32_t>> accounts;
+        std::unordered_map<std::string, std::vector<std::uint32_t>> books;
     };
     std::array<Version, 2> versions;  // by API version; the hub adds one a subscriber comes to need
 };
@@ -712,21 +729,28 @@ struct WsSession : std::enable_shared_from_this<WsSession> {
     // Messages to write, each marked when it is a stream message (rather than a reply).
     std::deque<std::pair<std::shared_ptr<std::string const>, bool>> outgoing;
     std::size_t streamed = 0;  // bytes of stream messages in `outgoing`
+    std::size_t replied = 0;   // bytes of replies in `outgoing`
     unsigned replies = 0;      // replies in `outgoing`
+    net::steady_timer deadline;  // the write in progress's (write_timeout)
     // Requests are read while earlier ones run, up to max_in_flight at once counting the replies
-    // not yet written (then reading waits and TCP holds the client back), and answered as each
-    // is ready, matched by its id as xrpld's are: one request at a time put a client's
-    // server_info behind its own book_offers.
+    // not yet written, and while the replies not yet written are at most max_replied (then
+    // reading waits and TCP holds the client back), and answered as each is ready, matched by
+    // its id as xrpld's are: one request at a time put a client's server_info behind its own
+    // book_offers.
     // Subscribe and unsubscribe change what the session receives, so they wait for each other
     // and apply in the order sent.
     static constexpr unsigned max_in_flight = 8;
+    static constexpr std::size_t max_replied = 8 << 20;
     unsigned in_flight = 0;
     bool reading = false, changing = false;
     std::deque<Json> changes;
     // Streams: ledger, transactions and accounts (rippled's subscribe), in the API version of the
     // subscribe request. A ledger's ledgerClosed message comes before its transactions.
     bool ledger_stream = false, transactions_stream = false, subscribed = false, closed = false;
-    std::set<std::string> accounts, books;
+    // The accounts followed are kept sorted, 20 bytes each: as base58 strings in a set, the
+    // 10000 a session may follow took about 1 MB, a GB over a thousand sessions.
+    std::vector<::xrpl::AccountID> accounts;
+    std::set<std::string> books;
     static constexpr std::size_t max_accounts = 10000, max_books = 1000, max_snapshots = 64;  // change() says why
     unsigned api_version = 1;
     std::uint32_t seen = 0;  // the last ledger whose messages were sent
@@ -738,9 +762,11 @@ struct WsSession : std::enable_shared_from_this<WsSession> {
     std::deque<std::shared_ptr<Rendered>> backlog;
     bool joined = false, holding = false;
     WsSession(Server& s, beast::tcp_stream stream, std::string address, std::shared_ptr<net::ssl::context>)
-        : server(s), ws(std::in_place_type<Plain>, std::move(stream)), client(std::move(address)) {}
+        : server(s), ws(std::in_place_type<Plain>, std::move(stream)), client(std::move(address)), deadline(s.io) { server.ws_sessions.insert(this); }
     WsSession(Server& s, beast::ssl_stream<beast::tcp_stream> stream, std::string address, std::shared_ptr<net::ssl::context> context)
-        : server(s), tls(std::move(context)), ws(std::in_place_type<Secure>, std::move(stream)), client(std::move(address)) {}
+        : server(s), tls(std::move(context)), ws(std::in_place_type<Secure>, std::move(stream)), client(std::move(address)), deadline(s.io) {
+        server.ws_sessions.insert(this);
+    }
     ~WsSession();
     template<class F> void with(F&& f) { std::visit([&](auto& s) { f(s); }, ws); }
     void path_find(Json const& request);
@@ -755,39 +781,74 @@ struct WsSession : std::enable_shared_from_this<WsSession> {
             s.async_accept(request, [self = shared_from_this()](beast::error_code ec) { if (!ec) self->read(); });
         });
     }
-    // A subscriber that cannot keep up is disconnected, and the operator's log says why.
+    // A client that cannot keep up is disconnected, and the operator's log says why (once: a
+    // session already closed, its read or write having failed, is only made sure of). What waits
+    // behind the message being written is never sent, so its memory goes now.
     void drop(char const* reason) {
-        if (closed) return;
-        std::cerr << Json{{"event", "subscriber_dropped"}, {"reason", reason}, {"address", client}}.dump() << std::endl;
+        if (!closed) std::cerr << Json{{"event", "subscriber_dropped"}, {"reason", reason}, {"address", client}, {"queued", queued()}}.dump() << std::endl;
         closed = true; backlog.clear();
+        while (outgoing.size() > 1) { forget(*outgoing.back().first, outgoing.back().second); outgoing.pop_back(); }
         beast::error_code ec; with([&](auto& s) { beast::get_lowest_layer(s).socket().close(ec); });
+    }
+    std::size_t queued() const { return streamed + replied; }
+    // A message's bytes leave the session's count and the server's (Server::ws_queued) as it
+    // leaves `outgoing`, written or dropped; what is left when the session ends leaves with it.
+    // A stream message leaves the server's as the last session holding it lets it go.
+    void count(std::string const& text, bool stream) {
+        if (stream) streamed += text.size(); else { replied += text.size(); ++replies; }
+        if (!stream || server.ws_streamed[&text]++ == 0) server.ws_queued += text.size();
+    }
+    void forget(std::string const& text, bool stream) {
+        if (stream) streamed -= text.size(); else { replied -= text.size(); --replies; }
+        if (stream) {
+            auto it = server.ws_streamed.find(&text);
+            if (--it->second) return;
+            server.ws_streamed.erase(it);
+        }
+        server.ws_queued -= text.size();
     }
     void send(Json value) { send(std::make_shared<std::string const>(value.dump())); }
     // A subscriber more than 16 MB of stream messages behind (past the message being written) is
     // disconnected. A count of messages dropped a healthy one on a single large ledger. Replies
-    // are not counted: there are at most max_in_flight of them (read() waits while they are
-    // written), and pipelined account_tx or ledger_data pages of a few MB each passed the cap.
+    // are not held to it: pipelined account_tx or ledger_data pages of a few MB each passed it,
+    // and read() takes no request while max_replied of them wait: a session holds at most that
+    // and the replies of the requests already running (max_in_flight), whatever they weigh. A
+    // client that drains them too slowly is disconnected by write_timeout, and every session's
+    // together by max_ws_queued. (xrpld's BaseWSPeer counts messages, ws_queue_limit's 100.)
     static constexpr std::size_t max_queued = 16 << 20;
     void send(std::shared_ptr<std::string const> text, bool stream = false) {
         if (closed) return;
-        if (stream) {
-            auto writing = !outgoing.empty() && outgoing.front().second ? outgoing.front().first->size() : 0;
-            if (!outgoing.empty() && streamed - writing + text->size() > max_queued) { drop("max_queued"); return; }
-            streamed += text->size();
-        } else {
-            ++replies;
+        if (!outgoing.empty()) {
+            auto writing = outgoing.front().first->size();
+            if (stream && streamed - (outgoing.front().second ? writing : 0) + text->size() > max_queued) { drop("max_queued"); return; }
         }
+        bool counted = stream && server.ws_streamed.contains(text.get());  // queued already, by some session
+        if (!counted && server.ws_queued + text->size() > Server::max_ws_queued) {
+            server.shed();
+            if (closed) return;  // this session held the most
+        }
+        count(*text, stream);
         outgoing.emplace_back(std::move(text), stream);
         if (outgoing.size() == 1) write();
     }
+    // A write pending past write_timeout disconnects the session: a client that answers the
+    // keep-alive pings (the idle timeout counts only what it sends) but does not read would keep
+    // its queue for good. xrpld's BaseWSPeer has no such deadline, only its ping's.
+    static constexpr std::chrono::seconds write_timeout{60};
     void write() {
+        deadline.expires_after(write_timeout);
+        deadline.async_wait([self = shared_from_this()](beast::error_code ec) {
+            // One that fired as its write ended, with the next write's deadline set since, is not due.
+            if (!ec && self->deadline.expiry() <= std::chrono::steady_clock::now()) self->drop("write_timeout");
+        });
         with([&](auto& s) {
             s.text(true);
             s.async_write(net::buffer(*outgoing.front().first), [self = shared_from_this()](beast::error_code ec, std::size_t) {
+                self->deadline.cancel();
                 if (ec) { self->closed = true; return; }
                 auto [text, stream] = std::move(self->outgoing.front());
                 self->outgoing.pop_front();
-                if (stream) self->streamed -= text->size(); else --self->replies;
+                self->forget(*text, stream);
                 if (!self->outgoing.empty()) self->write();
                 if (!stream) self->read();
             });
@@ -811,12 +872,17 @@ struct WsSession : std::enable_shared_from_this<WsSession> {
         if (ledger_stream && ledger.closed) send(ledger.closed, true);
         if (!wants_transactions()) return;
         auto const& version = ledger.versions[api_version - 1];
-        auto matching = [](std::set<std::string> const& wanted, std::unordered_map<std::string, std::vector<std::uint32_t>> const& index) {
+        // Books are a set, accounts a sorted vector.
+        auto contains = [](auto const& wanted, auto const& key) {
+            if constexpr (requires { wanted.contains(key); }) return wanted.contains(key);
+            else return std::binary_search(wanted.begin(), wanted.end(), key);
+        };
+        auto matching = [&contains](auto const& wanted, auto const& index) {
             std::vector<std::uint32_t> out;
             if (wanted.size() < index.size()) {
                 for (auto const& key : wanted) if (auto it = index.find(key); it != index.end()) out.insert(out.end(), it->second.begin(), it->second.end());
             } else {
-                for (auto const& [key, positions] : index) if (wanted.contains(key)) out.insert(out.end(), positions.begin(), positions.end());
+                for (auto const& [key, positions] : index) if (contains(wanted, key)) out.insert(out.end(), positions.begin(), positions.end());
             }
             std::sort(out.begin(), out.end()); out.erase(std::unique(out.begin(), out.end()), out.end());
             return out;
@@ -838,7 +904,7 @@ struct WsSession : std::enable_shared_from_this<WsSession> {
     static std::shared_ptr<std::string const> response_text(Json result, Json const& request) {
         Json response{{"type", "response"}, {"status", result.value("status", "error")}};
         if (result.contains("error")) { response.update(result); response["request"] = rpc::masked(request); }
-        else { result.erase("status"); response["result"] = result; }
+        else { result.erase("status"); response["result"] = std::move(result); }  // moved: a copy held a large answer twice
         for (auto name : {"id", "jsonrpc", "ripplerpc", "api_version"})
             if (request.is_object() && request.contains(name)) response[name] = request.at(name);
         return std::make_shared<std::string const>(response.dump());
@@ -863,7 +929,7 @@ struct WsSession : std::enable_shared_from_this<WsSession> {
         auto answer = std::make_shared<Json>(std::move(result));
         auto step = std::make_shared<std::function<void(std::size_t)>>();
         *step = [self = shared_from_this(), queries, answer, step, done = std::move(done)](std::size_t i) {
-            if (i == queries->size()) { done(*answer); *step = nullptr; return; }
+            if (i == queries->size()) { done(std::move(*answer)); *step = nullptr; return; }
             self->server.dispatch("book_offers", (*queries)[i].second, [answer, queries, step, i](Json offers) {
                 if (!offers.contains("error") && offers.contains("offers")) (*answer)[(*queries)[i].first] = offers.at("offers");
                 (*step)(i + 1);
@@ -874,7 +940,8 @@ struct WsSession : std::enable_shared_from_this<WsSession> {
     // rippled's subscribe/unsubscribe parameters for the streams served here; false when the
     // request names none.
     bool change(Json const& request, bool add) {
-        std::set<std::string> streams, ids;
+        std::set<std::string> streams;
+        std::set<::xrpl::AccountID> ids;
         if (request.contains("streams")) {
             if (!request.at("streams").is_array()) throw Failure{error(::xrpl::RpcInvalidParams)};
             for (auto const& stream : request.at("streams")) {
@@ -885,8 +952,9 @@ struct WsSession : std::enable_shared_from_this<WsSession> {
         if (request.contains("accounts")) {
             if (!request.at("accounts").is_array() || request.at("accounts").empty()) throw Failure{error(::xrpl::RpcActMalformed)};
             for (auto const& id : request.at("accounts")) {
-                if (!id.is_string() || !::xrpl::parseBase58<::xrpl::AccountID>(id.get<std::string>())) throw Failure{error(::xrpl::RpcActMalformed)};
-                ids.insert(id.get<std::string>());
+                auto parsed = id.is_string() ? ::xrpl::parseBase58<::xrpl::AccountID>(id.get<std::string>()) : std::nullopt;
+                if (!parsed) throw Failure{error(::xrpl::RpcActMalformed)};
+                ids.insert(*parsed);
             }
         }
         // Books: taker_pays is the issue going in, taker_gets the one coming out; `both` adds
@@ -908,10 +976,12 @@ struct WsSession : std::enable_shared_from_this<WsSession> {
         if (streams.empty() && ids.empty() && keys.empty()) return false;
         // Each account and book a session follows is kept and matched against every ledger's
         // transactions, and each snapshot book is a book_offers read: a client gets that much.
+        // (xrpld allows 100000 subscriptions a connection, InfoSub.h's
+        // kMaxSubscriptionsPerConnection; the 10000 accounts here are what one client needs.)
         if (add) {
             auto const asked = request.value("books", Json::array());
             std::size_t snapshots = std::count_if(asked.begin(), asked.end(), [](Json const& book) { return book.value("snapshot", false); });
-            std::size_t more_accounts = std::count_if(ids.begin(), ids.end(), [&](auto const& id) { return !accounts.contains(id); });
+            std::size_t more_accounts = std::count_if(ids.begin(), ids.end(), [&](auto const& id) { return !std::binary_search(accounts.begin(), accounts.end(), id); });
             std::size_t more_books = std::count_if(keys.begin(), keys.end(), [&](auto const& key) { return !books.contains(key); });
             if (accounts.size() + more_accounts > max_accounts || books.size() + more_books > max_books || snapshots > max_snapshots) {
                 auto refused = error(::xrpl::RpcInvalidParams);
@@ -923,7 +993,13 @@ struct WsSession : std::enable_shared_from_this<WsSession> {
         for (auto const& key : keys) { if (add) books.insert(key); else books.erase(key); }
         if (streams.contains("ledger")) ledger_stream = add;
         if (streams.contains("transactions")) transactions_stream = add;
-        for (auto const& id : ids) { if (add) accounts.insert(id); else accounts.erase(id); }
+        // Both sorted, so the change is one merge.
+        std::vector<::xrpl::AccountID> followed;
+        followed.reserve(add ? accounts.size() + ids.size() : accounts.size());
+        if (add) std::set_union(accounts.begin(), accounts.end(), ids.begin(), ids.end(), std::back_inserter(followed));
+        else std::set_difference(accounts.begin(), accounts.end(), ids.begin(), ids.end(), std::back_inserter(followed));
+        followed.shrink_to_fit();
+        accounts = std::move(followed);
         subscribed = ledger_stream || transactions_stream || !accounts.empty() || !books.empty();
         return true;
     }
@@ -978,7 +1054,7 @@ struct WsSession : std::enable_shared_from_this<WsSession> {
         });
     }
     void read() {
-        if (reading || closed || in_flight + replies >= max_in_flight) return;
+        if (reading || closed || in_flight + replies >= max_in_flight || replied > max_replied) return;
         reading = true;
         with([&](auto& s) { s.async_read(input, [self = shared_from_this()](beast::error_code ec, std::size_t) { self->reading = false; self->received(ec); }); });
     }
@@ -1039,8 +1115,8 @@ struct WsSession : std::enable_shared_from_this<WsSession> {
 struct PathProxy : std::enable_shared_from_this<PathProxy> {
     using Plain = websocket::stream<beast::tcp_stream>;
     using Secure = websocket::stream<beast::ssl_stream<beast::tcp_stream>>;
-    // Requests waiting to be sent upstream at once; more are answered tooBusy.
-    static constexpr std::size_t max_outgoing = 64;
+    // Requests waiting to be sent upstream at once, and their bytes; more are answered tooBusy.
+    static constexpr std::size_t max_outgoing = 64, max_pending = 1 << 20;
     Server& server;
     std::weak_ptr<WsSession> session;
     std::string client;
@@ -1049,14 +1125,21 @@ struct PathProxy : std::enable_shared_from_this<PathProxy> {
     std::variant<std::monostate, Plain, Secure> stream;
     beast::flat_buffer input;
     std::deque<std::string> outgoing;
+    std::size_t pending = 0;  // bytes in `outgoing`
     bool open = false, writing = false, closed = false;
     PathProxy(Server& s, std::weak_ptr<WsSession> owner, std::string address)
         : server(s), session(std::move(owner)), client(std::move(address)) {}
     template<class F> void with(F&& f) {
         std::visit([&](auto& s) { if constexpr (!std::is_same_v<std::decay_t<decltype(s)>, std::monostate>) f(s); }, stream);
     }
+    // Whether `more` bytes of requests can wait to be sent too.
+    bool full(std::size_t more) const { return outgoing.size() >= max_outgoing || pending + more > max_pending; }
     template<class S> void handshake(S& s, std::string const& host, std::string const& path) {
         s.set_option(websocket::stream_base::timeout::suggested(beast::role_type::client));
+        // A search's update is a few alternatives, kilobytes; one past 4 MB ends the relay rather
+        // than be read whole (Beast's default is 16 MB), and the session's stream limit applies
+        // to what is relayed.
+        s.read_message_max(4 << 20);
         // xrpld meters a client by its address; with this machine in its secure_gateway it reads this one.
         s.set_option(websocket::stream_base::decorator([address = client](websocket::request_type& r) { if (!address.empty()) r.set("X-Forwarded-For", address); }));
         s.async_handshake(host, path, [self = shared_from_this()](beast::error_code ec) { if (ec || self->closed) return self->fail(); self->opened(); });
@@ -1098,6 +1181,7 @@ struct PathProxy : std::enable_shared_from_this<PathProxy> {
     void opened() { open = true; read(); if (!outgoing.empty() && !writing) write(); }
     void send(std::string text) {
         if (closed) return;
+        pending += text.size();
         outgoing.push_back(std::move(text));
         if (open && !writing) write();
     }
@@ -1109,6 +1193,7 @@ struct PathProxy : std::enable_shared_from_this<PathProxy> {
                 self->writing = false;
                 if (ec == net::error::operation_aborted) return;  // the stream closed: the read pending tells why
                 if (ec) return self->fail();
+                self->pending -= self->outgoing.front().size();
                 self->outgoing.pop_front();
                 if (!self->outgoing.empty()) self->write();
             });
@@ -1235,7 +1320,8 @@ struct StreamHub : std::enable_shared_from_this<StreamHub> {
             auto position = static_cast<std::uint32_t>(out.transactions.size());
             out.transactions.push_back(std::make_shared<std::string const>(item.at("event").dump()));
             auto note = [position](std::vector<std::uint32_t>& positions) { if (positions.empty() || positions.back() != position) positions.push_back(position); };
-            for (auto const& a : item.at("accounts")) note(out.accounts[a.get<std::string>()]);
+            for (auto const& a : item.at("accounts"))
+                if (auto id = ::xrpl::parseBase58<::xrpl::AccountID>(a.get<std::string>())) note(out.accounts[*id]);
             for (auto const& b : item.value("books", Json::array())) note(out.books[b.get<std::string>()]);
         }
         return out;
@@ -1345,19 +1431,30 @@ void PathProxy::fail() {
         for (auto const& text : outgoing) {
             Json request = Json::parse(text, nullptr, false);
             auto answer = error(::xrpl::RpcNotReady); answer["error_message"] = "The upstream server did not answer.";
-            owner->send(WsSession::response_text(answer, request.is_object() ? request : Json::object()));
+            owner->send(WsSession::response_text(std::move(answer), request.is_object() ? request : Json::object()));
         }
         if (owner->paths.get() == this) owner->paths.reset();
     }
-    outgoing.clear();
+    outgoing.clear(); pending = 0;
     close();
 }
-WsSession::~WsSession() { server.release(client); if (paths) paths->close(); }
+WsSession::~WsSession() {
+    for (auto const& [text, stream] : outgoing) forget(*text, stream);
+    server.ws_sessions.erase(this);
+    server.release(client); if (paths) paths->close();
+}
+// The session holding the most bytes queued, of those still open, is disconnected; one closed
+// already releases the rest of its queue when its write ends.
+void Server::shed() {
+    WsSession* largest = nullptr;
+    for (auto* session : ws_sessions) if (!session->closed && (!largest || session->queued() > largest->queued())) largest = session;
+    if (largest && largest->queued()) largest->drop("max_queued_total");
+}
 void WsSession::path_find(Json const& request) {
     if (server.options.forward_ws.empty()) {
         auto answer = error(::xrpl::RpcNotSupported);
         answer["error_message"] = "path_find needs [serve] forward_ws, the upstream server's WebSocket.";
-        reply(answer, request); return;
+        reply(std::move(answer), request); return;
     }
     // The upstream's WebSocket is checked as the HTTP upstream is (UpstreamCheck), its probe on
     // the probes' lane: the network thread never waits for it. A search already open may still
@@ -1368,16 +1465,17 @@ void WsSession::path_find(Json const& request) {
     auto subcommand = request.value("subcommand", Json());
     bool ending = paths && (subcommand == "close" || subcommand == "status");
     if ((!addresses || addresses->empty()) && !ending) { reply(unchecked_upstream(), request); return; }
-    if (paths && paths->outgoing.size() >= PathProxy::max_outgoing) { reply(error(::xrpl::RpcTooBusy), request); return; }
     // What would give the request a role of its own (xrpld reads admin_user and admin_password
     // from each request) or carries a key is not sent on. Queued before a new connection
     // starts, so a connection that fails at once answers it.
     auto relayed = request;
     for (auto name : {"admin_user", "admin_password", "secret", "seed", "seed_hex", "passphrase"}) relayed.erase(name);
+    auto text = relayed.dump();
+    if (paths && paths->full(text.size())) { reply(error(::xrpl::RpcTooBusy), request); return; }
     bool fresh = !paths;
     if (fresh) paths = std::make_shared<PathProxy>(server, weak_from_this(), client);
     auto proxy = paths;
-    proxy->send(relayed.dump());
+    proxy->send(std::move(text));
     if (fresh) proxy->start(*addresses);
 }
 void stream_join(std::shared_ptr<WsSession> const& session) {
@@ -1565,6 +1663,8 @@ std::shared_ptr<net::ssl::context> tls_context(fs::path const& cert, fs::path co
     auto context = std::make_shared<net::ssl::context>(net::ssl::context::tls_server);
     context->set_options(net::ssl::context::default_workarounds | net::ssl::context::no_sslv2 | net::ssl::context::no_sslv3 |
                          net::ssl::context::no_tlsv1 | net::ssl::context::no_tlsv1_1 | net::ssl::context::single_dh_use);
+    // An idle connection's read and write buffers (about 34 KB) are freed until it next has data.
+    SSL_CTX_set_mode(context->native_handle(), SSL_MODE_RELEASE_BUFFERS);
     try {
         context->use_certificate_chain_file(cert.string());
         context->use_private_key_file(key.string(), net::ssl::context::pem);

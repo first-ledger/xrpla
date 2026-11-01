@@ -68,7 +68,8 @@ struct PeerLocal {
 // Finished messages) with their node keys, then framed protobuf messages from xrpl.proto (a
 // 4-byte length, a 2-byte type; no compression is offered). An internal thread owns the
 // stream: it answers pings, hands peers' requests to the responder and queues the message
-// types asked for. As xrpld's peer timer does, it pings the peer every minute and ends the
+// types asked for (others are dropped as they arrive, unread; one larger than its type ever is
+// ends the session). As xrpld's peer timer does, it pings the peer every minute and ends the
 // session when a ping is still unanswered a minute later, or when 128 messages or more have
 // waited to be sent at four checks in a row. Outbound sessions connect to an endpoint;
 // inbound ones come from a PeerListener.
@@ -104,6 +105,8 @@ public:
     // Frames (and their bytes) received from and sent to the peer since the handshake.
     struct Traffic { std::uint64_t messages_in = 0, bytes_in = 0, messages_out = 0, bytes_out = 0; };
     Traffic traffic() const;
+    // Bytes waiting to be sent to the peer.
+    std::size_t queued_bytes() const;
     // Ends the session (receive() then throws); `why` goes into failure().
     void close(std::string const& why = {});
     // The session as a responder sees a peer that asks (to charge it for what it sends).

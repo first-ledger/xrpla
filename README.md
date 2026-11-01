@@ -52,7 +52,7 @@ sudo apt install xrpla
 ```
 
 See [Install XRPLA](docs/guides/install.md) for the packages, building with Docker or from
-source, and the runtime dependencies. XRPLA 0.4.0 is built on libxrpl 3.4.1 and RocksDB 10.5.1, and
+source, and the runtime dependencies. XRPLA 0.4.1 is built on libxrpl 3.4.1 and RocksDB 10.5.1, and
 restores into xrpld 3.4 and Clio 2.7/2.8 databases.
 
 ## Licence

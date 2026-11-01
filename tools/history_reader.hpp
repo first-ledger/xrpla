@@ -102,6 +102,9 @@ inline S transactionColumns(V data){
  h.end();layout.end();for(U i=0;i<columns.size();++i)require(positions[i]==columns[i].size(),"Unconsumed column");return out;
 }
 
+// What a one-ledger decode builds: the whole record, its object changes alone (no header, transactions or
+// metadata), or its header, transactions and metadata alone (no object changes).
+enum class Part {all,patches,transactions};
 class Archive {
  struct Page {U first,count,txFirst,txCount;S digest;};
  struct Section {U offset,length,size;S digest;};
@@ -229,13 +232,16 @@ class Archive {
  void skipMetadata(Reader& r,Cache& cache){U tag=r.byte();if(!tag){r.bytes();return;}require(tag==1,"Metadata tag");U count=r.var(65536);for(U i=0;i<count;++i)skipNode(r,cache);}
  // One ledger's records parsed but not built: they only update the page's view cache.
  // `row` (when its transaction section is decoded) checks the metadata count the history section gives.
- void skipRow(Reader& r,Cache& cache,TxRow const* row){U n=r.var(1000000);require(!row||n==row->txs.size(),"Metadata count");for(U j=0;j<n;++j){r.var();r.var(recordMax);skipMetadata(r,cache);}U count=r.var(std::min<U>(1000000,r.data.size()));
+ void skipRow(Reader& r,Cache& cache,TxRow const* row){U n=r.var(1000000);require(!row||n==row->txs.size(),"Metadata count");for(U j=0;j<n;++j){r.var();r.var(recordMax);skipMetadata(r,cache);}skipPatches(r,cache);}
+ // A ledger's object changes parsed but not built: they only update the page's view cache, as patchesInto does.
+ void skipPatches(Reader& r,Cache& cache){U count=r.var(std::min<U>(1000000,r.data.size()));
   for(U j=0;j<count;++j){U kid=r.var(),len=r.var(recordMax);get(hashes_,kid);if(!len)cache.erase(kid);else {U tag=r.byte();if(!tag)r.bytes();else {require(tag==1,"Object tag");skipView(r,kid,cache);}}}}
- // One ledger's record; `patchesOnly` leaves its metadata empty. Either way the view cache is updated alike.
- S buildRow(Reader& r,Cache& cache,TxRow const& row,bool patchesOnly){require(r.var(1000000)==row.txs.size(),"Metadata count");std::vector<S> metas(row.txs.size());std::vector<bool> seen(row.txs.size());
+ // One ledger's record; `patchesOnly` leaves its metadata empty, `transactionsOnly` its object changes (a count of
+ // none). Either way the view cache is updated alike, so a cursor resumes after it as after a whole record.
+ S buildRow(Reader& r,Cache& cache,TxRow const& row,bool patchesOnly,bool transactionsOnly=false){require(r.var(1000000)==row.txs.size(),"Metadata count");std::vector<S> metas(row.txs.size());std::vector<bool> seen(row.txs.size());
   for(U j=0;j<row.txs.size();++j){U at=r.var(),len=r.var(recordMax);require(at<metas.size()&&!seen[at],"Transaction permutation");seen[at]=true;if(patchesOnly)skipMetadata(r,cache);else metas[at]=metadata(r,cache,len);}
   S out;le(out,row.seq,4);rec(out,row.header);le(out,row.txs.size(),4);for(U j=0;j<row.txs.size();++j){rec(out,row.txs[j]);rec(out,metas[j]);require(out.size()<=sectionMax,"Ledger transaction bound");}
-  patchesInto(r,cache,out);return out;}
+  if(transactionsOnly){skipPatches(r,cache);le(out,0,4);}else patchesInto(r,cache,out);return out;}
  // A ledger's object changes, appended to `out` as buildRow lays them out.
  void patchesInto(Reader& r,Cache& cache,S& out){U count=r.var(std::min<U>(1000000,r.data.size()));le(out,count,4);S prior;
   for(U j=0;j<count;++j){U kid=r.var(),len=r.var(recordMax);S key(identity(kid));require(prior.empty()||key>prior,"Patch order");prior=key;S value;if(!len)cache.erase(kid);else {U tag=r.byte();if(!tag)value=r.bytes();else {require(tag==1,"Object tag");value=view(r,kid,cache,len);}require(value.size()==len,"Object size");}out+=key;rec(out,value);require(out.size()<=sectionMax,"Ledger bound");}}
@@ -259,14 +265,14 @@ class Archive {
  struct Cursor {U index=std::numeric_limits<U>::max(),next=0,used=0;std::size_t pos=0;std::shared_ptr<S const> raw;Cache cache;};
  static constexpr std::size_t cursorsMax=4;
  std::vector<Cursor> cursors_;U cursorUse_=0;
- S ledger(U sequence,bool patchesOnly){loadDictionary();U index=pageOf(sequence);TxPage* tx=patchesOnly&&!get(txPages_,index).ready?nullptr:&txPage(index);auto const& p=get(pages_,index);U at=sequence-p.first;
+ S ledger(U sequence,Part part){loadDictionary();bool patchesOnly=part==Part::patches;U index=pageOf(sequence);TxPage* tx=patchesOnly&&!get(txPages_,index).ready?nullptr:&txPage(index);auto const& p=get(pages_,index);U at=sequence-p.first;
   Cursor* c=nullptr;std::shared_ptr<S const> raw;
   for(auto& k:cursors_)if(k.index==index){if(!raw)raw=k.raw;if(k.next<=at&&(!c||k.next>c->next))c=&k;}
   if(!c){
    if(cursors_.size()<cursorsMax)c=&cursors_.emplace_back();else c=&*std::min_element(cursors_.begin(),cursors_.end(),[](Cursor const& a,Cursor const& b){return a.used<b.used;});
    *c=Cursor{};c->raw=raw?raw:std::make_shared<S const>(section(2+2*index));Reader r{*c->raw};require(r.var(256)==p.count,"History page count");c->pos=r.pos;c->index=index;c->cache.reserve(8192);}
   c->used=++cursorUse_;
-  try{Reader r{*c->raw,c->pos};for(U i=c->next;i<at;++i)skipRow(r,c->cache,tx?&get(tx->rows,i):nullptr);S out=patchesOnly?buildPatches(r,c->cache,sequence,tx?&get(tx->rows,at):nullptr):buildRow(r,c->cache,get(tx->rows,at),false);c->pos=r.pos;c->next=at+1;return out;}
+  try{Reader r{*c->raw,c->pos};for(U i=c->next;i<at;++i)skipRow(r,c->cache,tx?&get(tx->rows,i):nullptr);S out=patchesOnly?buildPatches(r,c->cache,sequence,tx?&get(tx->rows,at):nullptr):buildRow(r,c->cache,get(tx->rows,at),false,part==Part::transactions);c->pos=r.pos;c->next=at+1;return out;}
   catch(...){*c=Cursor{};throw;}
  }
 public:
@@ -297,7 +303,10 @@ public:
  // One ledger's record (unverified, as with `verify` false): the page's earlier ledgers are parsed but not built, from where
  // the previous one-ledger decode stopped when it was an earlier ledger of the same page. With `patchesOnly` the record
  // has no header and no transactions (only its sequence and object changes), and the transaction section is not read.
- S decodeLedger(U sequence,bool patchesOnly=false){return ledger(sequence,patchesOnly);}
+ S decodeLedger(U sequence,bool patchesOnly=false){return ledger(sequence,patchesOnly?Part::patches:Part::all);}
+ // As above, building the part asked for: with Part::transactions the record has its header, transactions and metadata
+ // as a whole decode gives them, and no object changes (their count is zero); those are parsed, not built.
+ S decodeLedger(U sequence,Part part){return ledger(sequence,part);}
  // The object changes of a ledger record (from their count on), as decodePage and decodeLedger lay them out.
  static V patchesOf(V record){Reader r{record};r.take(4);r.take(r.little(4));for(U n=r.little(4),i=0;i<n;++i){r.take(r.little(4));r.take(r.little(4));}return record.substr(r.pos);}
  // Memory the one-ledger cursor holds: a page's history section and its view cache.

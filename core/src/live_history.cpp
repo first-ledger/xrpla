@@ -901,6 +901,7 @@ void follow_tail(fs::path const& dir, fs::path const& tail, fs::path const& tail
                     live = fresh;
                     use_live_history(live);
                     std::cerr << Json{{"event", "tail_rebuilt"}, {"status", live->status()}}.dump() << std::endl;
+                    release_freed_memory();  // the replaced tail's index, unless a request still holds it
                 } catch (std::exception const& error) {
                     base = nullptr;  // built again at the next check
                     std::cerr << Json{{"event", "tail_refresh_failed"}, {"error", error.what()}}.dump() << std::endl;

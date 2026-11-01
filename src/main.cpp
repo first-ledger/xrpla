@@ -17,6 +17,14 @@
 #include <set>
 #include <thread>
 
+#ifdef __linux__
+// jemalloc's settings (linked on Linux; CMakeLists.txt), read when it starts; MALLOC_CONF set in
+// the environment overrides them. On its defaults it returns freed pages only as later frees pass
+// through, so a server holding still kept gigabytes it no longer used: a thread of its own returns
+// them, dirty pages unused for 5 s and lazily freed ones for 1 s.
+extern "C" char const* malloc_conf = "background_thread:true,dirty_decay_ms:5000,muzzy_decay_ms:1000";
+#endif
+
 namespace {
 constexpr char help[] = "xrpla " XRPLA_VERSION R"( — authenticated and verified XRPL archives
 

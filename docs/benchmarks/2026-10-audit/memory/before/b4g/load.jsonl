@@ -1,0 +1,5 @@
+{"mix": "realistic", "clients": 25, "slow_readers": 0, "seconds": 180, "requests": 8656, "per_second": 48.1, "errors": {"actNotFound": 2281}, "ms_p50": 76, "ms_p95": 2588, "ms_p99": 5432, "ms_max": 19978, "received_mb": 149}
+{"mix": "realistic", "clients": 100, "slow_readers": 0, "seconds": 180, "requests": 8712, "per_second": 48.4, "errors": {"actNotFound": 2252}, "ms_p50": 87, "ms_p95": 6855, "ms_p99": 9803, "ms_max": 27103, "received_mb": 161}
+{"mix": "realistic", "clients": 200, "slow_readers": 0, "seconds": 180, "requests": 9280, "per_second": 51.6, "errors": {"actNotFound": 2404}, "ms_p50": 118, "ms_p95": 11768, "ms_p99": 14805, "ms_max": 30872, "received_mb": 171}
+{"mix": "heavy", "clients": 100, "slow_readers": 0, "seconds": 180, "requests": 663, "per_second": 3.7, "errors": {"TimeoutError": 7}, "ms_p50": 29631, "ms_p95": 43218, "ms_p99": 53920, "ms_max": 85749, "received_mb": 147}
+{"mix": "heavy", "clients": 100, "slow_readers": 100, "seconds": 180, "requests": 734, "per_second": 4.1, "errors": {"BrokenPipeError": 13}, "ms_p50": 25761, "ms_p95": 44888, "ms_p99": 57783, "ms_max": 97888, "received_mb": 170}

@@ -1,0 +1,8 @@
+{"mix": "realistic", "clients": 25, "slow_readers": 0, "seconds": 180, "requests": 8877, "per_second": 49.3, "errors": {"actNotFound": 2334}, "ms_p50": 91, "ms_p95": 2405, "ms_p99": 5574, "ms_max": 22949, "received_mb": 153}
+{"mix": "realistic", "clients": 100, "slow_readers": 0, "seconds": 180, "requests": 10085, "per_second": 56.0, "errors": {"actNotFound": 2601}, "ms_p50": 97, "ms_p95": 5968, "ms_p99": 9011, "ms_max": 28752, "received_mb": 185}
+{"mix": "realistic", "clients": 200, "slow_readers": 0, "seconds": 180, "requests": 9060, "per_second": 50.3, "errors": {"actNotFound": 2348}, "ms_p50": 201, "ms_p95": 12504, "ms_p99": 15663, "ms_max": 30702, "received_mb": 167}
+{"mix": "heavy", "clients": 100, "slow_readers": 0, "seconds": 180, "requests": 725, "per_second": 4.0, "errors": {}, "ms_p50": 26342, "ms_p95": 44970, "ms_p99": 60614, "ms_max": 83711, "received_mb": 162}
+{"mix": "heavy", "clients": 100, "slow_readers": 100, "seconds": 180, "requests": 748, "per_second": 4.2, "errors": {"BrokenPipeError": 13}, "ms_p50": 25761, "ms_p95": 43917, "ms_p99": 60794, "ms_max": 78968, "received_mb": 171}
+{"mix": "only_account_tx_pages", "clients": 100, "slow_readers": 0, "seconds": 120, "requests": 434, "per_second": 3.6, "errors": {}, "ms_p50": 33981, "ms_p95": 54272, "ms_p99": 62828, "ms_max": 74223, "received_mb": 132}
+{"mix": "only_ledger_txs", "clients": 100, "slow_readers": 0, "seconds": 120, "requests": 363560, "per_second": 3029.7, "errors": {}, "ms_p50": 32, "ms_p95": 42, "ms_p99": 53, "ms_max": 1179, "received_mb": 50327}
+{"mix": "only_ledger_data", "clients": 100, "slow_readers": 0, "seconds": 120, "requests": 258305, "per_second": 2152.5, "errors": {}, "ms_p50": 31, "ms_p95": 37, "ms_p99": 57, "ms_max": 22169, "received_mb": 34824}
