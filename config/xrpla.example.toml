@@ -273,16 +273,11 @@
 # [node]: the xrpld to follow. Read by: connected.
 #[node]
 
-# The node followed for new ledgers (required): http://, https://, ws:// or wss://.
-# A local xrpld's admin port, http://127.0.0.1:5005 ([port_rpc_admin_local]), is an
-# admin connection, so xrpld does not rate-limit it. Leave [serve] forward on a
-# public port: requests forwarded to an admin port would run with admin rights.
+# Its JSON-RPC URL (required), local or remote.
 #rpc = "http://127.0.0.1:5005"
 
-# Further nodes, tried in order when the primary does not hold a ledger (a local node
-# keeps little history) or cannot be reached. One URL, or a list of them. http(s):// or
-# ws(s)://. A public node is rate-limited, so it is a fallback, not the primary.
-#fallback = ["wss://api.xrpkuwait.com"]
+# More nodes, tried when the primary does not hold a ledger. One URL or a list.
+#fallback = ["wss://api.example.com"]
 
 # Its gRPC endpoint, grpc://HOST:PORT (xrpld's [port_grpc]): each ledger's changes in one
 # request instead of one per changed object. Empty: JSON-RPC only.
