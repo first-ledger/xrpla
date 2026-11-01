@@ -1,4 +1,5 @@
 #include <xrpla/core/operations.hpp>
+#include "ws_client.hpp"
 #include <boost/asio/ip/tcp.hpp>
 #include <curl/curl.h>
 #include <sys/socket.h>
@@ -9,6 +10,7 @@
 #include <cstring>
 #include <algorithm>
 #include <atomic>
+#include <iostream>
 #include <mutex>
 #include <utility>
 
@@ -76,6 +78,12 @@ void pin_connections(void* curl, std::vector<std::string> const& allowed) {
 bool RpcClient::last_reached() { return reached; }
 Json RpcClient::call(std::string const& method, Json params) const {
     reached = true;
+    // The same JSON methods, on a connection this thread keeps. A public node is often offered
+    // as wss:// and answers there when its HTTP port is rate-limited or absent.
+    if (url.starts_with("ws://") || url.starts_with("wss://")) {
+        try { return ws_rpc_call(*this, method, params); }
+        catch (...) { reached = false; throw; }
+    }
     if (!url.starts_with("https://") && !url.starts_with("http://")) throw Error("RPC source must be HTTP or HTTPS");
     auto body = Json{{"method", method}, {"params", Json::array({params})}}.dump();
     auto cached = cache / (sha256(url + body) + ".json");
@@ -138,7 +146,7 @@ Json RpcClient::call(std::string const& method, Json params) const {
         auto document = Json::parse(response);
         if (!document.contains("result") || !document["result"].is_object()) throw Error("Invalid RPC response envelope");
         auto result = document.at("result");
-        if (result.value("error", "") == "tooBusy" || result.value("error", "") == "slowDown") {
+        if (auto error = result.value("error", ""); error == "tooBusy" || error == "slowDown" || error == "rate_limited") {
             if (attempt + 1 < tries) continue;
         }
         // Cache only immutable ledger-pinned extraction calls, never forwarding
@@ -169,6 +177,61 @@ std::vector<Json> RpcClient::call_many(std::string const& method, std::vector<Js
             auto index = next.fetch_add(1);
             if (index >= params.size()) break;
             try { results[index] = call(method, params[index]); }
+            catch (...) { std::lock_guard guard(mutex); if (!failure) failure = std::current_exception(); failed = true; }
+        }
+    });
+    workers.clear();
+    if (failure) std::rethrow_exception(failure);
+    return results;
+}
+namespace {
+// The node does not hold the ledger. entryNotFound is not this: the ledger is held and the
+// object is gone, which is the answer.
+bool lacks_ledger(Json const& result) {
+    auto error = result.value("error", "");
+    return error == "lgrNotFound" || error == "ledgerNotFound";
+}
+}
+Json call_sources(std::vector<std::string> const& urls, std::string const& method, Json params, unsigned delay_ms, unsigned attempts, fs::path const& cache) {
+    if (urls.empty()) throw Error("No RPC source");
+    for (std::size_t i = 0; i < urls.size(); ++i) {
+        RpcClient client{urls[i], cache, delay_ms};
+        client.attempts = std::max(1u, attempts);
+        try {
+            auto result = client.call(method, params);
+            auto error = result.value("error", "");
+            // Retries are spent inside the call. A source that is still busy, or that does not
+            // hold the ledger, leaves this ledger to the next source.
+            bool passed = lacks_ledger(result) || error == "tooBusy" || error == "slowDown" || error == "rate_limited";
+            if (passed && i + 1 < urls.size()) continue;
+            // A later source, and only for a ledger: object fetches of a ledger the first source
+            // lacks would say so once per object.
+            if (i > 0 && method == "ledger" && !result.contains("error"))
+                std::cerr << Json{{"event", "ledger_from_fallback"}, {"source", urls[i]},
+                                  {"ledger", params.contains("ledger_index") ? params.at("ledger_index") : Json()}}.dump() << std::endl;
+            return result;
+        } catch (Error const&) {
+            if (i + 1 == urls.size()) throw;
+        } catch (std::exception const& error) {
+            if (i + 1 == urls.size()) throw Error(error.what());
+        }
+    }
+    throw Error("No RPC source served " + method);
+}
+std::vector<Json> call_sources_many(std::vector<std::string> const& urls, std::string const& method, std::vector<Json> const& params, unsigned jobs,
+                                    unsigned delay_ms, unsigned attempts, fs::path const& cache) {
+    if (!jobs || jobs > 32) throw Error("RPC jobs must be between 1 and 32");
+    std::vector<Json> results(params.size());
+    std::atomic<std::size_t> next{0};
+    std::atomic<bool> failed{false};
+    std::mutex mutex;
+    std::exception_ptr failure;
+    std::vector<std::jthread> workers;
+    for (unsigned n = 0; n < jobs && n < params.size(); ++n) workers.emplace_back([&] {
+        while (!failed.load()) {
+            auto index = next.fetch_add(1);
+            if (index >= params.size()) break;
+            try { results[index] = call_sources(urls, method, params[index], delay_ms, attempts, cache); }
             catch (...) { std::lock_guard guard(mutex); if (!failure) failure = std::current_exception(); failed = true; }
         }
     });

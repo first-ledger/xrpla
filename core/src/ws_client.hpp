@@ -29,4 +29,9 @@ public:
     // connection is closed then, and the caller connects again.
     Json receive(std::chrono::milliseconds idle);
 };
+struct RpcClient;
+// One JSON-RPC request on `url` (ws:// or wss://), returned as RpcClient::call returns it (the
+// result object; an error is that object's "error"). The connection is this thread's, kept and
+// used again for the same url. `client` supplies the pause, the retries and the cache.
+Json ws_rpc_call(RpcClient const& client, std::string const& method, Json const& params);
 }

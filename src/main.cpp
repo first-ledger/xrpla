@@ -36,10 +36,10 @@ constexpr char help[] = "xrpla " XRPLA_VERSION R"( — authenticated and verifie
   xrpla status [--dir ./data] [--config FILE]
   xrpla keygen --out publisher.seed
   xrpla export --source RPC_URL|grpc://HOST:PORT --range A-B --out ARCHIVE --signing-key FILE
-               [--delay-ms 200] [--jobs 1] [--grpc-source grpc[s]://HOST:PORT [--grpc-jobs N]] [--full-state]
+               [--fallback URL,URL] [--delay-ms 200] [--jobs 1] [--grpc-source grpc[s]://HOST:PORT [--grpc-jobs N]] [--full-state]
                [--compression-level 3] [--no-rpc-cache] [--history-peers default|none|HOST:PORT,... [--history-identity FILE]]
   xrpla publish --source RPC_URL|grpc://HOST:PORT --out ARCHIVE --signing-key FILE
-                [--start N] [--until N] [--batch-ledgers 64] [--interval 3]
+                [--fallback URL,URL] [--start N] [--until N] [--batch-ledgers 64] [--interval 3]
                 [--delay-ms 200] [--jobs 4] [--grpc-source grpc[s]://HOST:PORT [--grpc-jobs N]] [--full-state] [--once] [--no-rpc-cache]
                 [--compression-level 3] [--merge-chunks] [--interval-snapshots N]
                 [--history-peers default|none|HOST:PORT,... [--history-identity FILE]]
@@ -185,7 +185,7 @@ int run(int argc, char** argv) {
     if (command == "verify" || command == "build") allowed.insert("--trust-ledger-hash");
     if (command == "query") for (auto const* name : {"--kind", "--key", "--ledger"}) allowed.insert(name);
     if (command == "export") for (auto const* name : {"--source", "--range", "--out", "--signing-key", "--delay-ms", "--full-state"}) allowed.insert(name);
-    if (command == "export" || command == "publish") for (auto name : {"--jobs", "--grpc-source", "--grpc-jobs", "--compression-level", "--no-rpc-cache", "--interval-snapshots", "--history-peers", "--history-identity"}) allowed.insert(name);
+    if (command == "export" || command == "publish") for (auto name : {"--jobs", "--grpc-source", "--grpc-jobs", "--compression-level", "--no-rpc-cache", "--interval-snapshots", "--history-peers", "--history-identity", "--fallback"}) allowed.insert(name);
     if (command == "publish") for (auto name : {"--source", "--out", "--signing-key", "--delay-ms", "--full-state", "--start", "--until", "--batch-ledgers", "--interval", "--once",
                                                  "--validator-list", "--validator-list-key", "--validations-node", "--merge-chunks",
                                                  "--peers", "--peer-identity", "--network-id", "--peer-connections", "--peer-serve", "--peer-ledgers",
@@ -479,6 +479,11 @@ int run(int argc, char** argv) {
             exporting.jobs = args.contains("--jobs") ? jobs_value(args.at("--jobs")) : command == "publish" ? 4 : 1;
             exporting.rpc_cache = !args.contains("--no-rpc-cache");
             if (args.contains("--grpc-source")) exporting.grpc_source = args.at("--grpc-source");
+            // Nodes tried, in order, when --source does not hold a ledger or cannot be reached.
+            if (args.contains("--fallback")) {
+                std::stringstream list(args.at("--fallback"));
+                for (std::string url; std::getline(list, url, ',');) if (!url.empty()) exporting.fallbacks.push_back(url);
+            }
             // Connections to the gRPC node beside the JSON-RPC one's --jobs (without it, gRPC serves every ledger).
             if (args.contains("--grpc-jobs")) exporting.grpc_jobs = jobs_value(args.at("--grpc-jobs"), "--grpc-jobs");
             // Peers for transaction trees the source omits (a few 2013 ledgers): none unless given,

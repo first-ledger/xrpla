@@ -10,7 +10,7 @@ struct RpcClient {
     std::string url;
     fs::path cache;
     unsigned delay_ms = 200;
-    // Tries on transport errors, HTTP 429/5xx and tooBusy/slowDown answers (1: none again).
+    // Tries on transport errors, HTTP 429/5xx and tooBusy/slowDown/rate_limited answers (1: none again).
     unsigned attempts = 5;
     // Sent as X-Forwarded-For when set: the client a request is relayed for (xrpld accounts
     // resources by it when this machine is one of its secure_gateway addresses).
@@ -32,6 +32,13 @@ struct RpcClient {
     // kind, to have an upstream not reached checked again soon (server.cpp).
     static bool last_reached();
 };
+// Asks `urls` in order (http(s):// or ws(s)://, the same JSON methods either way). The next is
+// asked when this one does not hold the ledger (lgrNotFound or ledgerNotFound) or cannot be
+// reached. entryNotFound is the answer (the object is gone) and is not asked of the next.
+// `attempts` and `delay_ms` are RpcClient's. A ledger served by a later url is logged.
+Json call_sources(std::vector<std::string> const& urls, std::string const& method, Json params, unsigned delay_ms, unsigned attempts, fs::path const& cache);
+std::vector<Json> call_sources_many(std::vector<std::string> const& urls, std::string const& method, std::vector<Json> const& params, unsigned jobs,
+                                    unsigned delay_ms, unsigned attempts, fs::path const& cache);
 // Lets a libcurl handle (a CURL*, which curl.h declares as void) connect only to the addresses in
 // `allowed`, written as boost::asio writes them (an IPv4 address written as IPv6 is the IPv4
 // address it is), whatever its name cache holds. Read at each connection: `allowed` must outlive
@@ -75,6 +82,11 @@ struct ExportOptions {
     std::vector<std::string> history_peers;
     fs::path history_identity;
     std::uint32_t network_id = 0;
+    // After `source`, in order. A ledger the source does not hold (lgrNotFound), or a source
+    // that cannot be reached, is asked of the next. http(s):// or ws(s)://. The first source
+    // that answers is the one followed for the newest ledger: a local xrpld's admin port, which
+    // is not rate-limited. Empty: the source alone.
+    std::vector<std::string> fallbacks;
 };
 class GrpcLedgerClient {
     struct Impl;
