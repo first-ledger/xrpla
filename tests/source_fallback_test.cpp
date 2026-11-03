@@ -12,6 +12,7 @@
 #include <iostream>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <sstream>
 #include <thread>
 #include <vector>
@@ -32,9 +33,11 @@ class HttpNode {
     std::vector<std::shared_ptr<tcp::socket>> sockets_;
     std::thread thread_;
     Json answer_;
+    std::optional<Json> first_;
 public:
     std::atomic<unsigned> hits{0};
-    explicit HttpNode(Json answer) : answer_(std::move(answer)) {
+    // `first`, when set, answers the first request only (a node busy for a moment).
+    explicit HttpNode(Json answer, std::optional<Json> first = {}) : answer_(std::move(answer)), first_(std::move(first)) {
         thread_ = std::thread([this] {
             while (!stopping_) {
                 auto socket = std::make_shared<tcp::socket>(io_);
@@ -50,11 +53,11 @@ public:
                     http::request<http::string_body> request;
                     http::read(*socket, buffer, request, ec);
                     if (ec) break;
-                    ++hits;
+                    auto n = ++hits;
                     http::response<http::string_body> response{http::status::ok, request.version()};
                     response.set(http::field::content_type, "application/json");
                     response.keep_alive(request.keep_alive());
-                    response.body() = Json{{"result", answer_}}.dump();
+                    response.body() = Json{{"result", n == 1 && first_ ? *first_ : answer_}}.dump();
                     response.prepare_payload();
                     http::write(*socket, response, ec);
                     if (ec || !request.keep_alive()) break;
@@ -95,6 +98,7 @@ class WsNode {
     std::vector<std::thread> sessions_;
     std::thread accepting_;
     Json result_;
+    bool hang_up_;
     void serve(std::shared_ptr<websocket::stream<tcp::socket>> stream) {
         boost::system::error_code ec;
         stream->accept(ec);
@@ -111,12 +115,15 @@ class WsNode {
             stream->text(true);
             stream->write(net::buffer(body), ec);
             if (ec) return;
+            // As a server that drops idle connections: the caller's kept connection is closed.
+            if (hang_up_) { stream->close(websocket::close_code::going_away, ec); return; }
         }
     }
 public:
     std::atomic<unsigned> hits{0};
     std::atomic<unsigned> connections{0};
-    explicit WsNode(Json result) : result_(std::move(result)) {
+    // `hang_up`: the connection is closed after each answer.
+    explicit WsNode(Json result, bool hang_up = false) : result_(std::move(result)), hang_up_(hang_up) {
         accepting_ = std::thread([this] {
             for (;;) {
                 tcp::socket socket(io_);
@@ -291,4 +298,38 @@ TEST(Sources, AFallbackIsLoggedOnceWhenServingSwitches) {
     auto second = captured.take();
     EXPECT_NE(first.find("ledger_from_fallback"), std::string::npos) << first;
     EXPECT_EQ(second.find("ledger_from_fallback"), std::string::npos) << second;
+}
+
+TEST(Sources, AWebSocketPrimaryThatDroppedItsConnectionIsDialedAgain) {
+    forget_unreachable_sources();
+    WsNode primary(Json{{"kept", true}, {"ledger_index", 5}}, true);
+    HttpNode fallback(Json{{"fallback", true}});
+    // Each answer is followed by the server closing the connection this thread keeps. The next
+    // request finds it closed: the primary is dialed again, not passed over for 30 seconds.
+    for (int n = 0; n < 3; ++n) {
+        auto result = call_sources({primary.url(), fallback.url()}, "ledger", {{"ledger_index", 5}}, 0, 5, {});
+        EXPECT_TRUE(result.value("kept", false)) << result.dump();
+    }
+    EXPECT_EQ(primary.hits.load(), 3u);
+    EXPECT_EQ(primary.connections.load(), 3u);
+    EXPECT_EQ(fallback.hits.load(), 0u);
+}
+
+TEST(Sources, ABusyPrimaryIsAskedOnceMoreBeforeTheFallback) {
+    forget_unreachable_sources();
+    HttpNode primary(Json{{"kept", true}, {"ledger_index", 6}}, Json{{"error", "tooBusy"}});
+    HttpNode fallback(Json{{"fallback", true}});
+    auto result = call_sources({primary.url(), fallback.url()}, "ledger", {{"ledger_index", 6}}, 0, 5, {});
+    EXPECT_TRUE(result.value("kept", false)) << result.dump();
+    EXPECT_EQ(primary.hits.load(), 2u);
+    EXPECT_EQ(fallback.hits.load(), 0u);
+}
+
+TEST(Sources, APrimaryStillBusyLeavesTheLedgerToTheFallback) {
+    forget_unreachable_sources();
+    HttpNode primary(Json{{"error", "tooBusy"}});
+    HttpNode fallback(Json{{"fallback", true}});
+    auto result = call_sources({primary.url(), fallback.url()}, "ledger", {{"ledger_index", 6}}, 0, 5, {});
+    EXPECT_TRUE(result.value("fallback", false)) << result.dump();
+    EXPECT_EQ(primary.hits.load(), 2u);
 }

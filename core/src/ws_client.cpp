@@ -181,21 +181,33 @@ Json ws_rpc_call(RpcClient const& client, std::string const& method, Json const&
         if (client.delay_ms || attempt) std::this_thread::sleep_for(std::chrono::milliseconds{client.delay_ms + (attempt ? 500U << attempt : 0)});
         try {
             auto& slot = ws_conns[client.url];
-            if (!slot.client) slot.client = std::make_unique<WsClient>(client.url, std::chrono::seconds(30));
-            auto id = slot.next_id++;
-            Json message = params;
-            message["command"] = method;
-            message["id"] = id;
-            slot.client->send(message);
+            auto exchange = [&] {
+                auto id = slot.next_id++;
+                Json message = params;
+                message["command"] = method;
+                message["id"] = id;
+                slot.client->send(message);
+                for (int skipped = 0; skipped < 8; ++skipped) {
+                    auto incoming = slot.client->receive(std::chrono::seconds(60));
+                    if (incoming.contains("id") && !same_id(incoming, id)) continue;
+                    return unwrap_rpc(incoming);
+                }
+                throw Error("WebSocket response did not match the request");
+            };
             Json result;
-            bool matched = false;
-            for (int skipped = 0; skipped < 8 && !matched; ++skipped) {
-                auto incoming = slot.client->receive(std::chrono::seconds(60));
-                if (incoming.contains("id") && !same_id(incoming, id)) continue;
-                result = unwrap_rpc(incoming);
-                matched = true;
+            if (slot.client) {
+                // A kept connection the server (or a proxy) has since closed fails on its first use.
+                // That says nothing about the source: it is dialed again once, within this attempt,
+                // so a source asked only once is not counted unreachable for it.
+                try { result = exchange(); }
+                catch (std::exception const&) {
+                    slot.client = std::make_unique<WsClient>(client.url, std::chrono::seconds(30));
+                    result = exchange();
+                }
+            } else {
+                slot.client = std::make_unique<WsClient>(client.url, std::chrono::seconds(30));
+                result = exchange();
             }
-            if (!matched) throw Error("WebSocket response did not match the request");
             if (retryable_result(result)) {
                 if (attempt + 1 < tries) continue;
             }

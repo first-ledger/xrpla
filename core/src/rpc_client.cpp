@@ -192,6 +192,10 @@ bool lacks_ledger(Json const& result) {
     auto error = result.value("error", "");
     return error == "lgrNotFound" || error == "ledgerNotFound";
 }
+bool busy(Json const& result) {
+    auto error = result.value("error", "");
+    return error == "tooBusy" || error == "slowDown" || error == "rate_limited";
+}
 // A source that could not be reached stays out of the order for this long: a down primary is
 // not dialed again on every ledger and every tip poll.
 constexpr auto kUnreachableFor = std::chrono::seconds(30);
@@ -254,12 +258,17 @@ Json call_sources(std::vector<std::string> const& urls, std::string const& metho
         client.attempts = last ? std::max(1u, attempts) : 1u;
         try {
             auto result = client.call(method, params);
+            // Busy is momentary, and the next source is often a rate-limited public node: a source
+            // asked only once is asked again, after a pause, before its load moves on.
+            if (!last && busy(result)) {
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+                result = client.call(method, params);
+            }
             if (RpcClient::last_reached()) mark_reachable(urls[i]);
             else mark_unreachable(urls[i]);
-            auto error = result.value("error", "");
             // Retries are spent inside the call. A source that is still busy, or that does not
             // hold the ledger, leaves this ledger to the next source.
-            bool passed = lacks_ledger(result) || error == "tooBusy" || error == "slowDown" || error == "rate_limited";
+            bool passed = lacks_ledger(result) || busy(result);
             if (passed && !last) continue;
             if (served) *served = i;
             // Once per switch, and only for a ledger: object fetches would say so once per object.
