@@ -531,6 +531,7 @@ class NodeSource {
     }
     // Indexes at or after this are fallbacks. With no fallback configured, none of them are.
     std::size_t primary_urls() const { return fallbacks_.empty() ? urls_.size() : urls_.size() - fallbacks_.size(); }
+    // gRPC failing (tip), logged once until it answers again.
     void grpc_unavailable(std::string const& error) const {
         std::lock_guard lock(grpc_notice_mutex_);
         if (grpc_down_) return;
@@ -672,8 +673,9 @@ public:
             note_ledger_source("grpc", false, sequence);
         } catch (Error const& error) {
             if (!missing(error.what())) throw;
+            // A ledger gRPC does not hold is a gap in its history, not gRPC failing: no
+            // grpc_fallback here. Which source served it is logged by call_sources.
             if (!fallbacks_.empty()) {
-                grpc_unavailable(error.what());
                 try {
                     auto got = get_ledger(urls_, delay_ms_, ledger_cache_, sequence, nullptr, primary_urls());
                     complete(got.first, got.second);
