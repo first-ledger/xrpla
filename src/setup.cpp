@@ -323,14 +323,23 @@ void keep_synced(core::SyncOptions sync, fs::path pointer, std::chrono::seconds 
         }
     }).detach();
 }
+// A fallback is asked the same JSON methods as the primary, over HTTP or WebSocket.
+bool fallback_url(std::string const& url) {
+    for (std::string_view scheme : {"http://", "https://", "ws://", "wss://"})
+        if (url.starts_with(scheme) && url.size() > scheme.size()) return true;
+    return false;
+}
 // The node to follow, then each fallback (a URL or a list). The first is the primary: a local
 // xrpld's admin port, which is not rate-limited. Later ones are asked for ledgers it no longer holds.
+// Each fallback is checked here, before the follower starts: one it cannot use would otherwise
+// stop the follower at every restart.
 std::vector<std::string> node_endpoints(toml::table const& config) {
     std::vector<std::string> urls{required(config, "node.rpc")};
     auto node = config.at_path("node.fallback");
     if (!node) return urls;
     auto add = [&](std::optional<std::string> url) {
         if (!url || url->empty()) throw Error("Config node.fallback must be a URL or an array of URLs");
+        if (!fallback_url(*url)) throw Error("Config node.fallback must be http(s):// or ws(s):// URLs: " + *url);
         urls.push_back(*url);
     };
     if (auto one = node.value<std::string>()) add(one);
@@ -1580,19 +1589,30 @@ int setup_connected(fs::path const& config_path, fs::path const& unit_dir, toml:
     // After the gRPC question, so an answer script written before fallbacks existed still puts
     // the gRPC URL on this question. The fallback answer is the new one, after it.
     if (auto grpc = p.ask("Node gRPC URL for ledger diffs (empty: JSON-RPC only)"); !grpc.empty()) node.insert("grpc", grpc);
+    // Asked again until every URL is one a fallback can be: a typo must not end the setup, nor
+    // be written into the config.
     bool fallback = false;
-    if (auto extra = p.ask("Fallback nodes for ledgers the primary no longer holds (comma-separated http(s):// or ws(s)://, empty: none)"); !extra.empty()) {
+    for (;;) {
+        auto extra = p.ask("Fallback nodes for ledgers the primary no longer holds (comma-separated http(s):// or ws(s)://, empty: none)");
+        if (extra.empty()) break;
         toml::array list;
+        bool valid = true;
         std::stringstream stream(extra);
         for (std::string url; std::getline(stream, url, ',');) {
             auto begin = url.find_first_not_of(" \t");
             if (begin == std::string::npos) continue;
             auto end = url.find_last_not_of(" \t");
-            list.push_back(url.substr(begin, end - begin + 1));
+            auto trimmed = url.substr(begin, end - begin + 1);
+            valid = valid && fallback_url(trimmed);
+            list.push_back(trimmed);
         }
-        if (list.empty()) throw Error("Fallback nodes were empty");
+        if (!valid || list.empty()) {
+            p.out << "Please answer with http(s):// or ws(s):// URLs separated by commas, or nothing for none.\n";
+            continue;
+        }
         node.insert("fallback", list);
         fallback = true;
+        break;
     }
     // A fallback is another node, often a remote one, and it also supplies the tip while the
     // primary is down. Default the quorum check to yes; declining it is warned about.

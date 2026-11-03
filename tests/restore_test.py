@@ -915,6 +915,15 @@ class Restore(unittest.TestCase):
         self.assertNotIn('validators', tomllib.loads(declined.read_text()))
         self.assertIn('Warning: a fallback node is trusted on its word', printed)
 
+    def test_setup_asks_again_for_a_fallback_that_is_not_a_url(self):
+        # An answer script from before fallbacks puts its validator answer ('y') on the fallback
+        # question. It is asked again rather than written into the config.
+        config = self.root / 'etc-connected-fallback-typo' / 'xrpla.toml'
+        printed = self.setup(config, ['connected', 'http://127.0.0.1:5005', '', 'y', 'api.example.com, wss://ok.example.com',
+                                      'wss://api.example.com', 'n', '', 'tip', str(self.root / 'connected-fallback-typo-store'), '', '', ''])
+        self.assertEqual(printed.count('Please answer with http(s):// or ws(s):// URLs'), 2)
+        self.assertEqual(tomllib.loads(config.read_text())['node']['fallback'], ['wss://api.example.com'])
+
     def test_standalone_run_needs_no_node(self):
         # A standalone config has no [node]. `xrpla run` used to ask for node.rpc before it
         # noticed the profile follows peers, and the service then restarted forever.
