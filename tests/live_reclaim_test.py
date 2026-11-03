@@ -408,8 +408,8 @@ class Runner(unittest.TestCase):
         a = self.runner.args
         common = dict(xrpla='xrpla', batch_ledgers=256, poll_seconds=600, merge_chunks=True, until=None, validator_list=None)
         node = dict(node='http://node:51233', peers=None, rpc_jobs=2, grpc_source='grpc://node:50051', grpc_jobs=10, history_peers=None,
-                    history_identity=None, delay_ms=0)
-        peers = dict(node=None, peers='default', peer_identity=self.work / 'node.key', network_id=0)
+                    history_identity=None, delay_ms=0, fallback='wss://api.example.com')
+        peers = dict(node=None, peers='default', peer_identity=self.work / 'node.key', network_id=0, fallback=None)
         commands = []
         for mode in (node, peers):
             vars(a).update(common, **mode)
@@ -417,10 +417,11 @@ class Runner(unittest.TestCase):
                 self.runner.follow(self.work / 'spools' / 'spool-1001')
             commands.append(popen.call_args[0][0])
         self.assertIn('--grpc-source', commands[0]); self.assertNotIn('--peers', commands[0])
+        self.assertEqual(commands[0][commands[0].index('--fallback') + 1], 'wss://api.example.com')
         self.assertEqual(commands[1][commands[1].index('--peers') + 1], 'default')
         self.assertEqual(commands[1][commands[1].index('--network-id') + 1], '0')
         # From peers, nothing reaches a node: each ledger is trusted on the network's validators.
-        for flag in ('--source', '--jobs', '--grpc-source', '--grpc-jobs', '--history-peers', '--delay-ms', '--validations-node'):
+        for flag in ('--source', '--jobs', '--grpc-source', '--grpc-jobs', '--history-peers', '--delay-ms', '--validations-node', '--fallback'):
             self.assertNotIn(flag, commands[1])
         # A new spool cannot start from peers.
         (self.work / 'current').unlink(); vars(a).update(start=5)

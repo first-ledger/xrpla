@@ -47,8 +47,10 @@ void pinned(Json const& response, Header const& header) {
     if (response.contains("ledger_index") && response.at("ledger_index").get<std::uint32_t>() != header.sequence)
         throw Error("Source returned a different ledger sequence");
 }
-std::pair<Header, Json> get_ledger(RpcClient const& rpc, std::uint32_t sequence) {
-    auto response = rpc.call("ledger", {{"ledger_index", sequence}, {"binary", true}, {"transactions", true}, {"expand", true}, {"diff", true}});
+std::pair<Header, Json> get_ledger(std::vector<std::string> const& urls, unsigned delay_ms, fs::path const& cache, std::uint32_t sequence,
+                                 std::size_t* served = nullptr, std::size_t primary_urls = 1) {
+    auto response = call_sources(urls, "ledger", {{"ledger_index", sequence}, {"binary", true}, {"transactions", true}, {"expand", true}, {"diff", true}},
+                                 delay_ms, 5, cache, served, primary_urls);
     success(response);
     if (!response.value("validated", false)) throw Error("Source ledger is not validated");
     auto header = decode_header(from_hex(response.at("ledger").at("ledger_data").get<std::string>()));
@@ -451,12 +453,21 @@ private:
     std::vector<std::thread> threads_;
 };
 // The node a publisher reads ledgers from (docs/SETUP.md): over JSON-RPC (http[s]://: xrpld,
-// or Clio, which adds each ledger's object diff), over gRPC (grpc[s]://: an xrpld's GetLedger,
-// with each ledger's diff, and GetLedgerData for state, so one port serves everything), or both
-// (--grpc-source beside a JSON-RPC source: gRPC then serves everything it can).
+// or Clio, which adds each ledger's object diff), over WebSocket (ws[s]://, the same JSON
+// methods), over gRPC (grpc[s]://: an xrpld's GetLedger, with each ledger's diff, and
+// GetLedgerData for state, so one port serves everything), or gRPC beside a JSON-RPC source.
+// `urls_` is the source and then each fallback: a ledger the one before it does not hold is
+// asked of the next. The first that answers is followed for the newest ledger.
 class NodeSource {
     std::optional<RpcClient> rpc_, state_rpc_;
     std::unique_ptr<GrpcLedgerClient> grpc_;
+    std::vector<std::string> urls_;
+    std::vector<std::string> fallbacks_;
+    unsigned delay_ms_ = 0;
+    fs::path ledger_cache_;
+    // Set once gRPC has failed and a fallback is configured, cleared when gRPC answers again.
+    mutable std::mutex grpc_notice_mutex_;
+    mutable bool grpc_down_ = false;
     // Transaction trees the node's API omits, read raw from history peers (opened when needed).
     std::vector<std::string> history_peers_;
     fs::path history_identity_;
@@ -518,6 +529,20 @@ class NodeSource {
                           {"transactions", transactions.size()}}.dump() << std::endl;
         listed = listing(transactions);
     }
+    // Indexes at or after this are fallbacks. With no fallback configured, none of them are.
+    std::size_t primary_urls() const { return fallbacks_.empty() ? urls_.size() : urls_.size() - fallbacks_.size(); }
+    void grpc_unavailable(std::string const& error) const {
+        std::lock_guard lock(grpc_notice_mutex_);
+        if (grpc_down_) return;
+        grpc_down_ = true;
+        std::cerr << Json{{"event", "grpc_fallback"}, {"error", error}}.dump() << std::endl;
+    }
+    void grpc_ok() const {
+        std::lock_guard lock(grpc_notice_mutex_);
+        if (!grpc_down_) return;
+        grpc_down_ = false;
+        std::cerr << Json{{"event", "grpc_restored"}}.dump() << std::endl;
+    }
     // A ledger the node cannot serve: one it lacks (a hole in its history: ledgerNotFound), or
     // the one after it, whose diff xrpld computes against the missing parent. It is read from
     // peers that hold it, as when following the peer network: its header by hash (the next
@@ -558,26 +583,63 @@ public:
         history_peers_ = std::move(peers); history_identity_ = std::move(identity); network_id_ = network_id;
     }
     // Ledgers are cached in `cache` and state pages in `state_cache` (JSON-RPC; empty: none).
-    NodeSource(std::string const& source, std::string const& grpc_source, fs::path const& cache, fs::path const& state_cache, unsigned delay_ms) {
+    // `fallbacks` are asked, in order, for a ledger this source does not hold or when it cannot
+    // be reached. Each is http(s):// or ws(s)://.
+    NodeSource(std::string const& source, std::string const& grpc_source, fs::path const& cache, fs::path const& state_cache, unsigned delay_ms,
+               std::vector<std::string> fallbacks = {})
+        : delay_ms_(delay_ms), ledger_cache_(cache) {
+        auto http = [](std::string const& url) { return url.starts_with("http://") || url.starts_with("https://"); };
+        auto socket = [](std::string const& url) { return url.starts_with("ws://") || url.starts_with("wss://"); };
         if (source.starts_with("grpc://") || source.starts_with("grpcs://")) {
             if (!grpc_source.empty()) throw Error("A gRPC --source needs no --grpc-source");
             grpc_ = std::make_unique<GrpcLedgerClient>(source);
-            return;
+        } else if (http(source) || socket(source)) {
+            urls_.push_back(source);
+            // WebSocket speaks the same JSON methods, including ledger_data for a state download.
+            rpc_.emplace(RpcClient{source, cache, delay_ms});
+            state_rpc_.emplace(RpcClient{source, state_cache, delay_ms});
+            if (!grpc_source.empty()) {
+                if (!http(source)) throw Error("--grpc-source needs an http(s):// --source");
+                grpc_ = std::make_unique<GrpcLedgerClient>(grpc_source);
+            }
+        } else if (source.empty() && fallbacks.empty() && grpc_source.empty()) {
+            // Ledgers come from a piece feed (extend_spool). No node is opened.
+        } else throw Error("--source must be http(s)://, ws(s):// or grpc(s)://");
+        for (auto const& extra : fallbacks) {
+            if (!http(extra) && !socket(extra)) throw Error("A fallback source must be http(s):// or ws(s)://: " + extra);
+            urls_.push_back(extra);
+            fallbacks_.push_back(extra);
         }
-        rpc_.emplace(RpcClient{source, cache, delay_ms});
-        state_rpc_.emplace(RpcClient{source, state_cache, delay_ms});
-        if (!grpc_source.empty()) grpc_ = std::make_unique<GrpcLedgerClient>(grpc_source);
     }
-    std::string transport() const { return grpc_ ? "grpc" : "json-rpc"; }
+    std::string transport() const { return grpc_ ? "grpc" : urls_.empty() ? "json-rpc" : (urls_.front().starts_with("ws") ? "websocket" : "json-rpc"); }
+    // Objects of a ledger, each from the first source that holds that ledger.
+    std::vector<Json> entries(std::vector<Json> const& requests, unsigned jobs) const {
+        if (!urls_.empty()) return call_sources_many(urls_, "ledger_entry", requests, jobs, delay_ms_, 5, ledger_cache_);
+        return rpc().call_many("ledger_entry", requests, jobs);
+    }
     // For objects fetched one by one (a JSON-RPC source without diffs).
     RpcClient const& rpc() const {
-        if (!rpc_) throw Error("Objects by key need a JSON-RPC source");
+        if (!rpc_) throw Error("Objects by key need an http(s):// or ws(s):// source");
         return *rpc_;
     }
-    // The newest ledger the source says is validated.
+    // The newest ledger the first source that answers says is validated. A local node that
+    // answers is followed; a later source supplies the tip only when this one cannot be reached.
+    // A gRPC failure falls through only when fallbacks are configured. With none, a broken gRPC
+    // port fails here, as it did before fallbacks existed.
     Header tip() const {
-        if (grpc_) return grpc_->validated();
-        auto response = rpc_->call("ledger", {{"ledger_index", "validated"}, {"binary", true}});
+        if (grpc_) {
+            try {
+                auto header = grpc_->validated();
+                grpc_ok();
+                note_ledger_source("grpc", false, header.sequence);
+                return header;
+            } catch (Error const& error) {
+                if (fallbacks_.empty()) throw;
+                grpc_unavailable(error.what());
+            }
+        }
+        if (urls_.empty()) throw Error("No source");
+        auto response = call_sources(urls_, "ledger", {{"ledger_index", "validated"}, {"binary", true}}, delay_ms_, 5, ledger_cache_, nullptr, primary_urls());
         success(response);
         if (!response.value("validated", false)) throw Error("Source tip is not validated");
         auto header = decode_header(from_hex(response.at("ledger").at("ledger_data")));
@@ -588,14 +650,37 @@ public:
     std::pair<Header, Json> ledger(std::uint32_t sequence) const { return ledger(sequence, grpc_ != nullptr); }
     // From the gRPC node, or (`over_grpc` false, with --grpc-source beside a JSON-RPC source)
     // from the JSON-RPC one: a ledger is verified against its hashes whichever node sends it.
+    // A ledger the gRPC node does not hold is asked of the fallbacks, when some are configured,
+    // before the history peers. With none, it goes to the history peers as before: the JSON-RPC
+    // port beside gRPC is the same node, and is not a fallback.
     std::pair<Header, Json> ledger(std::uint32_t sequence, bool over_grpc) const {
-        if (!grpc_ || (!over_grpc && rpc_)) return get_ledger(*rpc_, sequence);
+        auto missing = [](std::string const& text) {
+            return text.find("ledgerNotFound") != std::string::npos || text.find("parent ledger not validated") != std::string::npos;
+        };
+        if (!grpc_ || (!over_grpc && !urls_.empty())) {
+            std::size_t from = 0;
+            auto got = get_ledger(urls_, delay_ms_, ledger_cache_, sequence, &from, primary_urls());
+            // A later url is another node. Its transaction list is checked like a gRPC ledger's:
+            // xrpld drops the list at the first transaction it cannot decode.
+            if (from >= primary_urls()) complete(got.first, got.second);
+            return got;
+        }
         std::pair<Header, Json> result;
-        try { result = grpc_->ledger(sequence); }
-        catch (Error const& error) {
-            std::string what = error.what();
-            if (history_peers_.empty() || (what.find("ledgerNotFound") == std::string::npos && what.find("parent ledger not validated") == std::string::npos)) throw;
-            return from_peers(sequence, what);
+        try {
+            result = grpc_->ledger(sequence);
+            grpc_ok();
+            note_ledger_source("grpc", false, sequence);
+        } catch (Error const& error) {
+            if (!missing(error.what())) throw;
+            if (!fallbacks_.empty()) {
+                grpc_unavailable(error.what());
+                try {
+                    auto got = get_ledger(urls_, delay_ms_, ledger_cache_, sequence, nullptr, primary_urls());
+                    complete(got.first, got.second);
+                    return got;
+                } catch (Error const& again) { if (!missing(again.what()) || history_peers_.empty()) throw; }
+            } else if (history_peers_.empty()) throw;
+            return from_peers(sequence, error.what());
         }
         complete(result.first, result.second);
         return result;
@@ -1041,7 +1126,7 @@ Json export_locked(ExportOptions const& options, PeerLedgers* peers = nullptr, P
     auto cache = options.rpc_cache ? root / ".rpc-cache" : fs::path{};
     std::optional<NodeSource> own_source;
     if (!kept_source) {
-        own_source.emplace(options.source, options.grpc_source, options.append ? fs::path{} : cache, cache, options.delay_ms);
+        own_source.emplace(options.source, options.grpc_source, options.append ? fs::path{} : cache, cache, options.delay_ms, options.fallbacks);
         own_source->history(options.history_peers, options.history_identity, options.network_id);
     }
     auto& source = kept_source ? *kept_source : *own_source;
@@ -1311,7 +1396,7 @@ Json export_locked(ExportOptions const& options, PeerLedgers* peers = nullptr, P
                   std::vector<Json> requests;
                   for (auto n = start; n < std::min(start + 256, ordered.size()); ++n)
                     requests.push_back({{"ledger_hash", header.hash}, {"index", to_hex(ordered[n])}, {"binary", true}});
-                  auto responses = source.rpc().call_many("ledger_entry", requests, options.jobs);
+                  auto responses = source.entries(requests, options.jobs);
                   for (std::size_t n = 0; n < responses.size(); ++n) {
                     auto const& key = ordered[start + n]; auto const& response = responses[n];
                     pinned(response, header);
@@ -2348,7 +2433,7 @@ Json publish_archive(PublishOptions const& options) {
     std::optional<NodeSource> node;
     auto open_node = [&] {
         if (node) return;
-        node.emplace(input.source, input.grpc_source, fs::path{}, input.rpc_cache ? input.output / ".rpc-cache" : fs::path{}, input.delay_ms);
+        node.emplace(input.source, input.grpc_source, fs::path{}, input.rpc_cache ? input.output / ".rpc-cache" : fs::path{}, input.delay_ms, input.fallbacks);
         node->history(input.history_peers, input.history_identity, input.network_id);
     };
     bool from_peers = !options.peers.empty();
