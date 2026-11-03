@@ -10,6 +10,7 @@
 #include <boost/beast/websocket/ssl.hpp>
 #include <openssl/ssl.h>
 #include <algorithm>
+#include <map>
 #include <optional>
 #include <regex>
 #include <thread>
@@ -126,14 +127,15 @@ Json WsClient::receive(std::chrono::milliseconds idle) {
     return parsed(buffer);
 }
 namespace {
-// This thread's connection to one WebSocket source. A prefetch fetches ledgers on several
-// threads; each keeps its own, as RpcClient keeps a curl handle per thread.
-struct WsSlot {
-    std::string url;
+// This thread's connection to each WebSocket source. A prefetch fetches ledgers on several
+// threads; each keeps its own, as RpcClient keeps a curl handle per thread. One slot for every
+// URL: a primary and a fallback stay connected, instead of handshaking again whenever the URL
+// changes.
+struct WsConn {
     std::unique_ptr<WsClient> client;
     std::uint64_t next_id = 1;
 };
-thread_local WsSlot ws_slot;
+thread_local std::map<std::string, WsConn> ws_conns;
 
 bool same_id(Json const& message, std::uint64_t id) {
     if (!message.contains("id")) return false;
@@ -178,20 +180,17 @@ Json ws_rpc_call(RpcClient const& client, std::string const& method, Json const&
     for (unsigned attempt = 0; attempt < tries; ++attempt) {
         if (client.delay_ms || attempt) std::this_thread::sleep_for(std::chrono::milliseconds{client.delay_ms + (attempt ? 500U << attempt : 0)});
         try {
-            if (!ws_slot.client || ws_slot.url != client.url) {
-                ws_slot.client.reset();
-                ws_slot.url = client.url;
-                ws_slot.client = std::make_unique<WsClient>(client.url, std::chrono::seconds(30));
-            }
-            auto id = ws_slot.next_id++;
+            auto& slot = ws_conns[client.url];
+            if (!slot.client) slot.client = std::make_unique<WsClient>(client.url, std::chrono::seconds(30));
+            auto id = slot.next_id++;
             Json message = params;
             message["command"] = method;
             message["id"] = id;
-            ws_slot.client->send(message);
+            slot.client->send(message);
             Json result;
             bool matched = false;
             for (int skipped = 0; skipped < 8 && !matched; ++skipped) {
-                auto incoming = ws_slot.client->receive(std::chrono::seconds(60));
+                auto incoming = slot.client->receive(std::chrono::seconds(60));
                 if (incoming.contains("id") && !same_id(incoming, id)) continue;
                 result = unwrap_rpc(incoming);
                 matched = true;
@@ -210,7 +209,7 @@ Json ws_rpc_call(RpcClient const& client, std::string const& method, Json const&
             }
             return result;
         } catch (std::exception const&) {
-            ws_slot.client.reset();
+            ws_conns[client.url].client.reset();
             if (attempt + 1 >= tries) throw;
         }
     }

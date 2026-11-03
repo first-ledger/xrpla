@@ -587,8 +587,10 @@ int run_mirrored(toml::table const& config, std::string const& profile) {
     std::atomic<bool> stopping{false};  // set once the service stops: a restart under way gives up
     // A node keeps recent ledgers only. Ledgers it no longer holds come from the fallback
     // nodes while the follower runs. Ledgers none of them hold (a publication up to a piece
-    // behind every node's history) come from peers.
-    auto endpoints = node_endpoints(config);
+    // behind every node's history) come from peers. Standalone follows peers and has no
+    // [node] section: the endpoints are read only for a profile that follows a node.
+    std::vector<std::string> endpoints;
+    if (!from_peers) endpoints = node_endpoints(config);
     auto fill_gap = [&] {
         if (from_peers) return;
         for (;;) {
@@ -1575,6 +1577,10 @@ int setup_connected(fs::path const& config_path, fs::path const& unit_dir, toml:
     auto network = ask_network(p, list, config);
     auto [list_url, list_key] = core::network_validator_list(core::parse_network(network));
     node.insert("rpc", p.ask("Node JSON-RPC URL (a local xrpld's admin port is not rate-limited)", "http://127.0.0.1:5005"));
+    // After the gRPC question, so an answer script written before fallbacks existed still puts
+    // the gRPC URL on this question. The fallback answer is the new one, after it.
+    if (auto grpc = p.ask("Node gRPC URL for ledger diffs (empty: JSON-RPC only)"); !grpc.empty()) node.insert("grpc", grpc);
+    bool fallback = false;
     if (auto extra = p.ask("Fallback nodes for ledgers the primary no longer holds (comma-separated http(s):// or ws(s)://, empty: none)"); !extra.empty()) {
         toml::array list;
         std::stringstream stream(extra);
@@ -1586,14 +1592,18 @@ int setup_connected(fs::path const& config_path, fs::path const& unit_dir, toml:
         }
         if (list.empty()) throw Error("Fallback nodes were empty");
         node.insert("fallback", list);
+        fallback = true;
     }
-    if (auto grpc = p.ask("Node gRPC URL for ledger diffs (empty: JSON-RPC only)"); !grpc.empty()) node.insert("grpc", grpc);
-    if (p.yes("Accept only ledgers a quorum of validators signed, rather than the node's word (recommended for a remote node)?", false)) {
+    // A fallback is another node, often a remote one, and it also supplies the tip while the
+    // primary is down. Default the quorum check to yes; declining it is warned about.
+    if (p.yes("Accept only ledgers a quorum of validators signed, rather than the node's word (recommended for a remote node)?", fallback)) {
         toml::table validators;
         validators.insert("list", p.ask("Validator list", list_url));
         validators.insert("list_key", p.ask("Validator list publisher key", list_key));
         node.insert("validations", p.ask("Node WebSocket URL (its validations stream)", "ws://127.0.0.1:6006"));
         config.insert("validators", validators);
+    } else if (fallback) {
+        p.out << "Warning: a fallback node is trusted on its word. A remote fallback can present a ledger as validated.\n";
     }
     // With a publication, history comes from it and the node supplies the ledgers after it.
     if (!ask_publication(p, list, network, config, true)) {

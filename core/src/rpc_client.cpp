@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <atomic>
 #include <iostream>
+#include <map>
 #include <mutex>
 #include <utility>
 
@@ -191,29 +192,88 @@ bool lacks_ledger(Json const& result) {
     auto error = result.value("error", "");
     return error == "lgrNotFound" || error == "ledgerNotFound";
 }
+// A source that could not be reached stays out of the order for this long: a down primary is
+// not dialed again on every ledger and every tip poll.
+constexpr auto kUnreachableFor = std::chrono::seconds(30);
+struct Unreachable {
+    std::mutex mutex;
+    std::map<std::string, std::chrono::steady_clock::time_point> until;
+};
+Unreachable& unreachable() { static Unreachable state; return state; }
+bool recently_unreachable(std::string const& url) {
+    std::lock_guard lock(unreachable().mutex);
+    auto found = unreachable().until.find(url);
+    if (found == unreachable().until.end()) return false;
+    if (std::chrono::steady_clock::now() >= found->second) { unreachable().until.erase(found); return false; }
+    return true;
 }
-Json call_sources(std::vector<std::string> const& urls, std::string const& method, Json params, unsigned delay_ms, unsigned attempts, fs::path const& cache) {
+void mark_unreachable(std::string const& url) {
+    std::lock_guard lock(unreachable().mutex);
+    unreachable().until[url] = std::chrono::steady_clock::now() + kUnreachableFor;
+}
+void mark_reachable(std::string const& url) {
+    std::lock_guard lock(unreachable().mutex);
+    unreachable().until.erase(url);
+}
+struct Served {
+    std::mutex mutex;
+    std::string source;
+    bool fallback = false;
+};
+Served& served_ledger() { static Served state; return state; }
+}
+void forget_unreachable_sources() {
+    { std::lock_guard lock(unreachable().mutex); unreachable().until.clear(); }
+    std::lock_guard lock(served_ledger().mutex);
+    served_ledger().source.clear();
+    served_ledger().fallback = false;
+}
+void note_ledger_source(std::string const& source, bool fallback, Json const& ledger) {
+    std::lock_guard lock(served_ledger().mutex);
+    auto& state = served_ledger();
+    if (state.fallback == fallback && (!fallback || state.source == source)) return;
+    auto from = state.source;
+    bool was = state.fallback;
+    state.source = source;
+    state.fallback = fallback;
+    // The gRPC port and the primary JSON-RPC port are one node. Moving between them is not a
+    // fallback switch.
+    if (!was && !fallback) return;
+    Json line{{"event", fallback ? "ledger_from_fallback" : "ledger_from_primary"}, {"source", source}, {"ledger", ledger}};
+    if (!from.empty()) line["from"] = from;
+    std::cerr << line.dump() << std::endl;
+}
+Json call_sources(std::vector<std::string> const& urls, std::string const& method, Json params, unsigned delay_ms, unsigned attempts, fs::path const& cache,
+                  std::size_t* served, std::size_t primary_urls) {
     if (urls.empty()) throw Error("No RPC source");
     for (std::size_t i = 0; i < urls.size(); ++i) {
+        bool last = i + 1 == urls.size();
+        // The last source is always asked: it is the only one left, and it keeps its retries.
+        if (!last && recently_unreachable(urls[i])) continue;
         RpcClient client{urls[i], cache, delay_ms};
-        client.attempts = std::max(1u, attempts);
+        client.attempts = last ? std::max(1u, attempts) : 1u;
         try {
             auto result = client.call(method, params);
+            if (RpcClient::last_reached()) mark_reachable(urls[i]);
+            else mark_unreachable(urls[i]);
             auto error = result.value("error", "");
             // Retries are spent inside the call. A source that is still busy, or that does not
             // hold the ledger, leaves this ledger to the next source.
             bool passed = lacks_ledger(result) || error == "tooBusy" || error == "slowDown" || error == "rate_limited";
-            if (passed && i + 1 < urls.size()) continue;
-            // A later source, and only for a ledger: object fetches of a ledger the first source
-            // lacks would say so once per object.
-            if (i > 0 && method == "ledger" && !result.contains("error"))
-                std::cerr << Json{{"event", "ledger_from_fallback"}, {"source", urls[i]},
-                                  {"ledger", params.contains("ledger_index") ? params.at("ledger_index") : Json()}}.dump() << std::endl;
+            if (passed && !last) continue;
+            if (served) *served = i;
+            // Once per switch, and only for a ledger: object fetches would say so once per object.
+            if (method == "ledger" && !result.contains("error")) {
+                Json ledger = params.contains("ledger_index") ? params.at("ledger_index") : Json();
+                note_ledger_source(urls[i], i >= primary_urls, ledger);
+            }
             return result;
         } catch (Error const&) {
-            if (i + 1 == urls.size()) throw;
+            if (!RpcClient::last_reached()) mark_unreachable(urls[i]);
+            if (last) throw;
         } catch (std::exception const& error) {
-            if (i + 1 == urls.size()) throw Error(error.what());
+            if (!RpcClient::last_reached()) mark_unreachable(urls[i]);
+            if (last) throw Error(error.what());
         }
     }
     throw Error("No RPC source served " + method);

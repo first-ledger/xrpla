@@ -212,8 +212,9 @@ ws = "127.0.0.1:6106"
 Before the first piece is sealed the cache holds only the baseline snapshot, and the tail
 serves everything after it. The first start therefore waits for the node's state export and
 its snapshot (tens of minutes on mainnet) before listening. A local node can be trusted as
-it is; with a remote one, set `[validators]` so ledgers are accepted only once a quorum of
-the list's validators signed them (see Trust above).
+it is. With a remote one, or a fallback, set `[validators]` so ledgers are accepted only once
+a quorum of the list's validators signed them (see Trust above). `xrpla setup` defaults that
+question to yes when a fallback is given.
 
 Over WebSocket, `subscribe` takes the `ledger`, `transactions`, `accounts` and `books`
 streams, as xrpld does (validated transactions only); see

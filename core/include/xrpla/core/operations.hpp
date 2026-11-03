@@ -33,10 +33,19 @@ struct RpcClient {
     static bool last_reached();
 };
 // Asks `urls` in order (http(s):// or ws(s)://, the same JSON methods either way). The next is
-// asked when this one does not hold the ledger (lgrNotFound or ledgerNotFound) or cannot be
-// reached. entryNotFound is the answer (the object is gone) and is not asked of the next.
-// `attempts` and `delay_ms` are RpcClient's. A ledger served by a later url is logged.
-Json call_sources(std::vector<std::string> const& urls, std::string const& method, Json params, unsigned delay_ms, unsigned attempts, fs::path const& cache);
+// asked when this one does not hold the ledger (lgrNotFound or ledgerNotFound), is rate-limited,
+// or cannot be reached. entryNotFound is the answer (the object is gone) and is not asked of the
+// next. Every url but the last is asked once; the last uses `attempts` (retries and backoff).
+// A url that could not be reached is skipped for 30 seconds, then asked again. `served`, when
+// set, receives the index of the url that answered. Indexes at or after `primary_urls` are
+// fallbacks: a ledger served as one is logged when serving switches onto or off a fallback.
+// Forgets sources marked unreachable, and which source last served a ledger. Tests call it so a
+// reused port is asked again.
+void forget_unreachable_sources();
+Json call_sources(std::vector<std::string> const& urls, std::string const& method, Json params, unsigned delay_ms, unsigned attempts, fs::path const& cache,
+                  std::size_t* served = nullptr, std::size_t primary_urls = 1);
+// Logs when the source of ledger answers switches onto a fallback, or back off one.
+void note_ledger_source(std::string const& source, bool fallback, Json const& ledger);
 std::vector<Json> call_sources_many(std::vector<std::string> const& urls, std::string const& method, std::vector<Json> const& params, unsigned jobs,
                                     unsigned delay_ms, unsigned attempts, fs::path const& cache);
 // Lets a libcurl handle (a CURL*, which curl.h declares as void) connect only to the addresses in
