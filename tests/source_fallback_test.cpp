@@ -333,3 +333,12 @@ TEST(Sources, APrimaryStillBusyLeavesTheLedgerToTheFallback) {
     EXPECT_TRUE(result.value("fallback", false)) << result.dump();
     EXPECT_EQ(primary.hits.load(), 2u);
 }
+
+TEST(Sources, APrimaryStillSyncingLeavesTheTipToTheFallback) {
+    forget_unreachable_sources();
+    HttpNode primary(Json{{"error", "noNetwork"}, {"error_message", "InsufficientNetworkMode"}});
+    HttpNode fallback(Json{{"fallback", true}});
+    auto result = call_sources({primary.url(), fallback.url()}, "ledger", {{"ledger_index", "validated"}}, 0, 5, {});
+    EXPECT_TRUE(result.value("fallback", false)) << result.dump();
+    EXPECT_EQ(primary.hits.load(), 1u);
+}

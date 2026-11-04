@@ -196,6 +196,11 @@ bool busy(Json const& result) {
     auto error = result.value("error", "");
     return error == "tooBusy" || error == "slowDown" || error == "rate_limited";
 }
+// A node still syncing (just restarted, or out of touch with its peers) answers these for minutes.
+bool not_ready(Json const& result) {
+    auto error = result.value("error", "");
+    return error == "noNetwork" || error == "noCurrent" || error == "noClosed" || error == "notSynced";
+}
 // A source that could not be reached stays out of the order for this long: a down primary is
 // not dialed again on every ledger and every tip poll.
 constexpr auto kUnreachableFor = std::chrono::seconds(30);
@@ -266,9 +271,9 @@ Json call_sources(std::vector<std::string> const& urls, std::string const& metho
             }
             if (RpcClient::last_reached()) mark_reachable(urls[i]);
             else mark_unreachable(urls[i]);
-            // Retries are spent inside the call. A source that is still busy, or that does not
-            // hold the ledger, leaves this ledger to the next source.
-            bool passed = lacks_ledger(result) || busy(result);
+            // Retries are spent inside the call. A source that is still busy, still syncing, or
+            // that does not hold the ledger, leaves this ledger to the next source.
+            bool passed = lacks_ledger(result) || busy(result) || not_ready(result);
             if (passed && !last) continue;
             if (served) *served = i;
             // Once per switch, and only for a ledger: object fetches would say so once per object.
