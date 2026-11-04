@@ -412,7 +412,9 @@ all|none|mpt_holders,nfts_by_issuer`.
 snapshot blocks, charged by what each holds. Under heavy load the process uses about a quarter
 more than the cache (requests in flight, key lookup maps, the allocator's own), so a machine
 shared with other services should leave that room. `xrpla_cache_stats` reports the cache's use,
-what the open segments hold by part, and on Linux the allocator's own figures.
+what the open segments hold by part, and on Linux the allocator's own figures. A sync keeps what
+the cache holds for every piece it keeps (each cache's `adopted` counts what the last one carried
+over), so a server following a live publication does not decode its history again every few minutes.
 
 `[cache] snapshots_every` picks which of the publication's state snapshots (one every
 1,000,000 ledgers) the local copy keeps besides the first and the newest: every one at a

@@ -174,11 +174,16 @@ struct Budget {
 // its cache's bytes and in the budget's `used`; when it is evicted it moves to the budget's `held`
 // (still in `used`) and is given back when the value is destroyed, by whichever request let go of
 // it last. Every value type of an Lru derives from it. Its fields change only under the lock of
-// the cache the value was inserted in (one, once); the destructor runs after every other use.
+// its `home`, the cache it was inserted in, or the one that adopted it (Lru::adopt) from there;
+// the destructor runs after every other use.
 struct Charged {
     Budget* budget = nullptr;  // set when evicted
     std::size_t charged = 0;
     bool evicted = false;
+    // Set under the lock of the cache it moves to; null while it moves, and after it was taken
+    // out as no cache's. A request of the replaced history recharging it (Lru::recharge) then
+    // finds it is not that cache's to change.
+    std::atomic<Cache const*> home{nullptr};
     Charged() = default;
     Charged(Charged const&) = delete;
     Charged& operator=(Charged const&) = delete;
@@ -270,6 +275,7 @@ template<class K, class T> class Lru final : Cache {
         if (over_) ++count; else --count;
     }
     void charge(T& value) {
+        value.home = this;
         value.charged = size_(value); bytes_ += value.charged;
         if (budget_) budget_->used += value.charged;
         tally();
@@ -314,7 +320,7 @@ template<class K, class T> class Lru final : Cache {
         while (!order_.empty() && bytes_ > capacity_ && budget_->over(freed)) evict_oldest(freed);
     }
 public:
-    U hits = 0, misses = 0;
+    U hits = 0, misses = 0, adopted = 0;
     Lru(std::size_t capacity, std::size_t (*size)(T const&)) : capacity_(capacity), size_(size) {}
     // A shared budget outlives this cache (its history holds it): what this one charged is given
     // back, or a reopened history would find it full of entries that no longer exist. It leaves
@@ -403,6 +409,7 @@ public:
     template<class Update> void recharge(K const& key, T& value, Update update) {
         Freed freed;
         std::lock_guard lock(mutex_);
+        if (value.home != this) return;  // adopted by another cache (adopt), or moving there
         if (value.evicted) {
             auto was = value.charged;
             update(value);
@@ -431,7 +438,41 @@ public:
         order_.splice(order_.begin(), order_, it->second); ++hits;
         return it->second->second;
     }
-    Json stats() { std::lock_guard lock(mutex_); return {{"entries", order_.size()}, {"bytes", bytes_}, {"share", capacity_}, {"hits", hits}, {"misses", misses}}; }
+    Json stats() {
+        std::lock_guard lock(mutex_);
+        return {{"entries", order_.size()}, {"bytes", bytes_}, {"share", capacity_}, {"hits", hits}, {"misses", misses}, {"adopted", adopted}};
+    }
+    // The entries of `from`, a cache of the same budget whose history this cache's replaces, under
+    // the key `key` gives each here (nullopt: none, as its range is not selected any more), behind
+    // this cache's own entries and in their order: their charges move with them, so a sync does
+    // not leave every request to decode again what was decoded before it. An entry with no key
+    // here, or whose key this cache already holds, is evicted as retire() would. Takes `from`'s
+    // lock, then this cache's, never both at once; run before `from` is retired.
+    template<class Map> void adopt(Lru& from, Map key) {
+        if (&from == this || !budget_ || from.budget_ != budget_) return;
+        std::list<Item> taken;
+        {
+            std::lock_guard lock(from.mutex_);
+            taken.splice(taken.end(), from.order_);
+            from.index_.clear(); from.bytes_ = 0; from.tally();
+            for (auto const& item : taken) item.second->home = nullptr;
+        }
+        Freed freed;
+        std::lock_guard lock(mutex_);
+        for (auto& [old, value] : taken) {
+            auto here = key(old);
+            if (!here || index_.contains(*here)) {
+                value->budget = budget_; value->evicted = true; budget_->held += value->charged;
+                if (value.use_count() == 1) freed.bytes += value->charged;
+                freed.values.push_back(std::move(value));
+                continue;
+            }
+            value->home = this; bytes_ += value->charged; ++adopted;
+            order_.emplace_back(*here, std::move(value)); index_[*here] = std::prev(order_.end());
+        }
+        tally();
+        trim(freed);
+    }
     // `visit(value)` for each entry, outside the cache's lock. Only weak pointers are kept for the
     // walk: an entry evicted meanwhile is freed as usual (and skipped), and each visited value is
     // let go right after its visit.
@@ -444,6 +485,10 @@ public:
 
 struct OpenArchive : Charged {
     std::mutex mutex;
+    // The range file the archive reads from (views into its mapping), kept mapped while the
+    // segment is: a newer history of the cache may adopt it (Lru::adopt) and outlive the one
+    // that opened the file.
+    std::shared_ptr<Mapped const> file;
     hx::Archive archive;
     // Memory charged to the open-segment cache (held), measured again as it grows (under
     // the cache's lock and this mutex); read by cache_stats without either.
@@ -455,7 +500,7 @@ struct OpenArchive : Charged {
     // `mutex` (Hold; one that throws too), and by a measure that found `mutex` held (Impl::grew).
     // Cleared when it is measured; the next lookup of a stale segment measures it (Impl::archive).
     std::atomic<bool> stale = false;
-    explicit OpenArchive(V bytes) : archive(bytes, true) {}
+    OpenArchive(std::shared_ptr<Mapped const> file, V bytes) : file(std::move(file)), archive(bytes, true) {}
 };
 // What an open segment is charged: what it holds, and room for a transaction page being read.
 std::size_t held(OpenArchive const& a) { return a.archive.heldBytes() + (std::size_t(1) << 20); }
@@ -490,7 +535,7 @@ struct Page : Charged {
 struct Range {
     U first = 0, last = 0;
     Bytes sha;
-    std::unique_ptr<Mapped> file;
+    std::shared_ptr<Mapped const> file;  // held by its open segments too (OpenArchive)
     Container directory;
     TxIndex tx;
     std::unique_ptr<QueryIndex> query;
@@ -581,6 +626,9 @@ struct PieceHistory::Impl {
     // against the signed catalog by sync), and the ranges after it every change since.
     std::vector<std::unique_ptr<StateIndex>> interval_states;
     std::vector<Base> intervals;
+    // Each tag's snapshot, by its state index's digest: a newer history keeps the blocks of the
+    // snapshots it still reads, under its own tags (adopt).
+    std::vector<Bytes> tag_sha;
     Base base_for(U seq) const {
         auto after = std::upper_bound(intervals.begin(), intervals.end(), seq, [](U n, Base const& b) { return n < b.seq; });
         if (after != intervals.begin()) return *(after - 1);
@@ -700,7 +748,7 @@ struct PieceHistory::Impl {
         auto open = archives.get({ri, si}, [&] {
             auto t = std::chrono::steady_clock::now();
             auto const& s = ranges[ri]->directory.segments[si];
-            auto a = std::make_shared<OpenArchive>(ranges[ri]->file->view().substr(s.offset, s.length));
+            auto a = std::make_shared<OpenArchive>(ranges[ri]->file, ranges[ri]->file->view().substr(s.offset, s.length));
             open_ns += since(t);
             if (dictionary) {
                 auto slot = Openings::shared().take(*budget);
@@ -992,6 +1040,7 @@ PieceHistory::PieceHistory(fs::path const& cache) : impl_(std::make_unique<Impl>
         try { return std::make_unique<OptionalIndex>(path, kind, source); } catch (std::exception const&) { return nullptr; }
     };
     auto snapshot_sha = from_hex(snapshot.at("index").at("sha256").get<std::string>());
+    m.tag_sha.push_back(snapshot_sha);
     m.holders = optional(snapshot_stem(m.snapshot_seq), Optional::mpt_holders, snapshot_sha);
     m.issuers = optional(snapshot_stem(m.snapshot_seq), Optional::nfts_by_issuer, snapshot_sha);
     m.has_holders = m.holders != nullptr; m.has_issuers = m.issuers != nullptr;
@@ -1002,7 +1051,7 @@ PieceHistory::PieceHistory(fs::path const& cache) : impl_(std::make_unique<Impl>
         r->sha = from_hex(info.at("sha256").get<std::string>());
         if (r->first != expected) throw Error("Cached ranges are not contiguous");
         expected = r->last + 1;
-        r->file = std::make_unique<Mapped>(cache / info.at("object").get<std::string>());
+        r->file = std::make_shared<Mapped const>(cache / info.at("object").get<std::string>());
         auto data = r->file->view();
         r->directory = Container::parse(data, info.at("directory_sha256").get<std::string>());
         if (r->directory.first != r->first || r->directory.last != r->last) throw Error("Container range differs from catalog");
@@ -1030,6 +1079,7 @@ PieceHistory::PieceHistory(fs::path const& cache) : impl_(std::make_unique<Impl>
         auto after = std::find_if(m.ranges.begin(), m.ranges.end(), [&](auto const& r) { return r->first == seq + 1; });
         if (after == m.ranges.end()) continue;
         m.intervals.push_back({index.get(), seq, static_cast<std::size_t>(after - m.ranges.begin()), static_cast<U>(m.intervals.size() + 1)});
+        m.tag_sha.push_back(from_hex(selected.at(seq).at("index").at("sha256").get<std::string>()));
         m.interval_states.push_back(std::move(index));
     }
     // A selection without ranges holds a new publication's baseline snapshot alone.
@@ -1641,6 +1691,40 @@ void PieceHistory::retire() const {
     m.archives.retire(); m.pages.retire(); m.blocks.retire();
 }
 
+void PieceHistory::adopt(PieceHistory const& replaced) const {
+    auto& m = *impl_;
+    auto& old = *replaced.impl_;
+    if (&m == &old) return;
+    // A range is the same where its digest is: its segments and decoded ledgers carry over to
+    // wherever it sits in this selection. A sync rewrites selection.json for each new catalog
+    // generation (every few minutes, live), and the ranges it keeps are nearly all of them.
+    std::map<Bytes, std::size_t> ranges;
+    for (std::size_t i = 0; i < m.ranges.size(); ++i) ranges.emplace(m.ranges[i]->sha, i);
+    std::vector<std::optional<std::size_t>> moved(old.ranges.size());
+    for (std::size_t i = 0; i < old.ranges.size(); ++i)
+        if (auto it = ranges.find(old.ranges[i]->sha); it != ranges.end()) moved[i] = it->second;
+    std::map<Bytes, U> tags;
+    for (U t = 0; t < m.tag_sha.size(); ++t) tags.emplace(m.tag_sha[t], t);
+    std::vector<std::optional<U>> retagged(old.tag_sha.size());
+    for (U t = 0; t < old.tag_sha.size(); ++t)
+        if (auto it = tags.find(old.tag_sha[t]); it != tags.end()) retagged[t] = it->second;
+    m.archives.adopt(old.archives, [&](Impl::SegmentId const& k) -> std::optional<Impl::SegmentId> {
+        if (k.first >= moved.size() || !moved[k.first]) return std::nullopt;
+        return Impl::SegmentId{*moved[k.first], k.second};
+    });
+    m.pages.adopt(old.pages, [&](Impl::LedgerKey const& k) -> std::optional<Impl::LedgerKey> {
+        auto const& [ri, si, seq, part] = k;
+        if (ri >= moved.size() || !moved[ri]) return std::nullopt;
+        return Impl::LedgerKey{*moved[ri], si, seq, part};
+    });
+    constexpr U block_bits = (U(1) << 48) - 1;
+    m.blocks.adopt(old.blocks, [&](U k) -> std::optional<U> {
+        auto t = k >> 48;
+        if (t >= retagged.size() || !retagged[t]) return std::nullopt;
+        return *retagged[t] << 48 | (k & block_bits);
+    });
+}
+
 bool is_piece_cache(fs::path const& dir) { return fs::exists(dir / "selection.json"); }
 // A piece cache is opened once and kept between requests. A sync that switches selection.json
 // (restore.cpp) has it opened again: the file's time is looked at most every 200 ms, and the new
@@ -1700,7 +1784,10 @@ std::shared_ptr<PieceHistory const> open_piece_history(fs::path const& dir) {
         // Both share the directory's budget (shared_budget): the replaced history gives back what
         // it holds, so the fresh one's caches and warm have it, rather than the two holding twice
         // --cache until the requests (and a live tail) holding the replaced one let it go.
-        if (replaced && replaced != fresh) replaced->retire();
+        // What it cached of the ranges and snapshots the fresh one still reads moves to it first
+        // (adopt): a sync every few minutes would otherwise empty the caches each time, and
+        // every request after it decode again what was decoded before.
+        if (replaced && replaced != fresh) { fresh->adopt(*replaced); replaced->retire(); }
         replaced.reset();
         release_freed_memory();
         warm(fresh);
