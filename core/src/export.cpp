@@ -2662,7 +2662,10 @@ Json publish_archive(PublishOptions const& options) {
             } else if (watcher && next <= end) {
                 // The source's "validated" flag is not trusted: end at a ledger validators signed.
                 auto chosen = watcher->end_for(next, options.until ? std::min<std::uint64_t>(tip.sequence, options.until) : tip.sequence, options.batch_ledgers);
-                if (!chosen) end = next - 1;  // nothing validated yet: wait
+                // Nothing validated yet: wait, and ask the source's tip again. A follower more than
+                // a batch behind read it before its stream counted a ledger (the stream connects
+                // once the list is fetched), so every ledger counted since may come after it.
+                if (!chosen) { end = next - 1; tip.sequence = 0; }
                 else { end = chosen->first; input.expected_last_hash = chosen->second; }
             }
             if (next <= end) {
