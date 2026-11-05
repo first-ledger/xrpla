@@ -598,11 +598,13 @@ static void raise_open_file_limit() {
 int main(int argc, char** argv) {
     raise_open_file_limit();
     try { return run(argc, argv); }
+#ifdef XRPLA_WITH_LIBXRPL
     catch (xrpla::core::Blocked const& error) {
         // Not worth restarting as it is: a supervisor (live_publisher) tells this from other failures.
         std::cerr << xrpla::Json{{"error", error.what()}, {"blocked", true}}.dump() << '\n';
         return 3;
     }
+#endif
     catch (std::exception const& error) {
         std::cerr << xrpla::Json{{"error", error.what()}}.dump() << '\n';
         return 1;
