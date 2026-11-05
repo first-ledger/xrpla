@@ -105,7 +105,8 @@ sudo xrpla setup
 | How will this machine use XRPLA? | `3` or `connected` |
 | Node JSON-RPC URL | `http://127.0.0.1:5005` |
 | Node gRPC URL for ledger diffs | `grpc://127.0.0.1:50051` (empty: JSON-RPC only) |
-| Accept only ledgers a quorum of validators signed...? | `y` for a remote or shared node; then the validator list, its key and the node's WebSocket URL |
+| Fallback nodes | comma-separated `http(s)://` or `ws(s)://` URLs, or empty when the primary's own history is enough |
+| Accept only ledgers a quorum of validators signed...? | `y` for a remote or shared node (the default when a fallback was given); then the validator list, its key and the node's WebSocket URL |
 | Which publication? | `xrpla-mainnet` to serve full history, `none` (the default) to keep history from now on, or `other` |
 | Publication for earlier history | only for `other` (or when no publication is listed): `<PUBLICATION_URL>`, or empty to keep history from now on |
 | Publisher key | `<PUBLISHER_KEY>` (only with a publication given by URL) |
@@ -151,11 +152,13 @@ into `STORAGE/bucket` and signed with this machine's own key (`STORAGE/keys/loca
 server answers from those pieces and the spool.
 
 **With a publication** XRPLA keeps the publication's whole history, as mirror and standalone do,
-and the node supplies only the ledgers after the publication's tip. Ledgers the node no longer
-holds are fetched from the peer network first (`[peers]` settings apply then).
+and the node supplies only the ledgers after the publication's tip. Ledgers the primary no
+longer holds are fetched from `[node] fallback`; ledgers none of the nodes hold are fetched
+from the peer network first (`[peers]` settings apply then).
 
-A local node can be trusted as it is. With a remote one, set `[validators]` so ledgers are
-accepted only once a quorum of the list's validators signed them.
+A local node can be trusted as it is. With a remote one, or a fallback, set `[validators]` so
+ledgers are accepted only once a quorum of the list's validators signed them. `xrpla setup`
+defaults that question to yes when a fallback is given.
 
 Full details: [SETUP.md](../SETUP.md#connected-follow-a-node-and-serve-its-history).
 

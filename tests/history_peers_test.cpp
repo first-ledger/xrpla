@@ -16,6 +16,8 @@
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
+#include <boost/beast/websocket.hpp>
+#include <sys/socket.h>
 #include <atomic>
 #include <cstdlib>
 #include <fstream>
@@ -28,6 +30,7 @@ namespace {
 namespace api = org::xrpl::rpc::v1;
 namespace net = boost::asio;
 namespace http = boost::beast::http;
+namespace websocket = boost::beast::websocket;
 std::string text(Bytes const& bytes) { return std::string(bytes.begin(), bytes.end()); }
 
 // A 40-ledger chain of `accounts` accounts, its newest ledgers served to peers by an XRPLA listener.
@@ -176,6 +179,7 @@ struct Server {
 // transactions and its object diff.
 class Clio {
     Chain const& c_;
+    std::set<std::uint32_t> alter_;
     net::io_context io_;
     net::ip::tcp::acceptor acceptor_{io_, {net::ip::make_address("127.0.0.1"), 0}};
     std::mutex mutex_;
@@ -190,7 +194,12 @@ class Clio {
         if (seq < c_.first() || seq > c_.last()) return {{"error", "lgrNotFound"}};
         auto const& ledger = c_.chain.ledgers[seq - c_.first()];
         Json transactions = Json::array(), diff = Json::array();
-        for (auto const& tx : ledger.transactions) transactions.push_back({{"tx_blob", to_hex(tx.transaction)}, {"meta", to_hex(tx.metadata)}});
+        for (auto const& tx : ledger.transactions) {
+            // Another ledger's metadata: a list whose tree root is not the header's, as xrpld
+            // sends when it stops at a transaction it cannot decode.
+            auto meta = alter_.contains(seq) && seq > c_.first() ? c_.chain.ledgers[seq - c_.first() - 1].transactions.front().metadata : tx.metadata;
+            transactions.push_back({{"tx_blob", to_hex(tx.transaction)}, {"meta", to_hex(meta)}});
+        }
         for (auto const& patch : ledger.patches) diff.push_back({{"object_id", to_hex(patch.key)}, {"object", to_hex(patch.object)}});
         ++ledgers;
         return {{"ledger", {{"ledger_data", to_hex(ledger.header)}, {"transactions", transactions}, {"diff", diff}}},
@@ -214,7 +223,7 @@ class Clio {
     }
 public:
     std::atomic<unsigned> ledgers{0};
-    explicit Clio(Chain const& c) : c_(c) {
+    explicit Clio(Chain const& c, std::set<std::uint32_t> alter = {}) : c_(c), alter_(std::move(alter)) {
         accepting_ = std::thread([this] {
             for (;;) {
                 auto socket = std::make_shared<net::ip::tcp::socket>(io_);
@@ -264,6 +273,114 @@ std::map<std::string, std::string> contents(fs::path const& archive) {
     }
     return files;
 }
+// The chain over WebSocket, the same JSON methods an HTTP node answers: `ledger` (the base
+// snapshot and each ledger) and `ledger_data` (one page of the snapshot). Several connections
+// stay open; a prefetch uses one per thread.
+class WsSource {
+    Chain const& c_;
+    net::io_context io_;
+    net::ip::tcp::acceptor acceptor_{io_, {net::ip::make_address("127.0.0.1"), 0}};
+    std::mutex mutex_;
+    std::vector<std::shared_ptr<websocket::stream<net::ip::tcp::socket>>> streams_;
+    std::vector<std::thread> connections_;
+    std::atomic<bool> stopping_{false};
+    std::thread accepting_;
+    Json ledger_answer(std::uint32_t seq) {
+        if (seq == c_.first() - 1) {
+            auto header = decode_header(c_.chain.snapshot_header);
+            return {{"ledger", {{"ledger_data", to_hex(c_.chain.snapshot_header)}, {"transactions", Json::array()}, {"diff", Json::array()}}},
+                    {"ledger_hash", header.hash}, {"ledger_index", seq}, {"validated", true}, {"status", "success"}};
+        }
+        if (seq < c_.first() || seq > c_.last()) return {{"error", "lgrNotFound"}};
+        auto const& ledger = c_.chain.ledgers[seq - c_.first()];
+        Json transactions = Json::array(), diff = Json::array();
+        for (auto const& tx : ledger.transactions) transactions.push_back({{"tx_blob", to_hex(tx.transaction)}, {"meta", to_hex(tx.metadata)}});
+        for (auto const& patch : ledger.patches) diff.push_back({{"object_id", to_hex(patch.key)}, {"object", to_hex(patch.object)}});
+        ++ledgers;
+        return {{"ledger", {{"ledger_data", to_hex(ledger.header)}, {"transactions", transactions}, {"diff", diff}}},
+                {"ledger_hash", decode_header(ledger.header).hash}, {"ledger_index", seq}, {"validated", true}, {"status", "success"}};
+    }
+    Json answer(Json const& request) {
+        auto command = request.value("command", request.value("method", ""));
+        if (command == "ledger_data") {
+            auto header = decode_header(c_.chain.snapshot_header);
+            if (request.contains("ledger_hash") && request.at("ledger_hash").get<std::string>() != header.hash) return {{"error", "lgrNotFound"}};
+            ++states;
+            Json state = Json::array();
+            auto marker = request.value("marker", std::string{});
+            for (auto const& item : c_.chain.snapshot) {
+                auto index = to_hex(item.key);
+                if (!marker.empty() && index <= marker) continue;
+                state.push_back({{"index", index}, {"data", to_hex(item.object)}});
+                if (state.size() == 2048) break;
+            }
+            Json page{{"state", state}, {"ledger_hash", header.hash}, {"ledger_index", header.sequence}, {"validated", true}};
+            if (state.size() == 2048) page["marker"] = state.back().at("index");
+            return page;
+        }
+        if (command != "ledger" || !request.contains("ledger_index") || !request.at("ledger_index").is_number_unsigned()) return {{"error", "notSupported"}};
+        return ledger_answer(request.at("ledger_index").get<std::uint32_t>());
+    }
+    void serve(std::shared_ptr<websocket::stream<net::ip::tcp::socket>> stream) {
+        boost::system::error_code ec;
+        stream->accept(ec);
+        if (ec || stopping_) return;
+        boost::beast::flat_buffer buffer;
+        while (!stopping_) {
+            buffer.clear();
+            stream->read(buffer, ec);
+            if (ec) return;
+            Json request;
+            try { request = Json::parse(boost::beast::buffers_to_string(buffer.data())); }
+            catch (...) { return; }
+            auto body = Json{{"id", request.contains("id") ? request.at("id") : Json()}, {"status", "success"}, {"type", "response"}, {"result", answer(request)}}.dump();
+            stream->text(true);
+            stream->write(net::buffer(body), ec);
+            if (ec) return;
+        }
+    }
+public:
+    std::atomic<unsigned> ledgers{0};
+    std::atomic<unsigned> states{0};
+    explicit WsSource(Chain const& c) : c_(c) {
+        accepting_ = std::thread([this] {
+            for (;;) {
+                net::ip::tcp::socket socket(io_);
+                boost::system::error_code ec;
+                acceptor_.accept(socket, ec);
+                if (ec || stopping_) return;
+                auto stream = std::make_shared<websocket::stream<net::ip::tcp::socket>>(std::move(socket));
+                std::lock_guard lock(mutex_);
+                streams_.push_back(stream);
+                connections_.emplace_back([this, stream] { serve(stream); });
+            }
+        });
+    }
+    ~WsSource() {
+        stopping_ = true;
+        {   // wakes the accepting thread
+            net::ip::tcp::socket wake(io_); boost::system::error_code ec;
+            wake.connect({net::ip::make_address("127.0.0.1"), acceptor_.local_endpoint().port()}, ec);
+        }
+        accepting_.join();
+        std::vector<std::shared_ptr<websocket::stream<net::ip::tcp::socket>>> streams;
+        std::vector<std::thread> connections;
+        {
+            std::lock_guard lock(mutex_);
+            streams.swap(streams_);
+            connections.swap(connections_);
+        }
+        // The asio socket is not safe to close while another thread is in read. Shutting the
+        // native descriptor down makes that read return. The caller's connection stays up until
+        // its thread ends, so a session is still blocked here.
+        for (auto& stream : streams) {
+            auto fd = boost::beast::get_lowest_layer(*stream).native_handle();
+            if (fd >= 0) ::shutdown(fd, SHUT_RDWR);
+        }
+        for (auto& connection : connections) connection.join();
+    }
+    std::string url() const { return "ws://127.0.0.1:" + std::to_string(acceptor_.local_endpoint().port()) + "/"; }
+};
 }
 
 TEST(HistoryPeers, OmittedTransactionsComeFromPeersAndTheArchiveIsTheSame) {
@@ -367,6 +484,64 @@ TEST(SourceSplit, LedgersFromAJsonRpcAndAGrpcNodeAtOnceMakeTheSameArchive) {
     auto lone = options(c, grpc, c.dir / "lone");
     lone.source = clio.source(); lone.grpc_jobs = 2;
     EXPECT_ANY_THROW(export_archive(lone));
+}
+
+TEST(HistoryPeers, AWebSocketSourceExportsStateAndLedgers) {
+    Chain c;
+    Server grpc(c, {});
+    WsSource ws(c);
+    auto expected = c.dir / "expected", actual = c.dir / "actual";
+    export_archive(options(c, grpc, expected));
+    auto o = options(c, grpc, actual);
+    o.source = ws.url();
+    o.jobs = 2;
+    export_archive(o);
+    auto a = contents(expected), b = contents(actual);
+    std::size_t compared = 0;
+    for (auto const& [name, bytes] : a) {
+        if (!name.starts_with("chunks/") && !name.starts_with("snapshots/")) continue;
+        ++compared;
+        ASSERT_TRUE(b.contains(name)) << name;
+        EXPECT_EQ(bytes, b.at(name)) << name;
+    }
+    EXPECT_GT(compared, 0u);
+    EXPECT_GT(ws.states.load(), 0u);
+}
+
+TEST(HistoryPeers, GrpcMissesStayOffTheJsonRpcPrimaryUnlessAFallbackIsSet) {
+    Chain c;
+    Server holed(c, {}, {}, {c.first() + 9});
+    Clio clio(c);
+    auto o = options(c, holed, c.dir / "actual");
+    o.source = clio.source();
+    o.grpc_source = holed.source();
+    o.history_peers = {c.peer()};
+    o.grpc_jobs = 0;
+    export_archive(o);
+    // The hole, and the ledger after it, come from history peers. The JSON-RPC port is the same node.
+    EXPECT_EQ(clio.ledgers.load(), 0u);
+}
+
+TEST(HistoryPeers, ALedgerFromAFallbackIsCheckedLikeOneFromGrpc) {
+    Chain c;
+    Server complete(c, {}), holed(c, {}, {}, {c.first() + 9});
+    Clio fallback(c, {c.first() + 9});
+    auto expected = c.dir / "expected", actual = c.dir / "actual";
+    export_archive(options(c, complete, expected));
+    auto o = options(c, holed, actual);
+    o.fallbacks = {fallback.source()};
+    o.history_peers = {c.peer()};
+    export_archive(o);
+    auto a = contents(expected), b = contents(actual);
+    std::size_t chunks = 0;
+    for (auto const& [name, bytes] : a) {
+        if (!name.starts_with("chunks/")) continue;
+        ++chunks;
+        ASSERT_TRUE(b.contains(name)) << name;
+        EXPECT_EQ(bytes, b.at(name)) << name;
+    }
+    EXPECT_GT(chunks, 0u);
+    EXPECT_GE(fallback.ledgers.load(), 1u);
 }
 
 // A base state read on several connections, each range read ahead of its turn: past the memory

@@ -997,6 +997,43 @@ class PieceQueries(unittest.TestCase):
             for server in servers: server.close()
             shutil.rmtree(root, ignore_errors=True)
 
+    def test_a_resync_keeps_what_the_caches_hold(self):
+        # A sync rewrites selection.json with each catalog generation (every few minutes, live):
+        # the history reopened on it takes over the open segments, decoded ledgers and snapshot
+        # blocks of the ranges and snapshots it still selects, answers as before, and opens
+        # nothing again. Without a tail: a tail's base is the one it was built on until rebuilt.
+        root = Path(tempfile.mkdtemp(prefix='xrpla-adopt-'))
+        server = None
+        try:
+            cache = root / 'cache'
+            shutil.copytree(self.pieces_dir, cache)
+            server = Server(cache)
+            last = server.call('ledger_range', {})['ledger_index_max']
+            seqs = sorted({self.first, (self.first + last) // 2, last})
+            def answers():
+                return [server.call('ledger', {'ledger_index': s, 'transactions': True, 'expand': True}) for s in seqs] + \
+                       [server.call('ledger_data', {'ledger_index': s, 'limit': 50}) for s in seqs]
+            before = answers()
+            cached = server.call('xrpla_cache_stats', {})
+            self.assertTrue(cached['archives']['entries'] and cached['pages']['entries'], cached)
+            selection = cache / 'selection.json'
+            selection.write_bytes(selection.read_bytes())
+            now = time.time_ns() + 10 ** 9
+            os.utime(selection, ns=(now, now))  # a time of its own, however coarse the file system's clock
+            for _ in range(200):
+                reopened = server.call('xrpla_cache_stats', {})
+                if reopened['archives']['adopted']: break
+                time.sleep(.05)
+            for name in ('archives', 'pages', 'snapshot_blocks'):
+                self.assertGreaterEqual(reopened[name]['adopted'], cached[name]['entries'], reopened)
+            self.assertEqual(answers(), before)
+            again = server.call('xrpla_cache_stats', {})
+            for name in ('archives', 'pages', 'snapshot_blocks'):
+                self.assertEqual(again[name]['misses'], reopened[name]['misses'], (name, again))
+        finally:
+            if server: server.close()
+            shutil.rmtree(root, ignore_errors=True)
+
     def test_state_pages_out_of_order(self):
         # Clio's out_of_order walks the same keys (this node reads any ledger's keys in order),
         # its marker the last key returned, and none once the walk is done.

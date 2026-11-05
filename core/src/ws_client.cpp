@@ -1,4 +1,5 @@
 // A blocking WebSocket client over Boost.Beast (ws_client.hpp).
+#include <xrpla/core/operations.hpp>
 #include "ws_client.hpp"
 #include <boost/asio/connect.hpp>
 #include <boost/asio/ip/tcp.hpp>
@@ -9,8 +10,10 @@
 #include <boost/beast/websocket/ssl.hpp>
 #include <openssl/ssl.h>
 #include <algorithm>
+#include <map>
 #include <optional>
 #include <regex>
+#include <thread>
 #include <variant>
 
 namespace xrpla::core {
@@ -63,12 +66,15 @@ struct WsClient::Impl {
         auto handshake = [&](auto& s) {
             bounded(left(), "No WebSocket handshake from " + url, [&](auto handler) { s.async_handshake(host, path, handler); });
         };
+        // A ledger with its transactions is larger than the 16 MB a stream accepts by default.
+        auto widen = [](auto& s) { s.read_message_max(512ull * 1024 * 1024); };
         if (secure) {
             tls.set_default_verify_paths();
             tls.set_verify_mode(net::ssl::verify_peer);
             // The certificate names the host without the brackets an IPv6 address has in a URL.
             auto name = host.starts_with('[') && host.ends_with(']') ? host.substr(1, host.size() - 2) : host;
             auto& s = stream.emplace<ws::stream<beast::ssl_stream<tcp::socket>>>(io, tls);
+            widen(s);
             if (!SSL_set_tlsext_host_name(s.next_layer().native_handle(), name.c_str())) throw Error("Cannot set TLS server name");
             s.next_layer().set_verify_callback(net::ssl::host_name_verification(name));
             connect(s);
@@ -76,6 +82,7 @@ struct WsClient::Impl {
             handshake(s);
         } else {
             auto& s = stream.emplace<ws::stream<tcp::socket>>(io);
+            widen(s);
             connect(s);
             handshake(s);
         }
@@ -118,5 +125,106 @@ Json WsClient::receive(std::chrono::milliseconds idle) {
         impl_->bounded(idle, "No WebSocket message", [&](auto handler) { s.async_read(buffer, handler); });
     });
     return parsed(buffer);
+}
+namespace {
+// This thread's connection to each WebSocket source. A prefetch fetches ledgers on several
+// threads; each keeps its own, as RpcClient keeps a curl handle per thread. One slot for every
+// URL: a primary and a fallback stay connected, instead of handshaking again whenever the URL
+// changes.
+struct WsConn {
+    std::unique_ptr<WsClient> client;
+    std::uint64_t next_id = 1;
+};
+thread_local std::map<std::string, WsConn> ws_conns;
+
+bool same_id(Json const& message, std::uint64_t id) {
+    if (!message.contains("id")) return false;
+    auto const& got = message.at("id");
+    if (got.is_number()) return got.get<std::uint64_t>() == id;
+    if (got.is_string()) return got.get<std::string>() == std::to_string(id);
+    return false;
+}
+// The result object RpcClient::call returns. A WebSocket success wraps it in "result"; an error
+// (lgrNotFound, rate_limited) is often the message itself.
+Json unwrap_rpc(Json const& message) {
+    if (message.contains("result") && message.at("result").is_object()) {
+        auto result = message.at("result");
+        if (!result.contains("error") && message.contains("error") && message.at("error").is_string()) result["error"] = message.at("error");
+        if (!result.contains("error_message") && message.contains("error_message")) result["error_message"] = message.at("error_message");
+        else if (!result.contains("error_message") && message.contains("message") && message.at("message").is_string()) result["error_message"] = message.at("message");
+        return result;
+    }
+    if (message.contains("error")) {
+        Json result{{"error", message.value("error", "ws")}, {"status", message.value("status", "error")}};
+        if (message.contains("error_message")) result["error_message"] = message.at("error_message");
+        else if (message.contains("message")) result["error_message"] = message.at("message");
+        return result;
+    }
+    return message;
+}
+bool retryable_result(Json const& result) {
+    auto error = result.value("error", "");
+    return error == "tooBusy" || error == "slowDown" || error == "rate_limited";
+}
+}
+Json ws_rpc_call(RpcClient const& client, std::string const& method, Json const& params) {
+    if (!params.is_object()) throw Error("WebSocket RPC parameters must be an object");
+    auto body = Json{{"method", method}, {"params", Json::array({params})}}.dump();
+    auto cached = client.cache / (sha256(client.url + body) + ".json");
+    if (!client.cache.empty()) {
+        safe_cache_path(cached);
+        if (fs::exists(cached)) return Json::parse(read_file(cached, 512ULL * 1024 * 1024));
+        fs::create_directories(client.cache);
+    }
+    unsigned tries = std::max(1u, client.attempts);
+    for (unsigned attempt = 0; attempt < tries; ++attempt) {
+        if (client.delay_ms || attempt) std::this_thread::sleep_for(std::chrono::milliseconds{client.delay_ms + (attempt ? 500U << attempt : 0)});
+        try {
+            auto& slot = ws_conns[client.url];
+            auto exchange = [&] {
+                auto id = slot.next_id++;
+                Json message = params;
+                message["command"] = method;
+                message["id"] = id;
+                slot.client->send(message);
+                for (int skipped = 0; skipped < 8; ++skipped) {
+                    auto incoming = slot.client->receive(std::chrono::seconds(60));
+                    if (incoming.contains("id") && !same_id(incoming, id)) continue;
+                    return unwrap_rpc(incoming);
+                }
+                throw Error("WebSocket response did not match the request");
+            };
+            Json result;
+            if (slot.client) {
+                // A kept connection the server (or a proxy) has since closed fails on its first use.
+                // That says nothing about the source: it is dialed again once, within this attempt,
+                // so a source asked only once is not counted unreachable for it.
+                try { result = exchange(); }
+                catch (std::exception const&) {
+                    slot.client = std::make_unique<WsClient>(client.url, std::chrono::seconds(30));
+                    result = exchange();
+                }
+            } else {
+                slot.client = std::make_unique<WsClient>(client.url, std::chrono::seconds(30));
+                result = exchange();
+            }
+            if (retryable_result(result)) {
+                if (attempt + 1 < tries) continue;
+            }
+            // The same ledger answers as HTTP: cached once validated, and an entryNotFound.
+            if (!client.cache.empty() && (params.contains("ledger_hash") ||
+                (params.contains("ledger_index") && params.at("ledger_index").is_number_unsigned())) &&
+                (!result.contains("error") || result["error"] == "entryNotFound") &&
+                (result.contains("validated") ? result["validated"] == true : method != "ledger")) {
+                auto temp = cached; temp += ".part";
+                write_file(temp, result.dump()); durable_rename(temp, cached);
+            }
+            return result;
+        } catch (std::exception const&) {
+            ws_conns[client.url].client.reset();
+            if (attempt + 1 >= tries) throw;
+        }
+    }
+    throw Error("WebSocket RPC retries exhausted");
 }
 }

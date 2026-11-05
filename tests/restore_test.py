@@ -14,6 +14,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import signal
 import socket
 import sqlite3
 import subprocess
@@ -870,7 +871,9 @@ class Restore(unittest.TestCase):
 
     def test_setup_connected_writes_service(self):
         config = self.root / 'etc-connected' / 'xrpla.toml'
-        self.setup(config, ['connected', 'http://127.0.0.1:5005', '', 'y', '', '', '', '', '123', str(self.root / 'connected-store'), '', '', ''])
+        # RPC, gRPC, then fallback (empty), then the validator answers. The fallback question
+        # follows gRPC so an older answer script still lines the gRPC URL up.
+        self.setup(config, ['connected', 'http://127.0.0.1:5005', '', '', 'y', '', '', '', '', '123', str(self.root / 'connected-store'), '', '', ''])
         written = tomllib.loads(config.read_text())
         self.assertEqual(written['profile'], 'connected')
         self.assertNotIn('publication', written)
@@ -882,7 +885,7 @@ class Restore(unittest.TestCase):
     def test_setup_connected_with_a_publication(self):
         config = self.root / 'etc-connected-pub' / 'xrpla.toml'
         hex_key = self.key.read_bytes().hex()
-        self.setup(config, ['connected', 'http://127.0.0.1:5005', '', 'n', str(self.bucket), hex_key, str(self.root / 'connected-pub-store'), '', '', ''])
+        self.setup(config, ['connected', 'http://127.0.0.1:5005', '', '', 'n', str(self.bucket), hex_key, str(self.root / 'connected-pub-store'), '', '', ''])
         written = tomllib.loads(config.read_text())
         self.assertEqual(written['publication']['source'], str(self.bucket))
         self.assertEqual((config.parent / 'publisher.pub').read_text().strip(), hex_key)
@@ -895,6 +898,72 @@ class Restore(unittest.TestCase):
         self.assertEqual((written['profile'], written['publication']['source'], written['serve']['http']), ('standalone', str(self.bucket), '127.0.0.1:5005'))
         self.assertNotIn('mirror', written)
         self.assertIn(f'xrpla run --config {config}', (self.root / 'units' / 'xrpla.service').read_text())
+
+    def test_setup_connected_fallback_defaults_validators_to_yes(self):
+        config = self.root / 'etc-connected-fallback' / 'xrpla.toml'
+        # An empty answer on the validator question takes the default, which is yes once a fallback is given.
+        self.setup(config, ['connected', 'http://127.0.0.1:5005', '', 'wss://api.example.com', '', '', '', '', '',
+                            'tip', str(self.root / 'connected-fallback-store'), '', '', ''])
+        written = tomllib.loads(config.read_text())
+        self.assertEqual(written['node']['rpc'], 'http://127.0.0.1:5005')
+        self.assertEqual(written['node']['fallback'], ['wss://api.example.com'])
+        self.assertEqual(written['validators']['list'], 'https://vl.ripple.com')
+        self.assertEqual(written['node']['validations'], 'ws://127.0.0.1:6006')
+        declined = self.root / 'etc-connected-fallback-no' / 'xrpla.toml'
+        printed = self.setup(declined, ['connected', 'http://127.0.0.1:5005', '', 'wss://api.example.com', 'n', '',
+                                        'tip', str(self.root / 'connected-fallback-no-store'), '', '', ''])
+        self.assertNotIn('validators', tomllib.loads(declined.read_text()))
+        self.assertIn('Warning: a fallback node is trusted on its word', printed)
+
+    def test_setup_asks_again_for_a_fallback_that_is_not_a_url(self):
+        # An answer script from before fallbacks puts its validator answer ('y') on the fallback
+        # question. It is asked again rather than written into the config.
+        config = self.root / 'etc-connected-fallback-typo' / 'xrpla.toml'
+        printed = self.setup(config, ['connected', 'http://127.0.0.1:5005', '', 'y', 'api.example.com, wss://ok.example.com',
+                                      'wss://api.example.com', 'n', '', 'tip', str(self.root / 'connected-fallback-typo-store'), '', '', ''])
+        self.assertEqual(printed.count('Please answer with http(s):// or ws(s):// URLs'), 2)
+        self.assertEqual(tomllib.loads(config.read_text())['node']['fallback'], ['wss://api.example.com'])
+
+    def test_standalone_run_needs_no_node(self):
+        # A standalone config has no [node]. `xrpla run` used to ask for node.rpc before it
+        # noticed the profile follows peers, and the service then restarted forever.
+        config = self.root / 'etc-standalone-run' / 'xrpla.toml'
+        config.parent.mkdir(exist_ok=True)
+        http = socket.socket(); http.bind(('127.0.0.1', 0)); http_port = http.getsockname()[1]; http.close()
+        ws = socket.socket(); ws.bind(('127.0.0.1', 0)); ws_port = ws.getsockname()[1]; ws.close()
+        storage = self.root / 'standalone-run'
+        config.write_text(f'profile = "standalone"\n\n[publication]\nsource = "{self.bucket}"\npublisher_key = "{self.key}"\n\n'
+                          f'[storage]\ndir = "{storage}"\n\n[serve]\nhttp = "127.0.0.1:{http_port}"\nws = "127.0.0.1:{ws_port}"\n\n'
+                          '[peers]\nendpoints = ["127.0.0.1:1"]\n')
+        proc = subprocess.Popen([BINARY, 'run', '--config', str(config)], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                text=True, start_new_session=True)
+        lines = []
+        def read():
+            for line in proc.stdout:
+                lines.append(line)
+        threading.Thread(target=read, daemon=True).start()
+        deadline = time.time() + 180
+        try:
+            while time.time() < deadline:
+                text = ''.join(lines)
+                if 'Config needs node.rpc' in text: self.fail(text[-4000:])
+                if proc.poll() is not None: self.fail('standalone run exited\n' + text[-4000:])
+                if '"event":"spool_extended"' in text or '"event":"spool_extend_failed"' in text:
+                    time.sleep(2)
+                    text = ''.join(lines)
+                    self.assertIsNone(proc.poll(), text[-4000:])
+                    self.assertNotIn('Config needs node.rpc', text)
+                    return
+                time.sleep(0.2)
+            self.fail('timed out before the spool was extended\n' + ''.join(lines)[-4000:])
+        finally:
+            try: os.killpg(proc.pid, signal.SIGTERM)
+            except ProcessLookupError: pass
+            try: proc.wait(timeout=15)
+            except subprocess.TimeoutExpired:
+                try: os.killpg(proc.pid, signal.SIGKILL)
+                except ProcessLookupError: pass
+                proc.wait(timeout=10)
 
     # Mirrors: a publication served from several places, tried in order.
     def serve(self, directory):

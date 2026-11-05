@@ -118,7 +118,7 @@ if(BUILD_TESTING)
   target_link_libraries(xrpla_format_tests PRIVATE xrpla_format GTest::gtest_main)
   gtest_discover_tests(xrpla_format_tests)
   if(XRPLA_WITH_LIBXRPL)
-    add_executable(xrpla_core_tests tests/core_test.cpp tests/index_test.cpp tests/validators_test.cpp tests/peer_test.cpp tests/sqlite_index_test.cpp tests/history_peers_test.cpp tests/piece_bounds_test.cpp tests/state_snapshot_test.cpp)
+    add_executable(xrpla_core_tests tests/core_test.cpp tests/index_test.cpp tests/validators_test.cpp tests/peer_test.cpp tests/sqlite_index_test.cpp tests/history_peers_test.cpp tests/piece_bounds_test.cpp tests/state_snapshot_test.cpp tests/source_fallback_test.cpp)
     target_compile_definitions(xrpla_core_tests PRIVATE XRPLA_TEST_FIXTURES="${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures")
     target_link_libraries(xrpla_core_tests PRIVATE xrpla_core GTest::gtest_main)
     # history_peers_test.cpp runs a gRPC server standing in for xrpld's.

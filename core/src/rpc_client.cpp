@@ -1,4 +1,5 @@
 #include <xrpla/core/operations.hpp>
+#include "ws_client.hpp"
 #include <boost/asio/ip/tcp.hpp>
 #include <curl/curl.h>
 #include <sys/socket.h>
@@ -9,6 +10,8 @@
 #include <cstring>
 #include <algorithm>
 #include <atomic>
+#include <iostream>
+#include <map>
 #include <mutex>
 #include <utility>
 
@@ -76,6 +79,12 @@ void pin_connections(void* curl, std::vector<std::string> const& allowed) {
 bool RpcClient::last_reached() { return reached; }
 Json RpcClient::call(std::string const& method, Json params) const {
     reached = true;
+    // The same JSON methods, on a connection this thread keeps. A public node is often offered
+    // as wss:// and answers there when its HTTP port is rate-limited or absent.
+    if (url.starts_with("ws://") || url.starts_with("wss://")) {
+        try { return ws_rpc_call(*this, method, params); }
+        catch (...) { reached = false; throw; }
+    }
     if (!url.starts_with("https://") && !url.starts_with("http://")) throw Error("RPC source must be HTTP or HTTPS");
     auto body = Json{{"method", method}, {"params", Json::array({params})}}.dump();
     auto cached = cache / (sha256(url + body) + ".json");
@@ -138,7 +147,7 @@ Json RpcClient::call(std::string const& method, Json params) const {
         auto document = Json::parse(response);
         if (!document.contains("result") || !document["result"].is_object()) throw Error("Invalid RPC response envelope");
         auto result = document.at("result");
-        if (result.value("error", "") == "tooBusy" || result.value("error", "") == "slowDown") {
+        if (auto error = result.value("error", ""); error == "tooBusy" || error == "slowDown" || error == "rate_limited") {
             if (attempt + 1 < tries) continue;
         }
         // Cache only immutable ledger-pinned extraction calls, never forwarding
@@ -169,6 +178,134 @@ std::vector<Json> RpcClient::call_many(std::string const& method, std::vector<Js
             auto index = next.fetch_add(1);
             if (index >= params.size()) break;
             try { results[index] = call(method, params[index]); }
+            catch (...) { std::lock_guard guard(mutex); if (!failure) failure = std::current_exception(); failed = true; }
+        }
+    });
+    workers.clear();
+    if (failure) std::rethrow_exception(failure);
+    return results;
+}
+namespace {
+// The node does not hold the ledger. entryNotFound is not this: the ledger is held and the
+// object is gone, which is the answer.
+bool lacks_ledger(Json const& result) {
+    auto error = result.value("error", "");
+    return error == "lgrNotFound" || error == "ledgerNotFound";
+}
+bool busy(Json const& result) {
+    auto error = result.value("error", "");
+    return error == "tooBusy" || error == "slowDown" || error == "rate_limited";
+}
+// A node still syncing (just restarted, or out of touch with its peers) answers these for minutes.
+bool not_ready(Json const& result) {
+    auto error = result.value("error", "");
+    return error == "noNetwork" || error == "noCurrent" || error == "noClosed" || error == "notSynced";
+}
+// A source that could not be reached stays out of the order for this long: a down primary is
+// not dialed again on every ledger and every tip poll.
+constexpr auto kUnreachableFor = std::chrono::seconds(30);
+struct Unreachable {
+    std::mutex mutex;
+    std::map<std::string, std::chrono::steady_clock::time_point> until;
+};
+Unreachable& unreachable() { static Unreachable state; return state; }
+bool recently_unreachable(std::string const& url) {
+    std::lock_guard lock(unreachable().mutex);
+    auto found = unreachable().until.find(url);
+    if (found == unreachable().until.end()) return false;
+    if (std::chrono::steady_clock::now() >= found->second) { unreachable().until.erase(found); return false; }
+    return true;
+}
+void mark_unreachable(std::string const& url) {
+    std::lock_guard lock(unreachable().mutex);
+    unreachable().until[url] = std::chrono::steady_clock::now() + kUnreachableFor;
+}
+void mark_reachable(std::string const& url) {
+    std::lock_guard lock(unreachable().mutex);
+    unreachable().until.erase(url);
+}
+struct Served {
+    std::mutex mutex;
+    std::string source;
+    bool fallback = false;
+};
+Served& served_ledger() { static Served state; return state; }
+}
+void forget_unreachable_sources() {
+    { std::lock_guard lock(unreachable().mutex); unreachable().until.clear(); }
+    std::lock_guard lock(served_ledger().mutex);
+    served_ledger().source.clear();
+    served_ledger().fallback = false;
+}
+void note_ledger_source(std::string const& source, bool fallback, Json const& ledger) {
+    std::lock_guard lock(served_ledger().mutex);
+    auto& state = served_ledger();
+    if (state.fallback == fallback && (!fallback || state.source == source)) return;
+    auto from = state.source;
+    bool was = state.fallback;
+    state.source = source;
+    state.fallback = fallback;
+    // The gRPC port and the primary JSON-RPC port are one node. Moving between them is not a
+    // fallback switch.
+    if (!was && !fallback) return;
+    Json line{{"event", fallback ? "ledger_from_fallback" : "ledger_from_primary"}, {"source", source}, {"ledger", ledger}};
+    if (!from.empty()) line["from"] = from;
+    std::cerr << line.dump() << std::endl;
+}
+Json call_sources(std::vector<std::string> const& urls, std::string const& method, Json params, unsigned delay_ms, unsigned attempts, fs::path const& cache,
+                  std::size_t* served, std::size_t primary_urls) {
+    if (urls.empty()) throw Error("No RPC source");
+    for (std::size_t i = 0; i < urls.size(); ++i) {
+        bool last = i + 1 == urls.size();
+        // The last source is always asked: it is the only one left, and it keeps its retries.
+        if (!last && recently_unreachable(urls[i])) continue;
+        RpcClient client{urls[i], cache, delay_ms};
+        client.attempts = last ? std::max(1u, attempts) : 1u;
+        try {
+            auto result = client.call(method, params);
+            // Busy is momentary, and the next source is often a rate-limited public node: a source
+            // asked only once is asked again, after a pause, before its load moves on.
+            if (!last && busy(result)) {
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+                result = client.call(method, params);
+            }
+            if (RpcClient::last_reached()) mark_reachable(urls[i]);
+            else mark_unreachable(urls[i]);
+            // Retries are spent inside the call. A source that is still busy, still syncing, or
+            // that does not hold the ledger, leaves this ledger to the next source.
+            bool passed = lacks_ledger(result) || busy(result) || not_ready(result);
+            if (passed && !last) continue;
+            if (served) *served = i;
+            // Once per switch, and only for a ledger: object fetches would say so once per object.
+            if (method == "ledger" && !result.contains("error")) {
+                Json ledger = params.contains("ledger_index") ? params.at("ledger_index") : Json();
+                note_ledger_source(urls[i], i >= primary_urls, ledger);
+            }
+            return result;
+        } catch (Error const&) {
+            if (!RpcClient::last_reached()) mark_unreachable(urls[i]);
+            if (last) throw;
+        } catch (std::exception const& error) {
+            if (!RpcClient::last_reached()) mark_unreachable(urls[i]);
+            if (last) throw Error(error.what());
+        }
+    }
+    throw Error("No RPC source served " + method);
+}
+std::vector<Json> call_sources_many(std::vector<std::string> const& urls, std::string const& method, std::vector<Json> const& params, unsigned jobs,
+                                    unsigned delay_ms, unsigned attempts, fs::path const& cache) {
+    if (!jobs || jobs > 32) throw Error("RPC jobs must be between 1 and 32");
+    std::vector<Json> results(params.size());
+    std::atomic<std::size_t> next{0};
+    std::atomic<bool> failed{false};
+    std::mutex mutex;
+    std::exception_ptr failure;
+    std::vector<std::jthread> workers;
+    for (unsigned n = 0; n < jobs && n < params.size(); ++n) workers.emplace_back([&] {
+        while (!failed.load()) {
+            auto index = next.fetch_add(1);
+            if (index >= params.size()) break;
+            try { results[index] = call_sources(urls, method, params[index], delay_ms, attempts, cache); }
             catch (...) { std::lock_guard guard(mutex); if (!failure) failure = std::current_exception(); failed = true; }
         }
     });

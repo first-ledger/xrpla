@@ -276,6 +276,9 @@
 # Its JSON-RPC URL (required), local or remote.
 #rpc = "http://127.0.0.1:5005"
 
+# More nodes, tried when the primary does not hold a ledger. One URL or a list.
+#fallback = ["wss://api.example.com"]
+
 # Its gRPC endpoint, grpc://HOST:PORT (xrpld's [port_grpc]): each ledger's changes in one
 # request instead of one per changed object. Empty: JSON-RPC only.
 #grpc = "grpc://127.0.0.1:50051"

@@ -174,7 +174,8 @@ two node databases do not share or hold differently.
 profile = "connected"
 
 [node]
-rpc = "http://127.0.0.1:5005"          # xrpld JSON-RPC; local or remote
+rpc = "http://127.0.0.1:5005"          # local xrpld admin port: not rate-limited
+# fallback = ["wss://api.example.com"] # ledgers the primary no longer holds; http(s) or ws(s)
 # grpc = "grpc://127.0.0.1:50051"      # optional: ledger diffs over gRPC
 # validations = "ws://127.0.0.1:6006"  # with [validators]
 # delay_ms = 0                         # pause before each request (raise for a shared public node)
@@ -211,8 +212,9 @@ ws = "127.0.0.1:6106"
 Before the first piece is sealed the cache holds only the baseline snapshot, and the tail
 serves everything after it. The first start therefore waits for the node's state export and
 its snapshot (tens of minutes on mainnet) before listening. A local node can be trusted as
-it is; with a remote one, set `[validators]` so ledgers are accepted only once a quorum of
-the list's validators signed them (see Trust above).
+it is. With a remote one, or a fallback, set `[validators]` so ledgers are accepted only once
+a quorum of the list's validators signed them (see Trust above). `xrpla setup` defaults that
+question to yes when a fallback is given.
 
 Over WebSocket, `subscribe` takes the `ledger`, `transactions`, `accounts` and `books`
 streams, as xrpld does (validated transactions only); see
@@ -225,8 +227,9 @@ With a `[publication]` section (`name`, or `source` and `publisher_key`) instead
 connected mode keeps the publication's whole history, as `mirror` and `standalone` do: the
 piece cache follows the publication, the spool starts from its newest snapshot, and the node
 supplies only the ledgers after the publication's tip. A node usually keeps about a day of
-ledgers while a publication can be one piece (50,000 ledgers) behind the network; any ledgers
-the node no longer holds are first fetched from the peer network (`publish --peers`). The
+ledgers while a publication can be one piece (50,000 ledgers) behind the network. Ledgers the
+primary no longer holds are fetched from `[node] fallback` (the next node that still has them).
+Ledgers none of the nodes hold are first fetched from the peer network (`publish --peers`). The
 spool is rebuilt from each newer snapshot the publication gains, while the follower keeps
 running until the swap. Nothing is sealed locally, so no Python pipeline runs.
 
@@ -409,7 +412,9 @@ all|none|mpt_holders,nfts_by_issuer`.
 snapshot blocks, charged by what each holds. Under heavy load the process uses about a quarter
 more than the cache (requests in flight, key lookup maps, the allocator's own), so a machine
 shared with other services should leave that room. `xrpla_cache_stats` reports the cache's use,
-what the open segments hold by part, and on Linux the allocator's own figures.
+what the open segments hold by part, and on Linux the allocator's own figures. A sync keeps what
+the cache holds for every piece it keeps (each cache's `adopted` counts what the last one carried
+over), so a server following a live publication does not decode its history again every few minutes.
 
 `[cache] snapshots_every` picks which of the publication's state snapshots (one every
 1,000,000 ledgers) the local copy keeps besides the first and the newest: every one at a

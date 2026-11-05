@@ -112,6 +112,9 @@ public:
     // cache directory (open_piece_history) serves in its place and shares its memory budget. It
     // still answers the requests that hold it, caching only within room the budget has left.
     void retire() const;
+    // Takes over what `replaced` (the history this one replaces, of the same cache directory and
+    // budget) caches of the ranges and snapshots both select; the rest stays for retire().
+    void adopt(PieceHistory const& replaced) const;
 };
 bool is_piece_cache(fs::path const&);
 // Applies to piece histories opened afterwards: a memory budget split across decoded pages
