@@ -475,14 +475,18 @@ class NodeSource {
     mutable std::mutex history_mutex_;
     mutable std::unique_ptr<PeerLedgers> history_;
     // Runs `request` against the history peers (opened on first use: those given, or the peers
-    // the network's hubs list as holding `sequence`); a failure drops them, so the next
-    // attempt looks for peers again.
+    // the network's hubs list as holding `sequence` followed by known full-history peers); a
+    // failure drops them, so the next attempt looks for peers again.
     template<class Request> auto with_history(std::uint32_t sequence, Request request) const {
         std::lock_guard lock(history_mutex_);
         try {
             if (!history_) {
                 auto peers = history_peers_;
-                if (peers == std::vector<std::string>{"default"}) peers = peers_holding(sequence, network_id_);
+                if (peers == std::vector<std::string>{"default"}) {
+                    peers = peers_holding(sequence, network_id_);
+                    for (auto const& known : full_history_peers(network_id_))
+                        if (std::find(peers.begin(), peers.end(), known) == peers.end()) peers.push_back(known);
+                }
                 if (peers.empty()) throw Error("No peer that holds ledger " + std::to_string(sequence) + " publishes its address");
                 PeerLedgers::Options options;
                 options.peers = peers; options.bootstrap = peers; options.private_mode = true;
@@ -520,10 +524,12 @@ class NodeSource {
             if (transaction_root(records) == header.transaction_hash) return;
         }
         document.erase("transactions_omitted");
+        // Without history peers no retry gets the ledger past this (xrpld drops the same
+        // transactions every time), so the run stops rather than retry it.
         if (history_peers_.empty())
-            throw Error("The source sent " + std::string(listed.empty() ? "none" : "only some") + " of the transactions of ledger " +
-                        std::to_string(header.sequence) + " (xrpld cannot decode one of them): give history peers "
-                        "(--history-peers default: peers that hold the ledger) to read its transaction tree raw");
+            throw Blocked("The source sent " + std::string(listed.empty() ? "none" : "only some") + " of the transactions of ledger " +
+                        std::to_string(header.sequence) + " (xrpld cannot decode one of them), and history peers are off: "
+                        "--history-peers default (the default) reads its transaction tree raw from peers that hold the ledger");
         auto transactions = with_history(header.sequence, [&](PeerLedgers& peers) { return peers.transactions(header); });
         std::cerr << Json{{"event", "transactions_from_peers"}, {"ledger", header.sequence}, {"source_sent", listed.size()},
                           {"transactions", transactions.size()}}.dump() << std::endl;
@@ -2691,6 +2697,12 @@ Json publish_archive(PublishOptions const& options) {
                 behind = end < tip.sequence;
                 if (!options.once) std::cout << Json{{"event", "archive_published"}, {"result", latest}}.dump() << std::endl;
             }
+        } catch (Blocked const& error) {
+            // Retrying cannot pass it: said once (the error names the ledger), and the run stops.
+            auto batch_from = committed ? static_cast<std::uint64_t>(committed) + 1 : options.start;
+            std::cerr << Json{{"event", "follower_blocked"}, {"batch_from", batch_from}, {"error", error.what()}}.dump() << std::endl;
+            if (server) server->node_store(nullptr);
+            throw;
         } catch (std::exception const& error) {
             if (options.once) { if (server) server->node_store(nullptr); throw; }
             // A crash/error after the manifest rename may have already committed.

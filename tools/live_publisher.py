@@ -49,6 +49,23 @@ from s3_remote import S3, push, reclaim
 TOOLS = Path(__file__).resolve().parent
 MANIFEST_WARNING = 12 * 1024 * 1024  # xrpla publish rejects manifests over 16 MiB
 STATUS = 'status.json'
+# xrpla's exit code for a failure restarting cannot pass, only a change to the runner's setup
+# (history peers turned off at a ledger whose transactions the node omits): the follower is
+# then not started again until the runner is.
+BLOCKED = 3
+
+
+def last_error(log):
+    """The error of the last {"error": ...} line in the end of a log (None if there is none)."""
+    try:
+        with open(log, 'rb') as f:
+            f.seek(max(0, f.seek(0, os.SEEK_END) - 65536)); lines = f.read().decode('utf-8', 'replace').splitlines()
+    except OSError: return None
+    for line in reversed(lines):
+        try: event = json.loads(line)
+        except ValueError: continue
+        if isinstance(event, dict) and 'error' in event and 'event' not in event: return event['error']
+    return None
 
 
 def without_credentials():
@@ -238,8 +255,15 @@ class Runner:
         the spool already holds --until)."""
         low = self.disk_low()
         if low and self.follower is not None: self.halt_follower()
-        elif not low and not self.reached_until(spool) and (self.follower is None or self.follower.poll() is not None):
-            if self.follower is not None: self.log(event='follower_exited', code=self.follower.returncode)
+        elif not low and not self.reached_until(spool) and not self.status.get('blocked') and (self.follower is None or self.follower.poll() is not None):
+            if self.follower is not None:
+                self.log(event='follower_exited', code=self.follower.returncode)
+                if self.follower.returncode == BLOCKED:
+                    # Started again it would stop at the same ledger: it stays stopped, said in
+                    # status.json (and by --health), until the runner is restarted.
+                    blocked = {'error': last_error(self.work / 'follower.log'), 'time': int(time.time())}
+                    self.touch(blocked=blocked); self.log(event='follower_blocked', **blocked)
+                    return
             self.follow(spool, None if (spool / 'manifest.json').exists() else self.args.start)
 
     def halt_follower(self):
@@ -394,7 +418,8 @@ class Runner:
                 last_publish = time.time(); self.note_spool(spool)
                 if self.publish(spool) is not None: spool = self.maybe_rotate(spool)
                 # A stop may arrive mid-publish, and rotation stops the follower.
-                if self.follower is None and not self.stopping and not self.disk_low() and not self.reached_until(spool): self.follow(spool)
+                if self.follower is None and not self.stopping and not self.disk_low() and not self.reached_until(spool) and not self.status.get('blocked'):
+                    self.follow(spool)
             manifest = spool / 'manifest.json'
             if manifest.exists() and manifest.stat().st_size > MANIFEST_WARNING and time.time() - self.warned > 3600:
                 self.warned = time.time(); self.log(event='spool_manifest_large', bytes=manifest.stat().st_size, limit=16 * 1024 * 1024)
@@ -414,6 +439,8 @@ def health(workdir, max_age):
         status = json.loads(path.read_bytes()); published = status.get('published')
         if now - status['updated'] > max_age: problems.append(f"status not updated for {int(now - status['updated'])} s: the runner is stopped or stuck")
         if status.get('disk_low'): problems.append('the disk is short of free space: the follower is paused')
+        elif status.get('blocked'):
+            problems.append(f"the follower stopped on a failure restarting cannot pass (change the setup, then restart the runner): {status['blocked'].get('error')}")
         elif not status.get('follower_running'): problems.append('the follower is not running')
         if now - status.get('spool_tip_since', now) > max_age: problems.append(f"the spool tip has not advanced past {status['spool_tip']} for {int(now - status['spool_tip_since'])} s")
         if not published or now - published['time'] > max_age: problems.append(f'no successful publish run in the last {max_age} s')
@@ -439,7 +466,7 @@ def main():
     p.add_argument('--fallback', help='comma-separated http(s):// or ws(s):// nodes tried when --node does not hold a ledger (a local node keeps little history) or cannot be reached')
     p.add_argument('--grpc-source', help='xrpld gRPC URL beside a JSON-RPC --node (gRPC then serves ledgers and state)')
     p.add_argument('--grpc-jobs', type=int, help='with --grpc-source: fetch ledgers on this many connections to it as well as on --rpc-jobs to --node (xrpla publish --grpc-jobs)')
-    p.add_argument('--history-peers', help="default (peers the network's crawl lists as holding the ledger), none, or HOST:PORT,...: where raw transaction trees come from for ledgers a gRPC node omits, a few of 2013 (xrpla publish --history-peers; default: none)")
+    p.add_argument('--history-peers', help="default (peers the network's crawl lists as holding the ledger), none, or HOST:PORT,...: where raw transaction trees come from for ledgers a gRPC node omits, a few of 2013 (xrpla publish --history-peers; default: default)")
     p.add_argument('--history-identity', type=Path, help='node key file this node uses toward history peers (default: a new key each run)')
     p.add_argument('--workdir', type=Path, required=True); p.add_argument('--spool-seed', type=Path, required=True)
     p.add_argument('--start', type=int, help='first ledger for a new spool'); p.add_argument('--xrpla', required=True)

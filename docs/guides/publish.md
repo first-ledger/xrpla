@@ -175,9 +175,18 @@ Firewall the port to that address: gRPC here is plaintext and unauthenticated.
 `xrpla grpc-probe --source grpc://HOST:50051 --ledger N` reports `"unlimited": true` once the
 exemption applies.
 
-A few 2013 ledgers hold transactions current xrpld cannot decode, and its gRPC omits them.
-`--history-peers default` fetches those ledgers' raw transaction trees from peers that hold
-them. More source options (Clio as a source, combining sources with `--grpc-jobs`) are in
+A few 2013 ledgers hold transactions current xrpld cannot decode (mainnet 625,681 is the first).
+xrpld then sends none or only some of the ledger's transactions, and XRPLA notices because the
+list does not hash to the transaction root in the ledger header. It then reads the ledger's raw
+transaction tree from peers, checks every node against that root, and keeps the raw bytes, so
+the archive is complete and nothing has to be decoded. Ledgers xrpld refuses outright (2014's
+6,409,247) are read the same way. This is on by default (`--history-peers default`): it asks
+the peers the network's crawl lists as holding the ledger, then a few known full-history peers.
+Give `--history-peers HOST:PORT,...` to use your own. With `--history-peers none` the publisher
+stops at such a ledger and exits 3, and `live_publisher.py` leaves the follower stopped and
+reports it in `status.json` and `--health`. If no peer can serve the ledger, the publisher
+keeps retrying it, and `--health` reports that the spool tip has stopped advancing. A ledger is
+never published with transactions missing. More source options (Clio as a source, combining sources with `--grpc-jobs`) are in
 [SETUP.md](../SETUP.md#publishing-where-ledgers-come-from).
 
 ## Validator signatures instead of the node's word

@@ -219,6 +219,11 @@ std::vector<std::string> peers_holding(std::uint32_t sequence, std::uint32_t net
     std::shuffle(peers.begin(), peers.end(), std::mt19937{std::random_device{}()});
     return peers;
 }
+std::vector<std::string> full_history_peers(std::uint32_t network_id) {
+    // Found serving mainnet's 2013 ledgers in September 2026 (the early backfill read them).
+    if (network_id == 0) return {"63.185.244.4:2459", "54.208.98.161:2459", "44.225.136.208:2459"};
+    return {};
+}
 namespace {
 // An endpoint that is an IP address and a port from 1 to 65535, the address unwrapped when it
 // is IPv4 mapped into IPv6; nullopt for anything else (a name, say).

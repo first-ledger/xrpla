@@ -44,8 +44,9 @@ constexpr char help[] = "xrpla " XRPLA_VERSION R"( — authenticated and verifie
                 [--compression-level 3] [--merge-chunks] [--interval-snapshots N]
                 [--history-peers default|none|HOST:PORT,... [--history-identity FILE]]
                   (raw transaction trees of ledgers whose transactions a gRPC source omits because
-                   current xrpld cannot decode one, a few of 2013; off unless given: `default` asks
-                   peers the network's crawl lists as holding the ledger)
+                   current xrpld cannot decode one, a few of 2013, and ledgers it refuses; `default`,
+                   the default, asks peers the network's crawl lists as holding the ledger, then
+                   known full-history peers; `none` stops at such a ledger, exiting 3)
                 [--validator-list https://vl.ripple.com --validator-list-key HEX --validations-node ws[s]://HOST:PORT]
                 [--peers default|HOST:PORT,... [--peer-identity FILE] [--network-id mainnet] [--peer-connections 10] [--peer-max N]
                          [--peer-private] [--peer-no-relay] [--peer-relay-validations all|trusted|drop_untrusted]
@@ -486,11 +487,12 @@ int run(int argc, char** argv) {
             }
             // Connections to the gRPC node beside the JSON-RPC one's --jobs (without it, gRPC serves every ledger).
             if (args.contains("--grpc-jobs")) exporting.grpc_jobs = jobs_value(args.at("--grpc-jobs"), "--grpc-jobs");
-            // Peers for transaction trees the source omits (a few 2013 ledgers): none unless given,
-            // `default` finding them from the network's crawl. The published history holds those
-            // ledgers already; only an export of them from a node needs this.
-            if (args.contains("--history-peers") && args.at("--history-peers") == "default") exporting.history_peers = {"default"};
-            else if (args.contains("--history-peers")) {
+            // Peers for transaction trees the source omits (a few 2013 ledgers): `default` unless
+            // told otherwise, finding them from the network's crawl; `none` turns this off (the
+            // run then stops at such a ledger). Only used when the source's list fails its check
+            // against the header's transaction root, so other ledgers never reach a peer.
+            if (!args.contains("--history-peers") || args.at("--history-peers") == "default") exporting.history_peers = {"default"};
+            else {
                 std::stringstream list(args.at("--history-peers"));
                 for (std::string peer; std::getline(list, peer, ',');) if (!peer.empty() && peer != "none") exporting.history_peers.push_back(peer);
             }
@@ -596,6 +598,11 @@ static void raise_open_file_limit() {
 int main(int argc, char** argv) {
     raise_open_file_limit();
     try { return run(argc, argv); }
+    catch (xrpla::core::Blocked const& error) {
+        // Not worth restarting as it is: a supervisor (live_publisher) tells this from other failures.
+        std::cerr << xrpla::Json{{"error", error.what()}, {"blocked", true}}.dump() << '\n';
+        return 3;
+    }
     catch (std::exception const& error) {
         std::cerr << xrpla::Json{{"error", error.what()}}.dump() << '\n';
         return 1;

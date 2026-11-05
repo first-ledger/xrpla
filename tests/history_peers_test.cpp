@@ -19,8 +19,10 @@
 #include <boost/beast/websocket.hpp>
 #include <sys/socket.h>
 #include <atomic>
+#include <csignal>
 #include <cstdlib>
 #include <fstream>
+#include <future>
 #include <set>
 #include <thread>
 
@@ -641,11 +643,52 @@ TEST(HistoryPeers, WithoutHistoryPeersTheExportStopsAtTheLedgerAndSaysWhy) {
     try {
         export_archive(options(c, omitting, c.dir / "archive"));
         FAIL() << "the export went past a ledger without its transactions";
-    } catch (std::exception const& error) {
+    } catch (Blocked const& error) {  // not to be retried
         std::string what = error.what();
         EXPECT_NE(what.find("ledger " + std::to_string(c.first() + 5)), std::string::npos) << what;
         EXPECT_NE(what.find("--history-peers"), std::string::npos) << what;
     }
+}
+
+// A publisher (not --once) at a ledger whose transactions the node omits: with history peers it
+// goes on past it; without, it stops there with Blocked, instead of retrying the batch forever.
+TEST(HistoryPeers, APublisherGoesPastAnOmittingLedgerWithHistoryPeersAndStopsWithout) {
+    Chain c;
+    auto omitted = c.first() + 20;  // in the third batch of 8
+    Server omitting(c, {omitted});
+    auto publishing = [&](fs::path const& out, std::vector<std::string> history) {
+        PublishOptions p;
+        p.export_options = options(c, omitting, out);
+        p.export_options.history_peers = std::move(history);
+        p.start = c.first(); p.until = c.last();
+        p.batch_ledgers = 8; p.interval_seconds = 1;
+        return std::async(std::launch::async, [p] { return publish_archive(p); });
+    };
+    auto finished = [](std::future<Json>& run) {
+        if (run.wait_for(std::chrono::seconds(120)) == std::future_status::ready) return true;
+        std::raise(SIGTERM);  // publish_archive's own handler: the run ends at its next check
+        run.wait();
+        return false;
+    };
+    auto through = publishing(c.dir / "through", {c.peer()});
+    ASSERT_TRUE(finished(through)) << "the publisher did not reach --until";
+    through.get();
+    auto tip = [&](char const* name) {
+        std::ifstream in(c.dir / name / "manifest.json");
+        return Json::parse(in).at("tip").at("seq").get<std::uint32_t>();
+    };
+    EXPECT_EQ(tip("through"), c.last());
+
+    auto stopped = publishing(c.dir / "stopped", {});
+    ASSERT_TRUE(finished(stopped)) << "the publisher kept retrying the ledger";
+    try {
+        stopped.get();
+        FAIL() << "the publisher went past a ledger without its transactions";
+    } catch (Blocked const& error) {
+        EXPECT_NE(std::string(error.what()).find("ledger " + std::to_string(omitted)), std::string::npos) << error.what();
+    }
+    // The ledgers before it are published.
+    EXPECT_EQ(tip("stopped"), omitted - (omitted - c.first()) % 8 - 1);
 }
 
 // The transactions of mainnet ledgers 625,681 and 625,753 (May 2013) as full-history peers

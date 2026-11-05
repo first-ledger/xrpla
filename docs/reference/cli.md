@@ -103,7 +103,7 @@ Main `publish` options (`export` shares the source options):
 | `--merge-chunks` | merge small chunks (for a follower polling every few seconds) |
 | `--interval-snapshots N` | write a state snapshot every N ledgers |
 | `--full-state`, `--no-rpc-cache` | compare complete states (no diffs); do not cache RPC responses |
-| `--history-peers default\|none\|HOST:PORT,...` [`--history-identity FILE`] | where to fetch raw transaction trees a gRPC source omits (a few 2013 ledgers) |
+| `--history-peers default\|none\|HOST:PORT,...` [`--history-identity FILE`] | where to fetch raw transaction trees a gRPC source omits (a few 2013 ledgers) and ledgers it refuses; `default` (the default) asks peers the crawl lists as holding the ledger, then known full-history peers; `none` stops at such a ledger, exiting 3 |
 | `--validator-list URL --validator-list-key HEX --validations-node ws[s]://...` | end each batch at a ledger a quorum of the list signed |
 | `--peers default\|HOST:PORT,...` | follow the peer network instead of a node (no `--source`); the `--peer-*` options are those of [PEER-SERVING.md](../PEER-SERVING.md#settings) |
 

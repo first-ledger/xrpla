@@ -475,6 +475,31 @@ class Runner(unittest.TestCase):
             self.assertFalse(self.runner.disk_low())
         self.assertEqual([e['event'] for e in self.events], ['disk_low', 'disk_recovered'])
 
+    def test_a_follower_that_exits_blocked_is_not_started_again_and_health_says_why(self):
+        (self.work / 'follower.log').write_text('{"event":"publish_retry"}\n{"event":"follower_blocked","ledger":625681,"error":"x"}\n'
+                                                 '{"error":"The source sent none of the transactions of ledger 625681","blocked":true}\n')
+        follower = mock.Mock(); follower.poll.return_value = live_publisher.BLOCKED; follower.returncode = live_publisher.BLOCKED
+        self.runner.follower = follower; self.runner.args.until = None
+        with mock.patch.object(self.runner, 'disk_low', return_value=False), mock.patch.object(self.runner, 'follow') as follow, \
+             mock.patch.object(self.runner, 'publish', return_value=None):
+            self.runner.run()
+            self.runner.keep_following(self.work / 'spools' / 'spool-1001')  # and on later passes
+            follow.assert_not_called()
+        self.assertEqual([e['event'] for e in self.events], ['follower_exited', 'follower_blocked'])
+        self.assertIn('ledger 625681', self.runner.status['blocked']['error'])
+        with mock.patch('builtins.print') as printed:
+            self.assertEqual(live_publisher.health(self.work, 1800), 1)
+        report = json.loads(printed.call_args[0][0])
+        self.assertTrue(any('ledger 625681' in problem for problem in report['problems']), report['problems'])
+
+    def test_a_follower_that_exits_otherwise_is_started_again(self):
+        follower = mock.Mock(); follower.poll.return_value = 1; follower.returncode = 1
+        self.runner.follower = follower; self.runner.args.until = None
+        with mock.patch.object(self.runner, 'disk_low', return_value=False), mock.patch.object(self.runner, 'follow') as follow:
+            self.runner.keep_following(self.work / 'spools' / 'spool-1001')
+            follow.assert_called_once()
+        self.assertNotIn('blocked', self.runner.status)
+
 
 if __name__ == '__main__':
     unittest.main()

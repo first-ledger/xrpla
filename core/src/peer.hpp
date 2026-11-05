@@ -154,6 +154,10 @@ std::vector<std::string> default_peers(std::uint32_t network_id = 0);
 // address, from the /crawl pages of the network's hubs, in random order. They are whoever
 // runs them: what they send is checked against ledger hashes, never trusted.
 std::vector<std::string> peers_holding(std::uint32_t sequence, std::uint32_t network_id = 0);
+// Public peers known to serve the network's oldest history (mainnet's 2013 ledgers, which most
+// peers, Ripple's hubs included, no longer serve), tried after those peers_holding finds. Run by
+// third parties: what they send is checked against ledger hashes like any peer's.
+std::vector<std::string> full_history_peers(std::uint32_t network_id = 0);
 
 // Whether a peer's gossiped endpoint (TMEndpoints) may be dialled: as xrpld's PeerFinder, a
 // literal public IP address and a port other than 0, never a name, loopback, private or

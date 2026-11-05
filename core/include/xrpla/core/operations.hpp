@@ -53,6 +53,10 @@ std::vector<Json> call_sources_many(std::vector<std::string> const& urls, std::s
 // address it is), whatever its name cache holds. Read at each connection: `allowed` must outlive
 // the handle's transfers. RpcClient's pinned requests use it, and a forwarding server's probes.
 void pin_connections(void* curl, std::vector<std::string> const& allowed);
+// A failure that trying again cannot fix, only a change to how the run is set up: a publisher
+// stops on it rather than retrying the batch (the xrpla command exits 3). Today: a source that
+// omits a ledger's transactions while history peers are turned off.
+struct Blocked : Error { using Error::Error; };
 struct ExportOptions {
     std::string source;
     Range range;
@@ -85,9 +89,10 @@ struct ExportOptions {
     // 2013 transactions, or their metadata, on current xrpld) drops that one and all after it.
     // The peer protocol sends the tree's nodes raw; each is checked against the hash its parent
     // (from the header's transaction root) commits to, so any peer may serve them. {"default"}:
-    // peers the network's hubs list (/crawl) as holding the ledger; or HOST:PORT endpoints; none
-    // (empty, the default): the export stops at that ledger, saying so. `history_identity`: this
-    // node's key toward them.
+    // peers the network's hubs list (/crawl) as holding the ledger, then known full-history peers
+    // (full_history_peers); or HOST:PORT endpoints; none (empty): the export stops at that ledger
+    // with Blocked, saying so. The xrpla command gives {"default"} unless told none.
+    // `history_identity`: this node's key toward them.
     std::vector<std::string> history_peers;
     fs::path history_identity;
     std::uint32_t network_id = 0;
