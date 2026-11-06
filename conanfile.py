@@ -6,7 +6,7 @@ import os
 
 class XrplaConan(ConanFile):
     name = "xrpla"
-    version = "0.4.3"
+    version = "0.4.4"
     settings = "os", "compiler", "build_type", "arch"
     options = {"with_libxrpl": [True, False]}
     default_options = {"with_libxrpl": True, "*:shared": False,
