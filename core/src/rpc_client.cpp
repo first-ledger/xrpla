@@ -94,52 +94,65 @@ Json RpcClient::call(std::string const& method, Json params) const {
         fs::create_directories(cache);
     }
     unsigned tries = std::max(1u, attempts);
+    // Reset options, retaining the per-worker connection cache. Its connections were opened
+    // under the pin they were made with: when the pin changes (the upstream checked again at
+    // other addresses), a new handle, with none, is used, so no request goes on a connection
+    // to an address no longer checked.
+    thread_local std::unique_ptr<CURL, decltype(&curl_easy_cleanup)> curl(curl_easy_init(), curl_easy_cleanup);
+    thread_local std::string pinned_with;
     for (unsigned attempt = 0; attempt < tries; ++attempt) {
         if (delay_ms || attempt) std::this_thread::sleep_for(std::chrono::milliseconds{delay_ms + (attempt ? 500U << attempt : 0)});
         Bytes response;
-        Receiving receiving{response, max_response};
-        // Reset options, retaining the per-worker connection cache. Its connections were opened
-        // under the pin they were made with: when the pin changes (the upstream checked again at
-        // other addresses), a new handle, with none, is used, so no request goes on a connection
-        // to an address no longer checked.
-        thread_local std::unique_ptr<CURL, decltype(&curl_easy_cleanup)> curl(curl_easy_init(), curl_easy_cleanup);
-        thread_local std::string pinned_with;
-        if (!curl || resolve != pinned_with) { curl.reset(curl_easy_init()); pinned_with = resolve; }
-        if (!curl) throw Error("Cannot allocate RPC client");
-        curl_easy_reset(curl.get());
-        auto raw_headers = curl_slist_append(nullptr, "Content-Type: application/json");
-        if (!forwarded_for.empty()) raw_headers = curl_slist_append(raw_headers, ("X-Forwarded-For: " + forwarded_for).c_str());
-        std::unique_ptr<curl_slist, decltype(&curl_slist_free_all)> headers(raw_headers, curl_slist_free_all);
-        // An entry replaces the one the handle's name cache has for the same host and port.
-        std::unique_ptr<curl_slist, decltype(&curl_slist_free_all)> pinned(resolve.empty() ? nullptr : curl_slist_append(nullptr, resolve.c_str()), curl_slist_free_all);
-        if (!resolve.empty() && !pinned) throw Error("Cannot allocate RPC client");
-        auto allowed = pinned_addresses(resolve);
-        curl_easy_setopt(curl.get(), CURLOPT_URL, url.c_str());
-        if (pinned) { curl_easy_setopt(curl.get(), CURLOPT_RESOLVE, pinned.get()); pin_connections(curl.get(), allowed); }
-        // HTTP/1.1, as xrpld speaks it: never HTTP/2, which libcurl offers over TLS.
-        curl_easy_setopt(curl.get(), CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
-        // Never through a proxy the environment names (http_proxy, HTTPS_PROXY, ALL_PROXY): the
-        // pin does not apply to a proxy's connection, and a forwarded request's role upstream is
-        // the one of the address it arrives from.
-        curl_easy_setopt(curl.get(), CURLOPT_PROXY, "");
-        curl_easy_setopt(curl.get(), CURLOPT_NOPROXY, "*");
-        if (auto bundle = std::getenv("SSL_CERT_FILE"); bundle && *bundle) curl_easy_setopt(curl.get(), CURLOPT_CAINFO, bundle);
-        else if (fs::exists("/etc/ssl/certs/ca-certificates.crt")) curl_easy_setopt(curl.get(), CURLOPT_CAINFO, "/etc/ssl/certs/ca-certificates.crt");
-        curl_easy_setopt(curl.get(), CURLOPT_HTTPHEADER, headers.get());
-        curl_easy_setopt(curl.get(), CURLOPT_POSTFIELDS, body.data());
-        curl_easy_setopt(curl.get(), CURLOPT_POSTFIELDSIZE_LARGE, static_cast<curl_off_t>(body.size()));
-        curl_easy_setopt(curl.get(), CURLOPT_WRITEFUNCTION, receive);
-        curl_easy_setopt(curl.get(), CURLOPT_WRITEDATA, &receiving);
-        curl_easy_setopt(curl.get(), CURLOPT_FOLLOWLOCATION, 0L);
-        curl_easy_setopt(curl.get(), CURLOPT_CONNECTTIMEOUT, 15L);
-        curl_easy_setopt(curl.get(), CURLOPT_TIMEOUT, 60L);
-        curl_easy_setopt(curl.get(), CURLOPT_NOSIGNAL, 1L);
-        curl_easy_setopt(curl.get(), CURLOPT_USERAGENT, "xrpla/" XRPLA_VERSION);
-        auto code = curl_easy_perform(curl.get());
-        long status = 0; curl_easy_getinfo(curl.get(), CURLINFO_RESPONSE_CODE, &status);
-        // An answer refused for its size (receive) was still an answer.
-        reached = code == CURLE_OK || code == CURLE_WRITE_ERROR;
+        CURLcode code = CURLE_OK;
+        long status = 0;
+        // dial 0 reuses the handle's connection. dial 1 is the one reconnect after that
+        // connection has failed: a keep-alive the server closed, not a node that is down.
+        for (int dial = 0; dial < 2; ++dial) {
+            response.clear();
+            Receiving receiving{response, max_response};
+            if (!curl || resolve != pinned_with) { curl.reset(curl_easy_init()); pinned_with = resolve; }
+            if (!curl) throw Error("Cannot allocate RPC client");
+            curl_easy_reset(curl.get());
+            auto raw_headers = curl_slist_append(nullptr, "Content-Type: application/json");
+            if (!forwarded_for.empty()) raw_headers = curl_slist_append(raw_headers, ("X-Forwarded-For: " + forwarded_for).c_str());
+            std::unique_ptr<curl_slist, decltype(&curl_slist_free_all)> headers(raw_headers, curl_slist_free_all);
+            // An entry replaces the one the handle's name cache has for the same host and port.
+            std::unique_ptr<curl_slist, decltype(&curl_slist_free_all)> pinned(resolve.empty() ? nullptr : curl_slist_append(nullptr, resolve.c_str()), curl_slist_free_all);
+            if (!resolve.empty() && !pinned) throw Error("Cannot allocate RPC client");
+            auto allowed = pinned_addresses(resolve);
+            curl_easy_setopt(curl.get(), CURLOPT_URL, url.c_str());
+            if (pinned) { curl_easy_setopt(curl.get(), CURLOPT_RESOLVE, pinned.get()); pin_connections(curl.get(), allowed); }
+            // HTTP/1.1, as xrpld speaks it: never HTTP/2, which libcurl offers over TLS.
+            curl_easy_setopt(curl.get(), CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+            // Never through a proxy the environment names (http_proxy, HTTPS_PROXY, ALL_PROXY): the
+            // pin does not apply to a proxy's connection, and a forwarded request's role upstream is
+            // the one of the address it arrives from.
+            curl_easy_setopt(curl.get(), CURLOPT_PROXY, "");
+            curl_easy_setopt(curl.get(), CURLOPT_NOPROXY, "*");
+            if (auto bundle = std::getenv("SSL_CERT_FILE"); bundle && *bundle) curl_easy_setopt(curl.get(), CURLOPT_CAINFO, bundle);
+            else if (fs::exists("/etc/ssl/certs/ca-certificates.crt")) curl_easy_setopt(curl.get(), CURLOPT_CAINFO, "/etc/ssl/certs/ca-certificates.crt");
+            curl_easy_setopt(curl.get(), CURLOPT_HTTPHEADER, headers.get());
+            curl_easy_setopt(curl.get(), CURLOPT_POSTFIELDS, body.data());
+            curl_easy_setopt(curl.get(), CURLOPT_POSTFIELDSIZE_LARGE, static_cast<curl_off_t>(body.size()));
+            curl_easy_setopt(curl.get(), CURLOPT_WRITEFUNCTION, receive);
+            curl_easy_setopt(curl.get(), CURLOPT_WRITEDATA, &receiving);
+            curl_easy_setopt(curl.get(), CURLOPT_FOLLOWLOCATION, 0L);
+            curl_easy_setopt(curl.get(), CURLOPT_CONNECTTIMEOUT, 15L);
+            curl_easy_setopt(curl.get(), CURLOPT_TIMEOUT, 60L);
+            curl_easy_setopt(curl.get(), CURLOPT_NOSIGNAL, 1L);
+            if (dial) curl_easy_setopt(curl.get(), CURLOPT_FRESH_CONNECT, 1L);
+            curl_easy_setopt(curl.get(), CURLOPT_USERAGENT, "xrpla/" XRPLA_VERSION);
+            code = curl_easy_perform(curl.get());
+            status = 0; curl_easy_getinfo(curl.get(), CURLINFO_RESPONSE_CODE, &status);
+            // An answer refused for its size (receive) was still an answer. A timeout has
+            // already waited: it is not dialed again inside this attempt.
+            reached = code == CURLE_OK || code == CURLE_WRITE_ERROR;
+            bool dropped = code != CURLE_OK && code != CURLE_WRITE_ERROR && code != CURLE_OPERATION_TIMEDOUT;
+            if (dropped && dial == 0) { curl.reset(); pinned_with.clear(); continue; }
+            break;
+        }
         if (code != CURLE_OK || status == 429 || status >= 500) {
+            if (code != CURLE_OK && code != CURLE_WRITE_ERROR) { curl.reset(); pinned_with.clear(); }
             if (attempt + 1 < tries) continue;
             throw Error("RPC " + method + " failed: HTTP " + std::to_string(status) + " " + curl_easy_strerror(code));
         }
@@ -201,8 +214,13 @@ bool not_ready(Json const& result) {
     auto error = result.value("error", "");
     return error == "noNetwork" || error == "noCurrent" || error == "noClosed" || error == "notSynced";
 }
-// A source that could not be reached stays out of the order for this long: a down primary is
-// not dialed again on every ledger and every tip poll.
+// A public node that answered by refusing the connection. The ledger was not served.
+bool declined(Json const& result) {
+    auto error = result.value("error", "");
+    return error == "websocket_connection_limit" || error == "upstream_unavailable";
+}
+// A fallback that could not be reached stays out of the order for this long. The primary is
+// not skipped: the next ledger asks it again.
 constexpr auto kUnreachableFor = std::chrono::seconds(30);
 struct Unreachable {
     std::mutex mutex;
@@ -257,8 +275,11 @@ Json call_sources(std::vector<std::string> const& urls, std::string const& metho
     if (urls.empty()) throw Error("No RPC source");
     for (std::size_t i = 0; i < urls.size(); ++i) {
         bool last = i + 1 == urls.size();
+        bool primary = i < primary_urls;
         // The last source is always asked: it is the only one left, and it keeps its retries.
-        if (!last && recently_unreachable(urls[i])) continue;
+        // The primary is always asked too. A ledger it failed to answer does not send the
+        // ledgers after it to a fallback for 30 seconds: it still holds them.
+        if (!primary && !last && recently_unreachable(urls[i])) continue;
         RpcClient client{urls[i], cache, delay_ms};
         client.attempts = last ? std::max(1u, attempts) : 1u;
         try {
@@ -272,8 +293,11 @@ Json call_sources(std::vector<std::string> const& urls, std::string const& metho
             if (RpcClient::last_reached()) mark_reachable(urls[i]);
             else mark_unreachable(urls[i]);
             // Retries are spent inside the call. A source that is still busy, still syncing, or
-            // that does not hold the ledger, leaves this ledger to the next source.
-            bool passed = lacks_ledger(result) || busy(result) || not_ready(result);
+            // that does not hold the ledger, leaves this ledger to the next source. A public
+            // node that refused the connection does too, and is not asked again for 30 seconds.
+            // The primary is not passed over for that refusal: it is not a public node.
+            if (!primary && declined(result)) mark_unreachable(urls[i]);
+            bool passed = lacks_ledger(result) || busy(result) || not_ready(result) || (!primary && declined(result));
             if (passed && !last) continue;
             if (served) *served = i;
             // Once per switch, and only for a ledger: object fetches would say so once per object.

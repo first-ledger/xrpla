@@ -34,10 +34,13 @@ class HttpNode {
     std::thread thread_;
     Json answer_;
     std::optional<Json> first_;
+    bool close_after_;
 public:
     std::atomic<unsigned> hits{0};
     // `first`, when set, answers the first request only (a node busy for a moment).
-    explicit HttpNode(Json answer, std::optional<Json> first = {}) : answer_(std::move(answer)), first_(std::move(first)) {
+    // `close_after`: the connection is closed after each answer, so the next request finds it dropped.
+    explicit HttpNode(Json answer, std::optional<Json> first = {}, bool close_after = false)
+        : answer_(std::move(answer)), first_(std::move(first)), close_after_(close_after) {
         thread_ = std::thread([this] {
             while (!stopping_) {
                 auto socket = std::make_shared<tcp::socket>(io_);
@@ -60,6 +63,11 @@ public:
                     response.body() = Json{{"result", n == 1 && first_ ? *first_ : answer_}}.dump();
                     response.prepare_payload();
                     http::write(*socket, response, ec);
+                    if (close_after_) {
+                        auto fd = socket->native_handle();
+                        if (fd >= 0) ::shutdown(fd, SHUT_RDWR);
+                        break;
+                    }
                     if (ec || !request.keep_alive()) break;
                 }
             }
@@ -257,7 +265,7 @@ TEST(Sources, EachWebSocketSourceKeepsItsConnection) {
     EXPECT_GE(kept.hits.load(), 2u);
 }
 
-TEST(Sources, APrimaryThatAcceptsAndClosesIsSkippedForThirtySeconds) {
+TEST(Sources, APrimaryThatAcceptsAndClosesIsAskedAgainForTheNextLedger) {
     forget_unreachable_sources();
     ClosingNode closed;
     HttpNode kept(Json{{"kept", true}, {"ledger_index", 2}});
@@ -265,10 +273,41 @@ TEST(Sources, APrimaryThatAcceptsAndClosesIsSkippedForThirtySeconds) {
     auto result = call_sources({closed.url(), kept.url()}, "ledger", {{"ledger_index", 2}}, 0, 5, {});
     EXPECT_LT(std::chrono::steady_clock::now() - start, std::chrono::seconds(3));
     EXPECT_TRUE(result.at("kept").get<bool>());
-    EXPECT_EQ(closed.accepts.load(), 1u);
+    auto after_first = closed.accepts.load();
+    EXPECT_GE(after_first, 1u);
+    // The primary accepted and closed, so this ledger came from the fallback. The next ledger
+    // still asks the primary: one failure does not send the ledgers after it elsewhere.
     auto again = call_sources({closed.url(), kept.url()}, "ledger", {{"ledger_index", 3}}, 0, 5, {});
     EXPECT_TRUE(again.at("kept").get<bool>());
-    EXPECT_EQ(closed.accepts.load(), 1u);
+    EXPECT_GT(closed.accepts.load(), after_first);
+}
+
+TEST(Sources, ADroppedPrimaryConnectionDoesNotUseTheFallback) {
+    forget_unreachable_sources();
+    HttpNode primary(Json{{"kept", true}, {"ledger_index", 8}}, {}, true);
+    HttpNode fallback(Json{{"fallback", true}});
+    for (int n = 0; n < 3; ++n) {
+        auto result = call_sources({primary.url(), fallback.url()}, "ledger", {{"ledger_index", 8}}, 0, 1, {});
+        EXPECT_TRUE(result.value("kept", false)) << result.dump();
+    }
+    EXPECT_EQ(fallback.hits.load(), 0u);
+    EXPECT_GE(primary.hits.load(), 3u);
+}
+
+TEST(Sources, APublicNodeThatRefusesTheConnectionIsNotTheAnswer) {
+    forget_unreachable_sources();
+    HttpNode primary(Json{{"error", "lgrNotFound"}});
+    HttpNode limited(Json{{"error", "websocket_connection_limit"}, {"status", "error"}});
+    HttpNode kept(Json{{"kept", true}, {"ledger_index", 9}});
+    auto result = call_sources({primary.url(), limited.url(), kept.url()}, "ledger", {{"ledger_index", 9}}, 0, 1, {});
+    EXPECT_TRUE(result.value("kept", false)) << result.dump();
+    EXPECT_GE(limited.hits.load(), 1u);
+    EXPECT_GE(kept.hits.load(), 1u);
+    // Refused for this ledger, and not dialed again for the next one.
+    auto hits = limited.hits.load();
+    auto again = call_sources({primary.url(), limited.url(), kept.url()}, "ledger", {{"ledger_index", 10}}, 0, 1, {});
+    EXPECT_TRUE(again.value("kept", false)) << again.dump();
+    EXPECT_EQ(limited.hits.load(), hits);
 }
 
 TEST(Sources, ARefusedPrimaryFailsOverWithoutTheBackoff) {

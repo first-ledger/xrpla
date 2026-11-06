@@ -36,8 +36,10 @@ struct RpcClient {
 // asked when this one does not hold the ledger (lgrNotFound or ledgerNotFound), is rate-limited,
 // or cannot be reached. entryNotFound is the answer (the object is gone) and is not asked of the
 // next. Every url but the last is asked once; the last uses `attempts` (retries and backoff).
-// A url that could not be reached is skipped for 30 seconds, then asked again. `served`, when
-// set, receives the index of the url that answered. Indexes at or after `primary_urls` are
+// A fallback that could not be reached is skipped for 30 seconds, then asked again. The primary
+// (indexes before `primary_urls`) is asked for every ledger: one dropped connection is dialed
+// again, and a failure to reach it does not send the ledgers after it to a fallback. `served`,
+// when set, receives the index of the url that answered. Indexes at or after `primary_urls` are
 // fallbacks: a ledger served as one is logged when serving switches onto or off a fallback.
 // Forgets sources marked unreachable, and which source last served a ledger. Tests call it so a
 // reused port is asked again.
