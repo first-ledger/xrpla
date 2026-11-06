@@ -100,17 +100,20 @@ Json RpcClient::call(std::string const& method, Json params) const {
     // to an address no longer checked.
     thread_local std::unique_ptr<CURL, decltype(&curl_easy_cleanup)> curl(curl_easy_init(), curl_easy_cleanup);
     thread_local std::string pinned_with;
+    // The URL this handle last got an answer from. A later nothing/reset from that URL is a
+    // keep-alive that died. A URL that has never answered is a server that is down.
+    thread_local std::string answered_for;
     for (unsigned attempt = 0; attempt < tries; ++attempt) {
         if (delay_ms || attempt) std::this_thread::sleep_for(std::chrono::milliseconds{delay_ms + (attempt ? 500U << attempt : 0)});
         Bytes response;
         CURLcode code = CURLE_OK;
         long status = 0;
-        // dial 0 reuses the handle's connection. dial 1 is the one reconnect after that
-        // connection has failed: a keep-alive the server closed, not a node that is down.
+        // dial 0 reuses the handle's connection. dial 1 runs only when that reused connection
+        // died before answering, and only when this call asked to redial.
         for (int dial = 0; dial < 2; ++dial) {
             response.clear();
             Receiving receiving{response, max_response};
-            if (!curl || resolve != pinned_with) { curl.reset(curl_easy_init()); pinned_with = resolve; }
+            if (!curl || resolve != pinned_with) { curl.reset(curl_easy_init()); pinned_with = resolve; answered_for.clear(); }
             if (!curl) throw Error("Cannot allocate RPC client");
             curl_easy_reset(curl.get());
             auto raw_headers = curl_slist_append(nullptr, "Content-Type: application/json");
@@ -145,10 +148,19 @@ Json RpcClient::call(std::string const& method, Json params) const {
             code = curl_easy_perform(curl.get());
             status = 0; curl_easy_getinfo(curl.get(), CURLINFO_RESPONSE_CODE, &status);
             // An answer refused for its size (receive) was still an answer. A timeout has
-            // already waited: it is not dialed again inside this attempt.
+            // already waited: it is not dialed again inside this attempt. A keep-alive this
+            // URL has already answered on, that then returns nothing or is reset, is dialed
+            // once more. libcurl replays that request itself once and counts the replay in
+            // CURLINFO_NUM_CONNECTS, so "no new connection" does not mean the keep-alive
+            // lived: a replay that also got nothing is CURLE_GOT_NOTHING with a count of 1.
+            // A refused connect, a DNS or TLS failure, or a URL that has never answered
+            // (it accepted and closed, or nothing is listening) is not dialed again.
             reached = code == CURLE_OK || code == CURLE_WRITE_ERROR;
-            bool dropped = code != CURLE_OK && code != CURLE_WRITE_ERROR && code != CURLE_OPERATION_TIMEDOUT;
-            if (dropped && dial == 0) { curl.reset(); pinned_with.clear(); continue; }
+            bool known = answered_for == url;
+            if (code == CURLE_OK) answered_for = url;
+            bool reused_died = redial && dial == 0 && known &&
+                (code == CURLE_GOT_NOTHING || code == CURLE_SEND_ERROR || code == CURLE_RECV_ERROR);
+            if (reused_died) { answered_for.clear(); curl.reset(); pinned_with.clear(); continue; }
             break;
         }
         if (code != CURLE_OK || status == 429 || status >= 500) {
@@ -214,13 +226,16 @@ bool not_ready(Json const& result) {
     auto error = result.value("error", "");
     return error == "noNetwork" || error == "noCurrent" || error == "noClosed" || error == "notSynced";
 }
-// A public node that answered by refusing the connection. The ledger was not served.
+// An answer that refused to serve the ledger. websocket_connection_limit comes from a public
+// WebSocket front end (api.xrpkuwait.com answers "The WebSocket connection limit for Public
+// Access has been reached"); upstream_unavailable is the same kind of refusal from a public
+// cluster with nothing behind it. Neither string is produced by xrpld or Clio.
 bool declined(Json const& result) {
     auto error = result.value("error", "");
     return error == "websocket_connection_limit" || error == "upstream_unavailable";
 }
-// A fallback that could not be reached stays out of the order for this long. The primary is
-// not skipped: the next ledger asks it again.
+// A source that could not be reached stays out of the order for this long: a down primary is
+// not dialed again on every ledger and every tip poll.
 constexpr auto kUnreachableFor = std::chrono::seconds(30);
 struct Unreachable {
     std::mutex mutex;
@@ -277,11 +292,10 @@ Json call_sources(std::vector<std::string> const& urls, std::string const& metho
         bool last = i + 1 == urls.size();
         bool primary = i < primary_urls;
         // The last source is always asked: it is the only one left, and it keeps its retries.
-        // The primary is always asked too. A ledger it failed to answer does not send the
-        // ledgers after it to a fallback for 30 seconds: it still holds them.
-        if (!primary && !last && recently_unreachable(urls[i])) continue;
+        if (!last && recently_unreachable(urls[i])) continue;
         RpcClient client{urls[i], cache, delay_ms};
         client.attempts = last ? std::max(1u, attempts) : 1u;
+        client.redial = true;
         try {
             auto result = client.call(method, params);
             // Busy is momentary, and the next source is often a rate-limited public node: a source
@@ -293,11 +307,11 @@ Json call_sources(std::vector<std::string> const& urls, std::string const& metho
             if (RpcClient::last_reached()) mark_reachable(urls[i]);
             else mark_unreachable(urls[i]);
             // Retries are spent inside the call. A source that is still busy, still syncing, or
-            // that does not hold the ledger, leaves this ledger to the next source. A public
-            // node that refused the connection does too, and is not asked again for 30 seconds.
-            // The primary is not passed over for that refusal: it is not a public node.
+            // that does not hold the ledger, leaves this ledger to the next source. So does one
+            // that declined. A fallback that declined is not asked again for 30 seconds. The
+            // primary is: the next ledger asks it, and only this ledger moves on.
             if (!primary && declined(result)) mark_unreachable(urls[i]);
-            bool passed = lacks_ledger(result) || busy(result) || not_ready(result) || (!primary && declined(result));
+            bool passed = lacks_ledger(result) || busy(result) || not_ready(result) || declined(result);
             if (passed && !last) continue;
             if (served) *served = i;
             // Once per switch, and only for a ledger: object fetches would say so once per object.

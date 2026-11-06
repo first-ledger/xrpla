@@ -34,19 +34,22 @@ class HttpNode {
     std::thread thread_;
     Json answer_;
     std::optional<Json> first_;
-    bool close_after_;
+    bool silence_next_;
 public:
     std::atomic<unsigned> hits{0};
+    std::atomic<unsigned> accepts{0};
     // `first`, when set, answers the first request only (a node busy for a moment).
-    // `close_after`: the connection is closed after each answer, so the next request finds it dropped.
-    explicit HttpNode(Json answer, std::optional<Json> first = {}, bool close_after = false)
-        : answer_(std::move(answer)), first_(std::move(first)), close_after_(close_after) {
+    // `silence_next`: hits 2 and 3 are read and closed with no answer. Those are the reused
+    // connection and libcurl's own replay of it. A later connection is answered.
+    explicit HttpNode(Json answer, std::optional<Json> first = {}, bool silence_next = false)
+        : answer_(std::move(answer)), first_(std::move(first)), silence_next_(silence_next) {
         thread_ = std::thread([this] {
             while (!stopping_) {
                 auto socket = std::make_shared<tcp::socket>(io_);
                 boost::system::error_code ec;
                 acceptor_.accept(*socket, ec);
                 if (ec || stopping_) return;
+                ++accepts;
                 {
                     std::lock_guard lock(mutex_);
                     sockets_.push_back(socket);
@@ -57,17 +60,20 @@ public:
                     http::read(*socket, buffer, request, ec);
                     if (ec) break;
                     auto n = ++hits;
+                    // Hits 2 and 3 are the reused connection and libcurl's own replay of it.
+                    // Both die with no answer, so that replay fails and the call returns
+                    // CURLE_GOT_NOTHING. A later dial is answered.
+                    if (silence_next_ && (n == 2 || n == 3)) {
+                        auto fd = socket->native_handle();
+                        if (fd >= 0) ::shutdown(fd, SHUT_RDWR);
+                        break;
+                    }
                     http::response<http::string_body> response{http::status::ok, request.version()};
                     response.set(http::field::content_type, "application/json");
                     response.keep_alive(request.keep_alive());
                     response.body() = Json{{"result", n == 1 && first_ ? *first_ : answer_}}.dump();
                     response.prepare_payload();
                     http::write(*socket, response, ec);
-                    if (close_after_) {
-                        auto fd = socket->native_handle();
-                        if (fd >= 0) ::shutdown(fd, SHUT_RDWR);
-                        break;
-                    }
                     if (ec || !request.keep_alive()) break;
                 }
             }
@@ -265,7 +271,7 @@ TEST(Sources, EachWebSocketSourceKeepsItsConnection) {
     EXPECT_GE(kept.hits.load(), 2u);
 }
 
-TEST(Sources, APrimaryThatAcceptsAndClosesIsAskedAgainForTheNextLedger) {
+TEST(Sources, APrimaryThatAcceptsAndClosesIsSkippedForThirtySeconds) {
     forget_unreachable_sources();
     ClosingNode closed;
     HttpNode kept(Json{{"kept", true}, {"ledger_index", 2}});
@@ -273,25 +279,55 @@ TEST(Sources, APrimaryThatAcceptsAndClosesIsAskedAgainForTheNextLedger) {
     auto result = call_sources({closed.url(), kept.url()}, "ledger", {{"ledger_index", 2}}, 0, 5, {});
     EXPECT_LT(std::chrono::steady_clock::now() - start, std::chrono::seconds(3));
     EXPECT_TRUE(result.at("kept").get<bool>());
-    auto after_first = closed.accepts.load();
-    EXPECT_GE(after_first, 1u);
-    // The primary accepted and closed, so this ledger came from the fallback. The next ledger
-    // still asks the primary: one failure does not send the ledgers after it elsewhere.
+    EXPECT_EQ(closed.accepts.load(), 1u);
     auto again = call_sources({closed.url(), kept.url()}, "ledger", {{"ledger_index", 3}}, 0, 5, {});
     EXPECT_TRUE(again.at("kept").get<bool>());
-    EXPECT_GT(closed.accepts.load(), after_first);
+    EXPECT_EQ(closed.accepts.load(), 1u);
 }
 
 TEST(Sources, ADroppedPrimaryConnectionDoesNotUseTheFallback) {
     forget_unreachable_sources();
+    // The first request is answered and the connection kept. The next request on it, and
+    // libcurl's own replay of that request, are read and closed with no answer. The redial
+    // is a new connection and is answered there. Without the redial this ledger comes from
+    // the fallback.
     HttpNode primary(Json{{"kept", true}, {"ledger_index", 8}}, {}, true);
     HttpNode fallback(Json{{"fallback", true}});
-    for (int n = 0; n < 3; ++n) {
-        auto result = call_sources({primary.url(), fallback.url()}, "ledger", {{"ledger_index", 8}}, 0, 1, {});
-        EXPECT_TRUE(result.value("kept", false)) << result.dump();
-    }
+    auto first = call_sources({primary.url(), fallback.url()}, "ledger", {{"ledger_index", 8}}, 0, 1, {});
+    EXPECT_TRUE(first.value("kept", false)) << first.dump();
+    auto second = call_sources({primary.url(), fallback.url()}, "ledger", {{"ledger_index", 8}}, 0, 1, {});
+    EXPECT_TRUE(second.value("kept", false)) << second.dump();
     EXPECT_EQ(fallback.hits.load(), 0u);
-    EXPECT_GE(primary.hits.load(), 3u);
+    EXPECT_GE(primary.accepts.load(), 3u);
+}
+
+TEST(Sources, AForwardedRequestIsNotResentWhenTheKeptConnectionDrops) {
+    forget_unreachable_sources();
+    HttpNode node(Json{{"kept", true}}, {}, true);
+    RpcClient client{node.url(), {}, 0};
+    client.attempts = 1;
+    EXPECT_FALSE(client.redial);
+    auto ok = client.call("server_info", Json::object());
+    EXPECT_TRUE(ok.value("kept", false));
+    auto accepts = node.accepts.load();
+    EXPECT_EQ(accepts, 1u);
+    EXPECT_THROW(client.call("submit", Json::object()), Error);
+    // libcurl may open one connection to replay a request that died before any answer.
+    // This call must not open one of its own after that.
+    EXPECT_LE(node.accepts.load(), accepts + 1);
+}
+
+TEST(Sources, APrimaryThatDeclinesLeavesThisLedgerAndIsAskedAgain) {
+    forget_unreachable_sources();
+    HttpNode primary(Json{{"kept", true}, {"ledger_index", 4}}, Json{{"error", "websocket_connection_limit"}, {"status", "error"}});
+    HttpNode fallback(Json{{"fallback", true}, {"ledger_index", 4}});
+    auto result = call_sources({primary.url(), fallback.url()}, "ledger", {{"ledger_index", 4}}, 0, 1, {});
+    EXPECT_TRUE(result.value("fallback", false)) << result.dump();
+    EXPECT_EQ(primary.hits.load(), 1u);
+    auto again = call_sources({primary.url(), fallback.url()}, "ledger", {{"ledger_index", 5}}, 0, 1, {});
+    EXPECT_TRUE(again.value("kept", false)) << again.dump();
+    EXPECT_EQ(primary.hits.load(), 2u);
+    EXPECT_EQ(fallback.hits.load(), 1u);
 }
 
 TEST(Sources, APublicNodeThatRefusesTheConnectionIsNotTheAnswer) {
