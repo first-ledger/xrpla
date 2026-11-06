@@ -34,15 +34,16 @@ class HttpNode {
     std::thread thread_;
     Json answer_;
     std::optional<Json> first_;
-    bool silence_next_;
+    unsigned silence_at_;
 public:
     std::atomic<unsigned> hits{0};
     std::atomic<unsigned> accepts{0};
     // `first`, when set, answers the first request only (a node busy for a moment).
-    // `silence_next`: hits 2 and 3 are read and closed with no answer. Those are the reused
-    // connection and libcurl's own replay of it. A later connection is answered.
-    explicit HttpNode(Json answer, std::optional<Json> first = {}, bool silence_next = false)
-        : answer_(std::move(answer)), first_(std::move(first)), silence_next_(silence_next) {
+    // `silence_at`, when set: hits silence_at and silence_at + 1 are read and closed with no
+    // answer. Those are the reused connection and libcurl's own replay of it. A later
+    // connection is answered.
+    explicit HttpNode(Json answer, std::optional<Json> first = {}, unsigned silence_at = 0)
+        : answer_(std::move(answer)), first_(std::move(first)), silence_at_(silence_at) {
         thread_ = std::thread([this] {
             while (!stopping_) {
                 auto socket = std::make_shared<tcp::socket>(io_);
@@ -60,10 +61,10 @@ public:
                     http::read(*socket, buffer, request, ec);
                     if (ec) break;
                     auto n = ++hits;
-                    // Hits 2 and 3 are the reused connection and libcurl's own replay of it.
-                    // Both die with no answer, so that replay fails and the call returns
-                    // CURLE_GOT_NOTHING. A later dial is answered.
-                    if (silence_next_ && (n == 2 || n == 3)) {
+                    // The reused connection and libcurl's own replay of it. Both die with no
+                    // answer, so that replay fails and the call returns CURLE_GOT_NOTHING. A
+                    // later dial is answered.
+                    if (silence_at_ && (n == silence_at_ || n == silence_at_ + 1)) {
                         auto fd = socket->native_handle();
                         if (fd >= 0) ::shutdown(fd, SHUT_RDWR);
                         break;
@@ -291,7 +292,7 @@ TEST(Sources, ADroppedPrimaryConnectionDoesNotUseTheFallback) {
     // libcurl's own replay of that request, are read and closed with no answer. The redial
     // is a new connection and is answered there. Without the redial this ledger comes from
     // the fallback.
-    HttpNode primary(Json{{"kept", true}, {"ledger_index", 8}}, {}, true);
+    HttpNode primary(Json{{"kept", true}, {"ledger_index", 8}}, {}, 2);
     HttpNode fallback(Json{{"fallback", true}});
     auto first = call_sources({primary.url(), fallback.url()}, "ledger", {{"ledger_index", 8}}, 0, 1, {});
     EXPECT_TRUE(first.value("kept", false)) << first.dump();
@@ -301,9 +302,23 @@ TEST(Sources, ADroppedPrimaryConnectionDoesNotUseTheFallback) {
     EXPECT_GE(primary.accepts.load(), 3u);
 }
 
+TEST(Sources, APrimaryDroppedAfterAFallbackServedIsDialedAgain) {
+    forget_unreachable_sources();
+    // The primary lacks ledger 6: the fallback serves it, and was the last source to answer on
+    // this thread. The primary's kept connection then dies on ledger 7. It answered before, so
+    // it is dialed again rather than skipped, though another source answered since.
+    HttpNode primary(Json{{"kept", true}, {"ledger_index", 7}}, Json{{"error", "lgrNotFound"}}, 2);
+    HttpNode fallback(Json{{"fallback", true}});
+    auto first = call_sources({primary.url(), fallback.url()}, "ledger", {{"ledger_index", 6}}, 0, 1, {});
+    EXPECT_TRUE(first.value("fallback", false)) << first.dump();
+    auto second = call_sources({primary.url(), fallback.url()}, "ledger", {{"ledger_index", 7}}, 0, 1, {});
+    EXPECT_TRUE(second.value("kept", false)) << second.dump();
+    EXPECT_EQ(fallback.hits.load(), 1u);
+}
+
 TEST(Sources, AForwardedRequestIsNotResentWhenTheKeptConnectionDrops) {
     forget_unreachable_sources();
-    HttpNode node(Json{{"kept", true}}, {}, true);
+    HttpNode node(Json{{"kept", true}}, {}, 2);
     RpcClient client{node.url(), {}, 0};
     client.attempts = 1;
     EXPECT_FALSE(client.redial);

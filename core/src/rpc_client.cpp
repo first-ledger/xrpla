@@ -13,6 +13,7 @@
 #include <iostream>
 #include <map>
 #include <mutex>
+#include <set>
 #include <utility>
 
 namespace xrpla::core {
@@ -71,6 +72,12 @@ curl_socket_t pinned_socket(void* allowed, curlsocktype purpose, curl_sockaddr* 
     return ::socket(target->family, target->socktype, target->protocol);
 }
 thread_local bool reached = true;  // RpcClient::last_reached
+// The URLs this thread's handle (RpcClient::call) has had an answer from since it was made. A
+// later nothing/reset from one of them is a keep-alive that died. A URL that has never answered
+// is a server that is down. Every one is kept, not only the last: a worker that asked a fallback
+// for one ledger still redials the primary's dropped keep-alive for the next. A new handle has no
+// connections, and starts with none.
+thread_local std::set<std::string> answered;
 }
 void pin_connections(void* curl, std::vector<std::string> const& allowed) {
     curl_easy_setopt(static_cast<CURL*>(curl), CURLOPT_OPENSOCKETFUNCTION, pinned_socket);
@@ -100,9 +107,6 @@ Json RpcClient::call(std::string const& method, Json params) const {
     // to an address no longer checked.
     thread_local std::unique_ptr<CURL, decltype(&curl_easy_cleanup)> curl(curl_easy_init(), curl_easy_cleanup);
     thread_local std::string pinned_with;
-    // The URL this handle last got an answer from. A later nothing/reset from that URL is a
-    // keep-alive that died. A URL that has never answered is a server that is down.
-    thread_local std::string answered_for;
     for (unsigned attempt = 0; attempt < tries; ++attempt) {
         if (delay_ms || attempt) std::this_thread::sleep_for(std::chrono::milliseconds{delay_ms + (attempt ? 500U << attempt : 0)});
         Bytes response;
@@ -113,7 +117,7 @@ Json RpcClient::call(std::string const& method, Json params) const {
         for (int dial = 0; dial < 2; ++dial) {
             response.clear();
             Receiving receiving{response, max_response};
-            if (!curl || resolve != pinned_with) { curl.reset(curl_easy_init()); pinned_with = resolve; answered_for.clear(); }
+            if (!curl || resolve != pinned_with) { curl.reset(curl_easy_init()); pinned_with = resolve; answered.clear(); }
             if (!curl) throw Error("Cannot allocate RPC client");
             curl_easy_reset(curl.get());
             auto raw_headers = curl_slist_append(nullptr, "Content-Type: application/json");
@@ -156,11 +160,11 @@ Json RpcClient::call(std::string const& method, Json params) const {
             // A refused connect, a DNS or TLS failure, or a URL that has never answered
             // (it accepted and closed, or nothing is listening) is not dialed again.
             reached = code == CURLE_OK || code == CURLE_WRITE_ERROR;
-            bool known = answered_for == url;
-            if (code == CURLE_OK) answered_for = url;
+            bool known = answered.contains(url);
+            if (code == CURLE_OK) answered.insert(url);
             bool reused_died = redial && dial == 0 && known &&
                 (code == CURLE_GOT_NOTHING || code == CURLE_SEND_ERROR || code == CURLE_RECV_ERROR);
-            if (reused_died) { answered_for.clear(); curl.reset(); pinned_with.clear(); continue; }
+            if (reused_died) { answered.clear(); curl.reset(); pinned_with.clear(); continue; }
             break;
         }
         if (code != CURLE_OK || status == 429 || status >= 500) {
@@ -266,6 +270,7 @@ Served& served_ledger() { static Served state; return state; }
 }
 void forget_unreachable_sources() {
     { std::lock_guard lock(unreachable().mutex); unreachable().until.clear(); }
+    answered.clear();  // this thread's: a reused port has not answered here yet
     std::lock_guard lock(served_ledger().mutex);
     served_ledger().source.clear();
     served_ledger().fallback = false;

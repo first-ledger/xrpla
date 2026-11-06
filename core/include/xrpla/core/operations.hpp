@@ -46,8 +46,8 @@ struct RpcClient {
 // seconds. The primary is not. `served`, when set, receives the index of the url that
 // answered. Indexes at or after `primary_urls` are fallbacks: a ledger served as one is
 // logged when serving switches onto or off a fallback.
-// Forgets sources marked unreachable, and which source last served a ledger. Tests call it so a
-// reused port is asked again.
+// Forgets sources marked unreachable, which source last served a ledger, and which sources this
+// thread has had an answer from (the redial). Tests call it so a reused port is asked again.
 void forget_unreachable_sources();
 Json call_sources(std::vector<std::string> const& urls, std::string const& method, Json params, unsigned delay_ms, unsigned attempts, fs::path const& cache,
                   std::size_t* served = nullptr, std::size_t primary_urls = 1);
