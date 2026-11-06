@@ -23,6 +23,9 @@ struct RpcClient {
     // The largest answer taken; a larger one fails the call as a transport error does. An
     // extraction's ledger with its transactions, or a state page, runs to hundreds of MB.
     std::size_t max_response = 512ULL << 20;
+    // Ledger and object reads (call_sources) dial a reused connection once more when it dies
+    // before answering. Forwarding leaves this false: a submit must not be sent again.
+    bool redial = false;
     Json call(std::string const& method, Json params = Json::object()) const;
     std::vector<Json> call_many(std::string const& method, std::vector<Json> const& params, unsigned jobs) const;
     // Whether this thread's last call reached the server: true when it answered (whatever it
@@ -36,9 +39,13 @@ struct RpcClient {
 // asked when this one does not hold the ledger (lgrNotFound or ledgerNotFound), is rate-limited,
 // or cannot be reached. entryNotFound is the answer (the object is gone) and is not asked of the
 // next. Every url but the last is asked once; the last uses `attempts` (retries and backoff).
-// A url that could not be reached is skipped for 30 seconds, then asked again. `served`, when
-// set, receives the index of the url that answered. Indexes at or after `primary_urls` are
-// fallbacks: a ledger served as one is logged when serving switches onto or off a fallback.
+// A url that could not be reached is skipped for 30 seconds, then asked again. A reused
+// connection that dies before answering is dialed once more first, so that one failure does
+// not skip the url. A declined answer (websocket_connection_limit, upstream_unavailable) is
+// not the ledger: the next source is asked, and a fallback that declined is skipped for 30
+// seconds. The primary is not. `served`, when set, receives the index of the url that
+// answered. Indexes at or after `primary_urls` are fallbacks: a ledger served as one is
+// logged when serving switches onto or off a fallback.
 // Forgets sources marked unreachable, and which source last served a ledger. Tests call it so a
 // reused port is asked again.
 void forget_unreachable_sources();
