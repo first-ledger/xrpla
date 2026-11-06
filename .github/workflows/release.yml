@@ -82,7 +82,7 @@ jobs:
     needs: release
     if: always() && (needs.release.result == 'success' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 45
     permissions:
       contents: read
       pages: write
@@ -92,13 +92,17 @@ jobs:
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
-      - name: Packages of every release
+      # The newest three releases only. Pages is given every file again on each deploy, and with
+      # every release (166 MB at 0.4.4) the deploy outlasted its timeout. Older packages stay on
+      # their GitHub release pages.
+      - name: Packages of the newest releases
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir debs
           for tag in $(gh release list --repo "$GITHUB_REPOSITORY" --exclude-drafts --exclude-pre-releases \
-                         --limit 1000 --json tagName --jq '.[].tagName'); do
+                         --limit 1000 --json tagName,publishedAt \
+                         --jq 'sort_by(.publishedAt) | reverse | .[:3] | .[].tagName'); do
             gh release download "$tag" --repo "$GITHUB_REPOSITORY" --pattern '*.deb' --dir debs
           done
           ls -la debs
@@ -132,3 +136,6 @@ jobs:
           path: site
       - id: deploy
         uses: actions/deploy-pages@v4
+        with:
+          # The default, 10 minutes, ran out at 0.4.4 while Pages was still publishing the files.
+          timeout: 1800000

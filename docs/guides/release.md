@@ -3,8 +3,8 @@
 For maintainers. A tag `vX.Y.Z` runs [.github/workflows/release.yml](../../.github/workflows/release.yml):
 it builds the packages in the pinned build image (running the test suite), attaches the `.deb`,
 `.tar.gz` and `SHA256SUMS` to a GitHub release, and republishes the signed apt repository at
-<https://first-ledger.github.io/xrpla/> from the `.deb` of every release, so older versions stay
-installable.
+<https://first-ledger.github.io/xrpla/> from the `.deb` of the newest three releases, so the two
+before the latest stay installable. Older packages stay on their GitHub release pages.
 
 ## Once: the signing key and Pages
 
