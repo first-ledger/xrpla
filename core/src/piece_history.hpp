@@ -120,6 +120,25 @@ bool is_piece_cache(fs::path const&);
 // Applies to piece histories opened afterwards: a memory budget split across decoded pages
 // (30%), open segments (60%, about 150 MB each) and snapshot blocks (10%).
 void configure_piece_caches(std::size_t megabytes, unsigned warm_segments);
+// What the host has free, from /proc/meminfo. `available` is 0 when it could not be read.
+struct HostMemory {
+    std::uint64_t available = 0, swap_total = 0, swap_free = 0;
+};
+// The decode cache's budget. `configured` is what the operator asked for. `active` is what the
+// caches are held to now. `ceiling` is the most `active` may grow back to: a host that is
+// swapping, or has under 6 GiB available, steps `active` down (by an eighth, at least 1 GiB,
+// and not below 16 GiB or below `configured` when that is smaller) and that size becomes the
+// ceiling. After the host has stayed comfortable (swap under 256 MiB and 16 GiB available) for
+// 30 observations, the ceiling rises by 1 GiB, and `active` follows it, never past `configured`.
+struct CachePressure {
+    std::uint64_t configured = 0, active = 0, ceiling = 0;
+    unsigned calm = 0;
+};
+CachePressure cache_pressure_step(CachePressure state, HostMemory mem);
+// Holds every open piece cache to `bytes` (at most its configured budget) and sheds what is over.
+void apply_piece_cache_limit(std::size_t bytes);
+// Once, from serve: steps the budget from host memory every 10 s.
+void watch_piece_cache_pressure();
 // One shared instance per cache directory, reopened when the selection changes.
 std::shared_ptr<PieceHistory const> open_piece_history(fs::path const&);
 // index_pieces (operations.hpp) builds or checks the local indexes of every range in a piece cache.

@@ -83,3 +83,81 @@ TEST(SeededKeyHash, EveryByteCountsForEitherByteType) {
     }
     EXPECT_EQ(seen.size(), 33U);
 }
+
+CachePressure full_cache() {
+    CachePressure state;
+    state.configured = state.active = state.ceiling = 64ull << 30;
+    return state;
+}
+
+TEST(CachePressure, HoldsItsBudgetWhileTheHostHasRoom) {
+    HostMemory mem{32ull << 30, 8ull << 30, 8ull << 30};  // 32 GiB available, swap idle
+    auto next = cache_pressure_step(full_cache(), mem);
+    EXPECT_EQ(next.active, 64ull << 30);
+    EXPECT_EQ(next.ceiling, 64ull << 30);
+    EXPECT_EQ(next.calm, 1u);
+}
+
+TEST(CachePressure, StepsDownAnEighthWhileTheHostIsSwapping) {
+    HostMemory mem{20ull << 30, 8ull << 30, 1ull << 30};  // 7 GiB of swap in use
+    auto next = cache_pressure_step(full_cache(), mem);
+    EXPECT_EQ(next.active, 56ull << 30);
+    EXPECT_EQ(next.ceiling, 56ull << 30);  // the size that swapped is not grown straight back to
+    EXPECT_EQ(next.calm, 0u);
+}
+
+TEST(CachePressure, StepsDownWhenAvailableMemoryIsUnderSixGibibytes) {
+    HostMemory mem{4ull << 30, 0, 0};
+    auto next = cache_pressure_step(full_cache(), mem);
+    EXPECT_EQ(next.active, 56ull << 30);
+    EXPECT_EQ(next.ceiling, next.active);
+}
+
+TEST(CachePressure, StopsAtSixteenGibibytes) {
+    CachePressure state = full_cache();
+    state.active = state.ceiling = 18ull << 30;
+    HostMemory mem{1ull << 30, 8ull << 30, 0};
+    auto next = cache_pressure_step(state, mem);
+    EXPECT_EQ(next.active, 16ull << 30);
+    EXPECT_EQ(next.ceiling, 16ull << 30);
+    EXPECT_EQ(cache_pressure_step(next, mem).active, 16ull << 30);
+}
+
+TEST(CachePressure, ACacheConfiguredBelowTheFloorIsLeftThere) {
+    CachePressure state;
+    state.configured = state.active = state.ceiling = 4ull << 30;
+    HostMemory mem{1ull << 30, 8ull << 30, 0};
+    EXPECT_EQ(cache_pressure_step(state, mem).active, 4ull << 30);
+}
+
+TEST(CachePressure, UnknownMemoryDoesNotMoveTheBudget) {
+    auto next = cache_pressure_step(full_cache(), HostMemory{});
+    EXPECT_EQ(next.active, 64ull << 30);
+    EXPECT_EQ(next.calm, 0u);
+}
+
+TEST(CachePressure, GrowsBackOneGibibyteAfterTheHostStaysComfortable) {
+    CachePressure state = full_cache();
+    state.active = state.ceiling = 32ull << 30;
+    state.calm = 29;
+    HostMemory calm{24ull << 30, 8ull << 30, 8ull << 30};
+    auto next = cache_pressure_step(state, calm);
+    EXPECT_EQ(next.ceiling, 33ull << 30);
+    EXPECT_EQ(next.active, 33ull << 30);
+    EXPECT_EQ(next.calm, 0u);
+    // One calm observation does not raise the ceiling.
+    state.calm = 0;
+    next = cache_pressure_step(state, calm);
+    EXPECT_EQ(next.ceiling, 32ull << 30);
+    EXPECT_EQ(next.active, 32ull << 30);
+    EXPECT_EQ(next.calm, 1u);
+}
+
+TEST(CachePressure, DoesNotGrowPastTheConfiguredBudget) {
+    CachePressure state = full_cache();
+    state.calm = 29;
+    HostMemory calm{24ull << 30, 8ull << 30, 8ull << 30};
+    auto next = cache_pressure_step(state, calm);
+    EXPECT_EQ(next.active, 64ull << 30);
+    EXPECT_EQ(next.ceiling, 64ull << 30);
+}

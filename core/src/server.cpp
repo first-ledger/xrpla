@@ -1718,6 +1718,7 @@ void serve(ServeOptions const& options) {
             cache_mb = std::clamp<std::size_t>(memory_kb / 1024 / 4, 3072, 65536);
         }
         configure_piece_caches(cache_mb, options.warm_segments);
+        watch_piece_cache_pressure();  // sheds the decode cache while the host is swapping
         std::cerr << Json{{"event", "piece_cache"}, {"cache_mb", cache_mb}}.dump() << std::endl;
         if (!options.tail.empty()) follow_tail(options.dir, options.tail, options.tail_key);
         else (void)open_piece_history(options.dir);
