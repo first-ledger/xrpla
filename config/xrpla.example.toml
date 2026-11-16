@@ -214,6 +214,16 @@
 # cache while the spool is built or extended (standalone, connected) is held to it too.
 #loopback_trusted = true
 
+# A listener, HOST:PORT, for this organisation. It answers HTTP and WebSocket, as the others
+# do, and the same public methods: XRPLA has no admin methods, and this port does not grant
+# any. Connections on it are not counted toward max_connections or max_connections_per_ip, and
+# its requests are not answered tooBusy when the public lanes are full, nor held to a
+# connection's in-flight, reply or keep-alive limits. A subscriber on it is not disconnected
+# for falling behind, and its queued bytes are not part of the process-wide WebSocket ceiling.
+# Bind it to loopback or an internal address. A client there that does not read can hold memory
+# without a cap. Empty: none. The interim server (standalone, connected) listens on it too.
+#admin = "127.0.0.1:5008"
+
 # Piece caches: how many of the newest history segments to open in the background at start
 # (0: none; opened on first use).
 #warm_segments = 0

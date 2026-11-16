@@ -624,21 +624,23 @@ struct Server {
         });
     }
     // Runs `work` on a lane's threads; `done` gets its result on the network thread. A lane at
-    // its limit answers fallback(tooBusy) at once; work that throws (a reply that cannot be
+    // its limit answers fallback(tooBusy) at once, except a request from the admin listener
+    // (`unlimited`): that port is not rate limited, and its work is not counted here, so it
+    // neither waits on the public queue nor fills it. Work that throws (a reply that cannot be
     // rendered, memory) answers fallback(internal) rather than end the process, and the lane's
     // count and the caller's session are released on the network thread either way.
-    template<class Work, class Fallback, class Done> void run(Lane& lane, Work work, Fallback fallback, Done done) {
-        if (lane.queued >= lane.limit) { done(fallback(::xrpl::RpcTooBusy)); return; }
-        ++lane.queued;
-        net::post(lane.threads, [this, &lane, work = std::move(work), fallback = std::move(fallback), done = std::move(done)]() mutable {
+    template<class Work, class Fallback, class Done> void run(Lane& lane, Work work, Fallback fallback, Done done, bool unlimited = false) {
+        if (!unlimited && lane.queued >= lane.limit) { done(fallback(::xrpl::RpcTooBusy)); return; }
+        if (!unlimited) ++lane.queued;
+        net::post(lane.threads, [this, &lane, unlimited, work = std::move(work), fallback = std::move(fallback), done = std::move(done)]() mutable {
             std::optional<decltype(work())> result;
             ++running;
             try { result.emplace(work()); }
             catch (std::exception const& e) { std::cerr << "serve: request failed: " << e.what() << std::endl; }
             catch (...) { std::cerr << "serve: request failed" << std::endl; }
             --running;
-            net::post(io, [&lane, result = std::move(result), fallback = std::move(fallback), done = std::move(done)]() mutable {
-                --lane.queued;
+            net::post(io, [&lane, unlimited, result = std::move(result), fallback = std::move(fallback), done = std::move(done)]() mutable {
+                if (!unlimited) --lane.queued;
                 done(result ? std::move(*result) : fallback(::xrpl::RpcInternal));
             });
         });
@@ -648,13 +650,13 @@ struct Server {
     // there capped a server's throughput with most of its cores idle. `client` is the address it
     // came from, passed on when the request is forwarded (send_upstream). path_find over HTTP is
     // answered here (noEvents), never upstream.
-    template<class Render, class Done> void dispatch_text(std::string method, Json params, Render render, Done done, std::string client = {}) {
+    template<class Render, class Done> void dispatch_text(std::string method, Json params, Render render, Done done, std::string client = {}, bool unlimited = false) {
         auto& to = lane(method, params);
         bool forward = &to == &forwarded && method != "path_find";
         run(to, [this, forward, method = std::move(method), params = std::move(params), render, client = std::move(client)] {
             return render(forward ? send_upstream(method, params, client) : rpc_request(options.dir, method, params, options.forward, client));
         },
-            [render](::xrpl::ErrorCodeI code) { return render(error(code)); }, std::move(done));
+            [render](::xrpl::ErrorCodeI code) { return render(error(code)); }, std::move(done), unlimited);
     }
     // A request for the upstream, on a forwarding lane's thread. It goes only once the upstream is
     // checked (UpstreamCheck), and only to the addresses checked. One that cannot reach the
@@ -667,8 +669,8 @@ struct Server {
         if (result.value("error", Json()) == "notReady" && !RpcClient::last_reached()) forward_check.failed(later);
         return result;
     }
-    template<class Done> void dispatch(std::string method, Json params, Done done, std::string client = {}) {
-        dispatch_text(std::move(method), std::move(params), [](Json result) { return result; }, std::move(done), std::move(client));
+    template<class Done> void dispatch(std::string method, Json params, Done done, std::string client = {}, bool unlimited = false) {
+        dispatch_text(std::move(method), std::move(params), [](Json result) { return result; }, std::move(done), std::move(client), unlimited);
     }
     // The stream hub's work, on its own lane; `done` gets T{} when it fails.
     template<class Work, class Done> void stream(Work work, Done done) {
@@ -724,6 +726,7 @@ struct WsSession : std::enable_shared_from_this<WsSession> {
     std::shared_ptr<net::ssl::context> tls;  // a TLS session's certificate, kept while it is open
     std::variant<Plain, Secure> ws;
     std::string client;                 // the address the session came from
+    bool unlimited = false;             // accepted on the admin listener: no per-connection limits
     std::shared_ptr<PathProxy> paths;   // its path searches, relayed upstream
     beast::flat_buffer input;
     // Messages to write, each marked when it is a stream message (rather than a reply).
@@ -761,10 +764,10 @@ struct WsSession : std::enable_shared_from_this<WsSession> {
     // skipped (or sent before its snapshot) while the snapshots are read.
     std::deque<std::shared_ptr<Rendered>> backlog;
     bool joined = false, holding = false;
-    WsSession(Server& s, beast::tcp_stream stream, std::string address, std::shared_ptr<net::ssl::context>)
-        : server(s), ws(std::in_place_type<Plain>, std::move(stream)), client(std::move(address)), deadline(s.io) { server.ws_sessions.insert(this); }
-    WsSession(Server& s, beast::ssl_stream<beast::tcp_stream> stream, std::string address, std::shared_ptr<net::ssl::context> context)
-        : server(s), tls(std::move(context)), ws(std::in_place_type<Secure>, std::move(stream)), client(std::move(address)), deadline(s.io) {
+    WsSession(Server& s, beast::tcp_stream stream, std::string address, std::shared_ptr<net::ssl::context>, bool open)
+        : server(s), ws(std::in_place_type<Plain>, std::move(stream)), client(std::move(address)), unlimited(open), deadline(s.io) { server.ws_sessions.insert(this); }
+    WsSession(Server& s, beast::ssl_stream<beast::tcp_stream> stream, std::string address, std::shared_ptr<net::ssl::context> context, bool open)
+        : server(s), tls(std::move(context)), ws(std::in_place_type<Secure>, std::move(stream)), client(std::move(address)), unlimited(open), deadline(s.io) {
         server.ws_sessions.insert(this);
     }
     ~WsSession();
@@ -796,10 +799,15 @@ struct WsSession : std::enable_shared_from_this<WsSession> {
     // A stream message leaves the server's as the last session holding it lets it go.
     void count(std::string const& text, bool stream) {
         if (stream) streamed += text.size(); else { replied += text.size(); ++replies; }
+        // An admin session's queue is its own: it is not part of the process-wide ceiling, and
+        // shed() does not disconnect it. A shared stream message still counts once for the
+        // public sessions that hold it.
+        if (unlimited) return;
         if (!stream || server.ws_streamed[&text]++ == 0) server.ws_queued += text.size();
     }
     void forget(std::string const& text, bool stream) {
         if (stream) streamed -= text.size(); else { replied -= text.size(); --replies; }
+        if (unlimited) return;
         if (stream) {
             auto it = server.ws_streamed.find(&text);
             if (--it->second) return;
@@ -818,12 +826,12 @@ struct WsSession : std::enable_shared_from_this<WsSession> {
     static constexpr std::size_t max_queued = 16 << 20;
     void send(std::shared_ptr<std::string const> text, bool stream = false) {
         if (closed) return;
-        if (!outgoing.empty()) {
+        if (!unlimited && !outgoing.empty()) {
             auto writing = outgoing.front().first->size();
             if (stream && streamed - (outgoing.front().second ? writing : 0) + text->size() > max_queued) { drop("max_queued"); return; }
         }
-        bool counted = stream && server.ws_streamed.contains(text.get());  // queued already, by some session
-        if (!counted && server.ws_queued + text->size() > Server::max_ws_queued) {
+        bool counted = !unlimited && stream && server.ws_streamed.contains(text.get());  // queued already, by some session
+        if (!unlimited && !counted && server.ws_queued + text->size() > Server::max_ws_queued) {
             server.shed();
             if (closed) return;  // this session held the most
         }
@@ -860,7 +868,7 @@ struct WsSession : std::enable_shared_from_this<WsSession> {
     static constexpr std::size_t max_backlog = 64;
     void queue(std::shared_ptr<Rendered> const& ledger) {
         if (closed || ledger->sequence <= seen || (!backlog.empty() && ledger->sequence <= backlog.back()->sequence)) return;
-        if (backlog.size() >= max_backlog) { drop("max_backlog"); return; }
+        if (!unlimited && backlog.size() >= max_backlog) { drop("max_backlog"); return; }
         backlog.push_back(ledger);
     }
     void pump();
@@ -933,7 +941,7 @@ struct WsSession : std::enable_shared_from_this<WsSession> {
             self->server.dispatch("book_offers", (*queries)[i].second, [answer, queries, step, i](Json offers) {
                 if (!offers.contains("error") && offers.contains("offers")) (*answer)[(*queries)[i].first] = offers.at("offers");
                 (*step)(i + 1);
-            });
+            }, {}, self->unlimited);
         };
         (*step)(0);
     }
@@ -1051,10 +1059,10 @@ struct WsSession : std::enable_shared_from_this<WsSession> {
             self->holding = true;
             stream_join(self);
             self->with_snapshots(request, self->seen, result, answered);
-        });
+        }, {}, unlimited);
     }
     void read() {
-        if (reading || closed || in_flight + replies >= max_in_flight || replied > max_replied) return;
+        if (reading || closed || (!unlimited && (in_flight + replies >= max_in_flight || replied > max_replied))) return;
         reading = true;
         with([&](auto& s) { s.async_read(input, [self = shared_from_this()](beast::error_code ec, std::size_t) { self->reading = false; self->received(ec); }); });
     }
@@ -1097,7 +1105,7 @@ struct WsSession : std::enable_shared_from_this<WsSession> {
                 auto params = request; params.erase("command"); params.erase("id");
                 ++in_flight;
                 server.dispatch_text(method, params, [request](Json result) { return response_text(std::move(result), request); },
-                                     [self = shared_from_this()](std::shared_ptr<std::string const> text) { self->send(std::move(text)); self->settle(); }, client);
+                                     [self = shared_from_this()](std::shared_ptr<std::string const> text) { self->send(std::move(text)); self->settle(); }, client, unlimited);
             }
         } catch (std::exception const&) {
             input.consume(input.size()); reply(error(::xrpl::RpcInvalidParams), request.is_object() ? request : Json::object());
@@ -1441,13 +1449,19 @@ void PathProxy::fail() {
 WsSession::~WsSession() {
     for (auto const& [text, stream] : outgoing) forget(*text, stream);
     server.ws_sessions.erase(this);
-    server.release(client); if (paths) paths->close();
+    // Admitted by the HTTP session that upgraded, which does not release a transferred connection.
+    // An admin connection was never admitted.
+    if (!unlimited) server.release(client);
+    if (paths) paths->close();
 }
 // The session holding the most bytes queued, of those still open, is disconnected; one closed
 // already releases the rest of its queue when its write ends.
 void Server::shed() {
+    // The admin listener is outside this ceiling: its sessions are not candidates, and their
+    // bytes are not in ws_queued (WsSession::count).
     WsSession* largest = nullptr;
-    for (auto* session : ws_sessions) if (!session->closed && (!largest || session->queued() > largest->queued())) largest = session;
+    for (auto* session : ws_sessions)
+        if (!session->unlimited && !session->closed && (!largest || session->queued() > largest->queued())) largest = session;
     if (largest && largest->queued()) largest->drop("max_queued_total");
 }
 void WsSession::path_find(Json const& request) {
@@ -1471,7 +1485,7 @@ void WsSession::path_find(Json const& request) {
     auto relayed = request;
     for (auto name : {"admin_user", "admin_password", "secret", "seed", "seed_hex", "passphrase"}) relayed.erase(name);
     auto text = relayed.dump();
-    if (paths && paths->full(text.size())) { reply(error(::xrpl::RpcTooBusy), request); return; }
+    if (!unlimited && paths && paths->full(text.size())) { reply(error(::xrpl::RpcTooBusy), request); return; }
     bool fresh = !paths;
     if (fresh) paths = std::make_shared<PathProxy>(server, weak_from_this(), client);
     auto proxy = paths;
@@ -1498,15 +1512,16 @@ struct HttpSession : std::enable_shared_from_this<HttpSession> {
     static constexpr unsigned max_requests_per_connection = 1000;
     unsigned served = 0;
     bool keep_alive = false;
+    bool unlimited = false;  // accepted on the admin listener: not counted, and not rate limited
     static std::variant<Plain, Secure> open(tcp::socket socket, std::shared_ptr<net::ssl::context> const& tls) {
         if (tls) return std::variant<Plain, Secure>(std::in_place_type<Secure>, std::move(socket), *tls);
         return std::variant<Plain, Secure>(std::in_place_type<Plain>, std::move(socket));
     }
-    HttpSession(Server& s, tcp::socket socket, std::string address, std::shared_ptr<net::ssl::context> context)
-        : server(s), tls(std::move(context)), client(std::move(address)), stream(open(std::move(socket), tls)) {
-        server.admit(client);
+    HttpSession(Server& s, tcp::socket socket, std::string address, std::shared_ptr<net::ssl::context> context, bool admin_port)
+        : server(s), tls(std::move(context)), client(std::move(address)), stream(open(std::move(socket), tls)), unlimited(admin_port) {
+        if (!unlimited) server.admit(client);
     }
-    ~HttpSession() { if (!transferred) server.release(client); }
+    ~HttpSession() { if (!transferred && !unlimited) server.release(client); }
     template<class F> void with(F&& f) { std::visit([&](auto& s) { f(s); }, stream); }
     // As xrpld's ServerHandler::processRequest: the result, with the request's id, jsonrpc and
     // ripplerpc beside it. An error echoes the request (`method`'s params, its secrets masked, with
@@ -1574,12 +1589,12 @@ struct HttpSession : std::enable_shared_from_this<HttpSession> {
             auto self = shared_from_this();
             if (ec) return;  // closed, idle too long, or not HTTP
             auto request = self->parser->release();
-            self->keep_alive = request.keep_alive() && ++self->served < max_requests_per_connection;
+            self->keep_alive = request.keep_alive() && (self->unlimited || ++self->served < max_requests_per_connection);
             if (websocket::is_upgrade(request)) {
                 self->transferred = true;
                 self->with([&](auto& s) {
                     beast::get_lowest_layer(s).expires_never();
-                    std::make_shared<WsSession>(self->server, std::move(s), self->client, self->tls)->start(std::move(request));
+                    std::make_shared<WsSession>(self->server, std::move(s), self->client, self->tls, self->unlimited)->start(std::move(request));
                 });
                 return;
             }
@@ -1613,7 +1628,7 @@ struct HttpSession : std::enable_shared_from_this<HttpSession> {
                 self->respond_text(body_text(error(::xrpl::RpcUnknownCommand), params, method)); return;
             }
             self->server.dispatch_text(method, params, [params, method](Json result) { return body_text(std::move(result), params, method); },
-                                       [self](std::string body) { self->respond_text(std::move(body)); }, self->client);
+                                       [self](std::string body) { self->respond_text(std::move(body)); }, self->client, self->unlimited);
         }
     }
 };
@@ -1622,8 +1637,9 @@ struct Listener : std::enable_shared_from_this<Listener> {
     tcp::acceptor acceptor;
     net::steady_timer pause;  // after a failed accept
     bool secure;  // TLS: HTTPS and WSS
+    bool unlimited = false;  // the admin listener: accept without the connection caps
     bool failing = false;
-    Listener(Server& s, std::string const& endpoint, bool tls) : server(s), acceptor(s.io), pause(s.io), secure(tls) {
+    Listener(Server& s, std::string const& endpoint, bool tls, bool open = false) : server(s), acceptor(s.io), pause(s.io), secure(tls), unlimited(open) {
         auto colon = endpoint.rfind(':'); if (colon == std::string::npos) throw Error("Listen address must be IP:PORT");
         auto ip = endpoint.substr(0, colon), port = endpoint.substr(colon + 1);
         if (ip.starts_with('[') && ip.ends_with(']')) ip = ip.substr(1, ip.size() - 2);
@@ -1651,8 +1667,12 @@ struct Listener : std::enable_shared_from_this<Listener> {
             beast::error_code unknown; auto peer = socket.remote_endpoint(unknown);
             if (!unknown) {
                 auto address = plain(peer.address());
-                if (auto reason = self->server.refusal(address)) self->server.refuse(reason, address.to_string());
-                else std::make_shared<HttpSession>(self->server, std::move(socket), address.to_string(), self->secure ? self->server.tls : nullptr)->start();
+                // The admin listener is outside max_connections and max_connections_per_ip, and
+                // its sessions are not counted, so they do not take a public slot.
+                if (!self->unlimited) {
+                    if (auto reason = self->server.refusal(address)) self->server.refuse(reason, address.to_string());
+                    else std::make_shared<HttpSession>(self->server, std::move(socket), address.to_string(), self->secure ? self->server.tls : nullptr, false)->start();
+                } else std::make_shared<HttpSession>(self->server, std::move(socket), address.to_string(), nullptr, true)->start();
             }
             self->start();
         });
@@ -1696,13 +1716,15 @@ void watch_tls(Server& server, std::shared_ptr<net::steady_timer> timer) {
 void serve(ServeOptions const& options) {
     if (!options.threads || options.threads > 32) throw Error("Server threads must be between 1 and 32");
     configure_network(options.network_id);
-    if (options.http.empty() && options.ws.empty() && options.https.empty() && options.wss.empty()) throw Error("At least one listener is required");
+    if (options.http.empty() && options.ws.empty() && options.https.empty() && options.wss.empty() && options.admin.empty()) throw Error("At least one listener is required");
     bool secure = !options.https.empty() || !options.wss.empty();
     if (secure && (options.tls_cert.empty() || options.tls_key.empty())) throw Error("HTTPS and WSS listeners need a TLS certificate and key");
     std::set<std::string> plain_endpoints, secure_endpoints;
     for (auto const& e : {options.http, options.ws}) if (!e.empty()) plain_endpoints.insert(e);
     for (auto const& e : {options.https, options.wss}) if (!e.empty()) secure_endpoints.insert(e);
     for (auto const& e : secure_endpoints) if (plain_endpoints.contains(e)) throw Error("Listener " + e + " cannot be both plain and TLS");
+    if (!options.admin.empty() && (plain_endpoints.contains(options.admin) || secure_endpoints.contains(options.admin)))
+        throw Error("Admin listener " + options.admin + " cannot be the same address as another listener");
     // A piece cache is opened (and its query index checked) before listening, like a store.
     if (is_piece_cache(options.dir)) {
         auto cache_mb = options.cache_mb;
@@ -1756,9 +1778,12 @@ void serve(ServeOptions const& options) {
         for (auto const& endpoint : *endpoints) {
             auto listener = std::make_shared<Listener>(server, endpoint, tls); listener->start(); listeners.push_back(listener);
         }
+    if (!options.admin.empty()) {
+        auto listener = std::make_shared<Listener>(server, options.admin, false, true); listener->start(); listeners.push_back(listener);
+    }
     auto signals = std::make_unique<net::signal_set>(server.io, SIGINT, SIGTERM);
     signals->async_wait([&](beast::error_code, int) { tls_timer->cancel(); server.io.stop(); });
-    std::cerr << Json{{"http", options.http}, {"ws", options.ws}, {"https", options.https}, {"wss", options.wss}, {"event", "listening"}}.dump() << '\n';
+    std::cerr << Json{{"http", options.http}, {"ws", options.ws}, {"https", options.https}, {"wss", options.wss}, {"admin", options.admin}, {"event", "listening"}}.dump() << '\n';
     server.io.run();
     // Stopping: requests still queued are dropped (their connections are closing). Those already
     // running get 10 s; a history query can take far longer (a busy order book, a request that

@@ -194,6 +194,13 @@ bool forwarded_request(std::string const& method, Json const& params);
 struct ServeOptions {
     fs::path dir;
     std::string http = "127.0.0.1:5005", ws = "127.0.0.1:6006", forward;
+    // Optional plain listener (HOST:PORT) for clients inside the operator's organisation. It
+    // answers HTTP and WebSocket, as the public listeners do, and the same methods: it is not an
+    // admin role (XRPLA has no admin methods). Connections on it are not counted toward
+    // max_connections or max_connections_per_ip, and its requests are not answered tooBusy for
+    // the lane queue, nor held to a connection's in-flight, reply, keep-alive or subscriber
+    // limits. Empty: none. Bind it where only that organisation can reach it.
+    std::string admin;
     // TLS listeners (each answers HTTPS and WSS, as each plain one answers HTTP and WebSocket),
     // with a certificate chain and its private key (PEM files). Both are read at start and again
     // when either changes, so a renewed certificate is used without a restart.

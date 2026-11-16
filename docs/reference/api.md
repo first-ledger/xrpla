@@ -6,7 +6,9 @@ methods are answered from a piece cache (mirror, standalone, connected) and from
 3.4.1); Clio's methods follow Clio 2.7 (2.8 for the MPT account methods and `nft_history`).
 
 XRPLA has no admin methods. Requests are answered for validated ledgers only; there is no open
-ledger and no consensus.
+ledger and no consensus. `[serve] admin` (`xrpla serve --admin`) is an optional listener for
+clients inside the operator's organisation: the same methods, without the public connection caps
+or `tooBusy`. It is not an admin role, and `ping` still does not report `role: admin`.
 
 ## Methods
 

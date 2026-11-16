@@ -68,6 +68,7 @@ Settings: [config/xrpla.example.toml](../../config/xrpla.example.toml).
 |---|---|---|
 | `--http HOST:PORT` | `127.0.0.1:5005` | JSON-RPC listener (also answers WebSocket upgrades) |
 | `--ws HOST:PORT` | `127.0.0.1:6006` | WebSocket listener |
+| `--admin HOST:PORT` | none | same API, with no connection cap and no `tooBusy`; bind it to an internal address |
 | `--https`, `--wss HOST:PORT` with `--tls-cert CHAIN.pem --tls-key KEY.pem` | none | TLS listeners; renewed certificates are reloaded |
 | `--forward URL`, `--forward-ws URL` | none | upstream xrpld for current-ledger methods ([API reference](api.md#forwarded-methods)) |
 | `--threads N` | 4 | request threads (1-32) |

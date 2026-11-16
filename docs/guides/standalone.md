@@ -194,7 +194,9 @@ The defaults listen on 127.0.0.1 only. To answer other machines:
   `tls_cert` and `tls_key`; renewed certificates are picked up within a minute);
 - put a reverse proxy or rate limiter in front of public listeners. Behind a proxy on the same
   machine set `[serve] loopback_trusted = false` and limit clients at the proxy;
-- `max_connections` (1,024) and `max_connections_per_ip` (64) cap open connections.
+- `max_connections` (1,024) and `max_connections_per_ip` (64) cap open connections;
+- `[serve] admin = "HOST:PORT"` listens without those caps and without `tooBusy`, for clients
+  inside this organisation. Bind it to loopback or an internal address.
 
 See [Security model](../reference/security.md).
 

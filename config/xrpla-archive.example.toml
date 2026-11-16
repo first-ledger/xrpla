@@ -30,6 +30,10 @@ http = "127.0.0.1:5005"
 # serve: the WebSocket listener, HOST:PORT.
 ws = "127.0.0.1:6006"
 
+# serve: an optional listener, HOST:PORT, with no connection cap and no tooBusy. Same methods
+# as http and ws. Bind it to loopback or an internal address. Empty: none.
+# admin = "127.0.0.1:5008"
+
 # serve: threads answering requests.
 threads = 4
 
