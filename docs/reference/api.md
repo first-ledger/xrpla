@@ -8,7 +8,11 @@ methods are answered from a piece cache (mirror, standalone, connected) and from
 XRPLA has no admin methods. Requests are answered for validated ledgers only; there is no open
 ledger and no consensus. `[serve] admin` (`xrpla serve --admin`) is an optional listener for
 clients inside the operator's organisation: the same methods, without the public connection caps
-or `tooBusy`. It is not an admin role, and `ping` still does not report `role: admin`.
+or `tooBusy` on the local lanes. Those requests still share the local thread pools and can wait
+behind work already queued. Forwarded requests and `path_find` keep their limits. A WebSocket
+session on it is dropped after 256 MB of queued bytes or 1,024 ledgers behind, and is outside
+the process-wide queue ceiling. It is not an admin role, and `ping` still does not report
+`role: admin`. Bind it to loopback or a private address; startup warns when it is not.
 
 ## Methods
 

@@ -56,7 +56,7 @@ constexpr char help[] = "xrpla " XRPLA_VERSION R"( — authenticated and verifie
                               [--peer-crawl] [--peer-reserved NODE_KEY,...]]
                   (with --peers: serve the newest ledgers to the peer network; docs/PEER-SERVING.md)
   xrpla serve --dir ./data [--http 127.0.0.1:5005] [--ws 127.0.0.1:6006]
-              [--admin HOST:PORT]  (same API; no connection cap and no tooBusy; bind it internally)
+              [--admin HOST:PORT]  (same API; no connection cap, no local tooBusy; shares those threads; 256 MB and 1024 ledgers per WebSocket; forwarded and path_find stay limited; bind it to loopback or a private address)
               [--https IP:PORT] [--wss IP:PORT] [--tls-cert CHAIN.pem --tls-key KEY.pem]  (reloaded when renewed)
               [--forward RPC_URL] [--forward-ws WS_URL] [--threads 4] [--config FILE]
               [--cache-mb N (default: memory / 4, 3072-65536)] [--tail SPOOL|FOLLOWER_DIR --tail-key FILE] [--network-id mainnet] [--max-connections 1024] [--max-connections-per-ip 64]

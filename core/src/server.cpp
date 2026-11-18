@@ -625,10 +625,12 @@ struct Server {
     }
     // Runs `work` on a lane's threads; `done` gets its result on the network thread. A lane at
     // its limit answers fallback(tooBusy) at once, except a request from the admin listener
-    // (`unlimited`): that port is not rate limited, and its work is not counted here, so it
-    // neither waits on the public queue nor fills it. Work that throws (a reply that cannot be
-    // rendered, memory) answers fallback(internal) rather than end the process, and the lane's
-    // count and the caller's session are released on the network thread either way.
+    // (`unlimited`) on a local lane: it is not answered tooBusy and is not counted in
+    // lane.queued, so it does not fill the public queue. It is still posted onto that same
+    // pool, behind work already there, and can wait. The forwarded lane does not take
+    // `unlimited` (dispatch_text): an admin client keeps that limit. Work that throws (a reply
+    // that cannot be rendered, memory) answers fallback(internal) rather than end the process,
+    // and the lane's count and the caller's session are released on the network thread either way.
     template<class Work, class Fallback, class Done> void run(Lane& lane, Work work, Fallback fallback, Done done, bool unlimited = false) {
         if (!unlimited && lane.queued >= lane.limit) { done(fallback(::xrpl::RpcTooBusy)); return; }
         if (!unlimited) ++lane.queued;
@@ -649,14 +651,17 @@ struct Server {
     // the text sent): one network thread serves every connection, and serializing large results
     // there capped a server's throughput with most of its cores idle. `client` is the address it
     // came from, passed on when the request is forwarded (send_upstream). path_find over HTTP is
-    // answered here (noEvents), never upstream.
+    // answered here (noEvents), never upstream. Admin skips tooBusy only on the local lanes. The
+    // forwarded lane keeps its limit for every client, admin included, so one internal session
+    // cannot queue unbounded work toward the upstream. HTTP path_find is answered locally but
+    // still runs on that lane, and keeps the limit too.
     template<class Render, class Done> void dispatch_text(std::string method, Json params, Render render, Done done, std::string client = {}, bool unlimited = false) {
         auto& to = lane(method, params);
         bool forward = &to == &forwarded && method != "path_find";
         run(to, [this, forward, method = std::move(method), params = std::move(params), render, client = std::move(client)] {
             return render(forward ? send_upstream(method, params, client) : rpc_request(options.dir, method, params, options.forward, client));
         },
-            [render](::xrpl::ErrorCodeI code) { return render(error(code)); }, std::move(done), unlimited);
+            [render](::xrpl::ErrorCodeI code) { return render(error(code)); }, std::move(done), unlimited && &to != &forwarded);
     }
     // A request for the upstream, on a forwarding lane's thread. It goes only once the upstream is
     // checked (UpstreamCheck), and only to the addresses checked. One that cannot reach the
@@ -726,7 +731,7 @@ struct WsSession : std::enable_shared_from_this<WsSession> {
     std::shared_ptr<net::ssl::context> tls;  // a TLS session's certificate, kept while it is open
     std::variant<Plain, Secure> ws;
     std::string client;                 // the address the session came from
-    bool unlimited = false;             // accepted on the admin listener: no per-connection limits
+    bool unlimited = false;             // accepted on the admin listener: no connection caps; local requests are not answered tooBusy
     std::shared_ptr<PathProxy> paths;   // its path searches, relayed upstream
     beast::flat_buffer input;
     // Messages to write, each marked when it is a stream message (rather than a reply).
@@ -744,6 +749,11 @@ struct WsSession : std::enable_shared_from_this<WsSession> {
     // and apply in the order sent.
     static constexpr unsigned max_in_flight = 8;
     static constexpr std::size_t max_replied = 8 << 20;
+    // Admin is not held to those. It stops being read, rather than answered tooBusy, once this
+    // many of its own requests are still running or its queued replies pass admin_max_queued:
+    // a client that sends faster than it reads would otherwise grow without a bound. Stream
+    // messages are pushed, not read, and drop the session at that byte cap.
+    static constexpr unsigned admin_max_in_flight = 256;
     unsigned in_flight = 0;
     bool reading = false, changing = false;
     std::deque<Json> changes;
@@ -817,18 +827,24 @@ struct WsSession : std::enable_shared_from_this<WsSession> {
     }
     void send(Json value) { send(std::make_shared<std::string const>(value.dump())); }
     // A subscriber more than 16 MB of stream messages behind (past the message being written) is
-    // disconnected. A count of messages dropped a healthy one on a single large ledger. Replies
-    // are not held to it: pipelined account_tx or ledger_data pages of a few MB each passed it,
-    // and read() takes no request while max_replied of them wait: a session holds at most that
-    // and the replies of the requests already running (max_in_flight), whatever they weigh. A
-    // client that drains them too slowly is disconnected by write_timeout, and every session's
-    // together by max_ws_queued. (xrpld's BaseWSPeer counts messages, ws_queue_limit's 100.)
+    // disconnected, 256 MB on the admin listener. A count of messages dropped a healthy one on a
+    // single large ledger. Replies are not held to the public cap: pipelined account_tx or
+    // ledger_data pages of a few MB each passed it, and read() takes no request while max_replied
+    // of them wait. An admin session has no max_replied, so its replies share the 256 MB cap.
+    // A client that drains them too slowly is disconnected by write_timeout, and every public
+    // session together by max_ws_queued. The admin session is not part of that ceiling (count).
+    // (xrpld's BaseWSPeer counts messages, ws_queue_limit's 100.)
     static constexpr std::size_t max_queued = 16 << 20;
+    static constexpr std::size_t admin_max_queued = 256 << 20;
     void send(std::shared_ptr<std::string const> text, bool stream = false) {
         if (closed) return;
-        if (!unlimited && !outgoing.empty()) {
+        if (!outgoing.empty()) {
             auto writing = outgoing.front().first->size();
-            if (stream && streamed - (outgoing.front().second ? writing : 0) + text->size() > max_queued) { drop("max_queued"); return; }
+            auto limit = unlimited ? admin_max_queued : max_queued;
+            if (stream && streamed - (outgoing.front().second ? writing : 0) + text->size() > limit) { drop("max_queued"); return; }
+            // Public replies stop in read() at max_replied. Admin keeps reading until the byte
+            // cap, so a reply is held to the same cap as its stream messages.
+            if (unlimited && streamed + replied - writing + text->size() > admin_max_queued) { drop("max_queued"); return; }
         }
         bool counted = !unlimited && stream && server.ws_streamed.contains(text.get());  // queued already, by some session
         if (!unlimited && !counted && server.ws_queued + text->size() > Server::max_ws_queued) {
@@ -866,9 +882,12 @@ struct WsSession : std::enable_shared_from_this<WsSession> {
     // of a ledger the hub keeps failing to render for this session holds every later one for
     // it, up to the 30 tries StreamHub gives it) disconnect it.
     static constexpr std::size_t max_backlog = 64;
+    // Admin may sit further behind (about 1024 ledgers, rather than a minute of mainnet) and is
+    // then dropped the same way. No cap let one subscriber retain every ledger the hub rendered.
+    static constexpr std::size_t admin_max_backlog = 1024;
     void queue(std::shared_ptr<Rendered> const& ledger) {
         if (closed || ledger->sequence <= seen || (!backlog.empty() && ledger->sequence <= backlog.back()->sequence)) return;
-        if (!unlimited && backlog.size() >= max_backlog) { drop("max_backlog"); return; }
+        if (backlog.size() >= (unlimited ? admin_max_backlog : max_backlog)) { drop("max_backlog"); return; }
         backlog.push_back(ledger);
     }
     void pump();
@@ -1062,7 +1081,10 @@ struct WsSession : std::enable_shared_from_this<WsSession> {
         }, {}, unlimited);
     }
     void read() {
-        if (reading || closed || (!unlimited && (in_flight + replies >= max_in_flight || replied > max_replied))) return;
+        if (reading || closed) return;
+        if (unlimited) {
+            if (in_flight >= admin_max_in_flight || replied > admin_max_queued) return;
+        } else if (in_flight + replies >= max_in_flight || replied > max_replied) return;
         reading = true;
         with([&](auto& s) { s.async_read(input, [self = shared_from_this()](beast::error_code ec, std::size_t) { self->reading = false; self->received(ec); }); });
     }
@@ -1485,7 +1507,9 @@ void WsSession::path_find(Json const& request) {
     auto relayed = request;
     for (auto name : {"admin_user", "admin_password", "secret", "seed", "seed_hex", "passphrase"}) relayed.erase(name);
     auto text = relayed.dump();
-    if (!unlimited && paths && paths->full(text.size())) { reply(error(::xrpl::RpcTooBusy), request); return; }
+    // The admin listener keeps this limit: an internal client must not push unbounded path
+    // searches onto the upstream.
+    if (paths && paths->full(text.size())) { reply(error(::xrpl::RpcTooBusy), request); return; }
     bool fresh = !paths;
     if (fresh) paths = std::make_shared<PathProxy>(server, weak_from_this(), client);
     auto proxy = paths;
@@ -1632,6 +1656,57 @@ struct HttpSession : std::enable_shared_from_this<HttpSession> {
         }
     }
 };
+// HOST:PORT as a listen endpoint. IPv6 may be written in brackets. Numeric addresses only.
+tcp::endpoint listen_endpoint(std::string const& endpoint) {
+    auto colon = endpoint.rfind(':');
+    if (colon == std::string::npos) throw Error("Listen address must be IP:PORT");
+    auto ip = endpoint.substr(0, colon), port = endpoint.substr(colon + 1);
+    if (ip.starts_with('[') && ip.ends_with(']')) ip = ip.substr(1, ip.size() - 2);
+    unsigned number = 0;
+    auto [end, ec] = std::from_chars(port.data(), port.data() + port.size(), number);
+    if (ec != std::errc{} || end != port.data() + port.size() || !number || number > 65535) throw Error("Invalid listen port");
+    try {
+        return tcp::endpoint(net::ip::make_address(ip), static_cast<unsigned short>(number));
+    } catch (std::exception const&) {
+        throw Error("Listen address must be IP:PORT");
+    }
+}
+// An IPv4-mapped IPv6 address is the IPv4 address it names.
+net::ip::address host_address(net::ip::address address) {
+    if (address.is_v6() && address.to_v6().is_v4_mapped())
+        return net::ip::address(net::ip::make_address_v4(net::ip::v4_mapped, address.to_v6()));
+    return address;
+}
+// The same socket, or a wildcard that covers the other. 0.0.0.0 covers IPv4. :: covers IPv6 and,
+// with the dual-stack default, IPv4, so the later bind fails or steals the port. Two different
+// specific addresses on one port do not. The caller's sets collapse an identical string first
+// (http and ws written the same way are one listener).
+bool listeners_overlap(tcp::endpoint const& a, tcp::endpoint const& b) {
+    if (a.port() != b.port()) return false;
+    auto left = host_address(a.address()), right = host_address(b.address());
+    if (left == right) return true;
+    auto v4_wild = [](net::ip::address const& address) { return address.is_v4() && address.is_unspecified(); };
+    auto v6_wild = [](net::ip::address const& address) { return address.is_v6() && address.is_unspecified(); };
+    if ((v4_wild(left) && right.is_v4()) || (v4_wild(right) && left.is_v4())) return true;
+    return v6_wild(left) || v6_wild(right);
+}
+// Loopback, RFC1918, IPv6 unique-local (fc00::/7), or link-local. A wildcard is not: it accepts
+// the public interfaces too. The admin listener has no authentication.
+bool internal_address(net::ip::address const& address) {
+    auto host = host_address(address);
+    if (host.is_loopback()) return true;
+    if (host.is_v4()) {
+        auto b = host.to_v4().to_bytes();
+        if (b[0] == 10) return true;
+        if (b[0] == 172 && b[1] >= 16 && b[1] <= 31) return true;
+        if (b[0] == 192 && b[1] == 168) return true;
+        if (b[0] == 169 && b[1] == 254) return true;
+        return false;
+    }
+    auto b = host.to_v6().to_bytes();
+    if ((b[0] & 0xfe) == 0xfc) return true;
+    return b[0] == 0xfe && (b[1] & 0xc0) == 0x80;
+}
 struct Listener : std::enable_shared_from_this<Listener> {
     Server& server;
     tcp::acceptor acceptor;
@@ -1640,12 +1715,7 @@ struct Listener : std::enable_shared_from_this<Listener> {
     bool unlimited = false;  // the admin listener: accept without the connection caps
     bool failing = false;
     Listener(Server& s, std::string const& endpoint, bool tls, bool open = false) : server(s), acceptor(s.io), pause(s.io), secure(tls), unlimited(open) {
-        auto colon = endpoint.rfind(':'); if (colon == std::string::npos) throw Error("Listen address must be IP:PORT");
-        auto ip = endpoint.substr(0, colon), port = endpoint.substr(colon + 1);
-        if (ip.starts_with('[') && ip.ends_with(']')) ip = ip.substr(1, ip.size() - 2);
-        unsigned number = 0; auto [end, ec] = std::from_chars(port.data(), port.data() + port.size(), number);
-        if (ec != std::errc{} || end != port.data() + port.size() || !number || number > 65535) throw Error("Invalid listen port");
-        tcp::endpoint target(net::ip::make_address(ip), static_cast<unsigned short>(number));
+        auto target = listen_endpoint(endpoint);
         acceptor.open(target.protocol()); acceptor.set_option(net::socket_base::reuse_address(true)); acceptor.bind(target); acceptor.listen(128);
     }
     void start() {
@@ -1722,9 +1792,23 @@ void serve(ServeOptions const& options) {
     std::set<std::string> plain_endpoints, secure_endpoints;
     for (auto const& e : {options.http, options.ws}) if (!e.empty()) plain_endpoints.insert(e);
     for (auto const& e : {options.https, options.wss}) if (!e.empty()) secure_endpoints.insert(e);
-    for (auto const& e : secure_endpoints) if (plain_endpoints.contains(e)) throw Error("Listener " + e + " cannot be both plain and TLS");
-    if (!options.admin.empty() && (plain_endpoints.contains(options.admin) || secure_endpoints.contains(options.admin)))
-        throw Error("Admin listener " + options.admin + " cannot be the same address as another listener");
+    // String equality missed the same socket written two ways, and a wildcard beside a specific
+    // address on that port (0.0.0.0:5005 and 127.0.0.1:5005): the later bind failed, or stole
+    // the connections. Identical strings are already one entry in the sets above.
+    std::vector<std::pair<std::string, tcp::endpoint>> bound;
+    auto consider = [&](std::string const& endpoint) {
+        auto parsed = listen_endpoint(endpoint);
+        for (auto const& [other, at] : bound) {
+            if (!listeners_overlap(parsed, at)) continue;
+            bool same = host_address(parsed.address()) == host_address(at.address());
+            throw Error("Listener " + endpoint + " and " + other + " cannot share a port (" +
+                        (same ? "the same address" : "one binds every address on that port") + ")");
+        }
+        bound.emplace_back(endpoint, std::move(parsed));
+    };
+    for (auto const& e : plain_endpoints) consider(e);
+    for (auto const& e : secure_endpoints) consider(e);
+    if (!options.admin.empty()) consider(options.admin);
     // A piece cache is opened (and its query index checked) before listening, like a store.
     if (is_piece_cache(options.dir)) {
         auto cache_mb = options.cache_mb;
@@ -1780,6 +1864,12 @@ void serve(ServeOptions const& options) {
         }
     if (!options.admin.empty()) {
         auto listener = std::make_shared<Listener>(server, options.admin, false, true); listener->start(); listeners.push_back(listener);
+        // Accepted either way: an operator may intend a public bind. Nothing on this port
+        // authenticates, and the bytes are plain text.
+        if (!internal_address(listen_endpoint(options.admin).address()))
+            std::cerr << Json{{"event", "admin_exposed"}, {"admin", options.admin},
+                              {"warning", "the admin listener has no authentication; bind it to loopback or a private address"}}.dump()
+                      << std::endl;
     }
     auto signals = std::make_unique<net::signal_set>(server.io, SIGINT, SIGTERM);
     signals->async_wait([&](beast::error_code, int) { tls_timer->cancel(); server.io.stop(); });
