@@ -120,16 +120,28 @@ bool is_piece_cache(fs::path const&);
 // Applies to piece histories opened afterwards: a memory budget split across decoded pages
 // (30%), open segments (60%, about 150 MB each) and snapshot blocks (10%).
 void configure_piece_caches(std::size_t megabytes, unsigned warm_segments);
-// What the host has free, from /proc/meminfo. `available` is 0 when it could not be read.
+// A cache's share of a lowered budget. `configured` is its share of `full`; the result is the
+// same fraction of `tight`. The product does not fit in 64 bits (a 64 GiB budget lowered to
+// 56 GiB), so this multiplies in 128 bits.
+std::size_t cache_share(std::size_t configured, std::size_t full, std::size_t tight);
+// One observation of host memory. `available` is bytes still free, or 0 when it could not be
+// read: MemAvailable, or the cgroup's memory.max minus memory.current when that headroom is
+// smaller. `pressured` is a memory stall (PSI some avg10 above 0, from the cgroup's
+// memory.pressure or /proc/pressure/memory) or pages swapped in since the previous sample.
+// Swap that is only occupied is not pressure: Linux keeps those pages until they are touched
+// or their process exits.
 struct HostMemory {
-    std::uint64_t available = 0, swap_total = 0, swap_free = 0;
+    std::uint64_t available = 0;
+    bool pressured = false;
 };
 // The decode cache's budget. `configured` is what the operator asked for. `active` is what the
-// caches are held to now. `ceiling` is the most `active` may grow back to: a host that is
-// swapping, or has under 6 GiB available, steps `active` down (by an eighth, at least 1 GiB,
-// and not below 16 GiB or below `configured` when that is smaller) and that size becomes the
-// ceiling. After the host has stayed comfortable (swap under 256 MiB and 16 GiB available) for
-// 30 observations, the ceiling rises by 1 GiB, and `active` follows it, never past `configured`.
+// caches are held to now. `ceiling` is the most `active` may grow back to. While `pressured`, or
+// while under 6 GiB is available, `active` steps down (by an eighth, at least 1 GiB, and not
+// below 16 GiB or below `configured` when that is smaller) and that size becomes the ceiling.
+// After 30 observations with no pressure and at least 16 GiB available, the ceiling rises by
+// 1 GiB, and `active` follows it, never past `configured`. A budget of 16 GiB or less does not
+// move, so the default (a quarter of memory, at most 64 GiB) changes only on a machine with more
+// than 64 GiB of RAM, or when the operator sets a cache above 16 GiB.
 struct CachePressure {
     std::uint64_t configured = 0, active = 0, ceiling = 0;
     unsigned calm = 0;

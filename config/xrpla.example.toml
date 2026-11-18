@@ -121,7 +121,10 @@
 # dictionary, about 45 MB; loading one is most of a cold read), 10% snapshot blocks. More
 # memory keeps more of the history decoded and answers faster. The process uses about a quarter
 # more than this under heavy load (requests in flight, lookup maps, the allocator's own), so
-# leave that room beside other services.
+# leave that room beside other services. While serving, a budget above 16 GiB steps down under
+# memory pressure (a stall, pages swapped in since the last sample, or under 6 GiB free,
+# including a cgroup memory.max) and grows back 1 GiB at a time after five quiet minutes. The
+# default only does this on a machine with more than 64 GiB of RAM.
 #cache_mb = 0
 
 # ---------------------------------------------------------------------------------------------

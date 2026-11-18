@@ -411,7 +411,18 @@ all|none|mpt_holders,nfts_by_issuer`.
 `[storage] cache_mb` is the decode cache for a piece cache: open segments, decoded ledgers and
 snapshot blocks, charged by what each holds. Under heavy load the process uses about a quarter
 more than the cache (requests in flight, key lookup maps, the allocator's own), so a machine
-shared with other services should leave that room. `xrpla_cache_stats` reports the cache's use,
+shared with other services should leave that room. While serving, a budget above 16 GiB steps
+down when the host is under memory pressure and grows back after the host stays comfortable. The
+default is a quarter of memory and at most 64 GiB, so that step runs only on a machine with more
+than 64 GiB of RAM, or when `cache_mb` is set above 16 GiB. Pressure is a memory stall
+(`/proc/pressure/memory`, or the cgroup's `memory.pressure` when the process is in a cgroup) or
+pages swapped in since the last sample (`pswpin` in `/proc/vmstat`), or under 6 GiB still
+available. Available memory is `MemAvailable`, or the cgroup's `memory.max` minus `memory.current`
+when that headroom is smaller. Swap that is only occupied does not count: Linux does not free it
+until those pages are touched. After five minutes with no pressure and at least 16 GiB available,
+the budget grows by 1 GiB at a time, never past what was configured. The first step runs before
+the history opens, so a restart on a pressured host does not fill the configured cache and then
+shed it. `xrpla_cache_stats` reports the cache's use,
 what the open segments hold by part, and on Linux the allocator's own figures. A sync keeps what
 the cache holds for every piece it keeps (each cache's `adopted` counts what the last one carried
 over), so a server following a live publication does not decode its history again every few minutes.

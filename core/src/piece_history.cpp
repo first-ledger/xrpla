@@ -8,6 +8,7 @@
 #include <xrpl/protocol/nft.h>
 #include <algorithm>
 #include <atomic>
+#include <charconv>
 #include <chrono>
 #include <condition_variable>
 #include <deque>
@@ -35,6 +36,12 @@
 namespace xrpla::core {
 namespace r = ::xrpl;
 using namespace pieces;
+
+std::size_t cache_share(std::size_t configured, std::size_t full, std::size_t tight) {
+    if (!full || !configured || tight >= full) return configured;
+    return static_cast<std::size_t>(static_cast<unsigned __int128>(configured) * tight / full);
+}
+
 namespace {
 // The threads a request's loads run on (segment pages, snapshot blocks, object reads), shared by
 // every request: one per core, at most 16. The asking thread takes tasks too, so a request never
@@ -164,9 +171,7 @@ struct Budget {
     }
     // `configured` is a cache's share of `total`. Under a lower cap it is the same fraction.
     std::size_t share_of(std::size_t configured) const {
-        auto full = total.load(), tight = cap();
-        if (!full || tight >= full) return configured;
-        return configured / full * tight + (configured % full) * tight / full;
+        return cache_share(configured, total.load(), cap());
     }
     // Whether the total is over once `freed` is let go.
     bool over(Freed const& freed) const { return used > cap() + freed.bytes; }
@@ -1017,16 +1022,94 @@ void configure_piece_caches(std::size_t megabytes, unsigned warm_segments) {
     cache_megabytes = megabytes; warm_count = warm_segments;
 }
 namespace {
+std::optional<std::uint64_t> read_u64_file(std::string const& path) {
+    std::ifstream in(path);
+    std::string text;
+    if (!(in >> text) || text == "max") return std::nullopt;
+    unsigned long long value = 0;
+    auto [end, ec] = std::from_chars(text.data(), text.data() + text.size(), value);
+    if (ec != std::errc{} || end != text.data() + text.size()) return std::nullopt;
+    return value;
+}
+// "some avg10=0.00 avg60=...": a non-zero avg10 is a stall during the last 10 seconds.
+bool pressure_stalled(std::string const& path) {
+    std::ifstream in(path);
+    std::string kind, word;
+    if (!(in >> kind) || kind != "some") return false;
+    while (in >> word) {
+        constexpr std::string_view key = "avg10=";
+        if (!word.starts_with(key)) continue;
+        auto value = std::string_view(word).substr(key.size());
+        return value.find_first_not_of("0.") != std::string_view::npos;
+    }
+    return false;
+}
+// cgroup v2 ("0::/path") or, failing that, the v1 memory controller. Empty when neither is listed.
+std::string cgroup_memory_dir() {
+    std::ifstream in("/proc/self/cgroup");
+    std::string line, v1;
+    while (std::getline(in, line)) {
+        if (line.starts_with("0::")) {
+            auto rel = line.substr(3);
+            if (rel.empty() || rel == "/") return "/sys/fs/cgroup";
+            if (!rel.starts_with('/')) rel.insert(rel.begin(), '/');
+            return "/sys/fs/cgroup" + rel;
+        }
+        if (auto at = line.find(":memory:"); at != std::string::npos) v1 = line.substr(at + 8);
+    }
+    if (v1.empty()) return {};
+    if (v1 == "/") return "/sys/fs/cgroup/memory";
+    if (!v1.starts_with('/')) v1.insert(v1.begin(), '/');
+    return "/sys/fs/cgroup/memory" + v1;
+}
+// Pages swapped in since the previous call. The first call only records the counter: swap already
+// occupied is not pressure, and a process start must not treat the boot total as a new swap-in.
+bool swap_ins_since_last_sample() {
+    std::ifstream in("/proc/vmstat");
+    std::string key;
+    unsigned long long pages = 0;
+    bool found = false;
+    while (in >> key) {
+        if (key == "pswpin") {
+            in >> pages;
+            found = true;
+            break;
+        }
+        in.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    }
+    if (!found) return false;
+    static std::uint64_t last = 0;
+    static bool have = false;
+    auto now = static_cast<std::uint64_t>(pages);
+    bool rose = have && now > last;
+    last = now;
+    have = true;
+    return rose;
+}
 HostMemory host_memory() {
     HostMemory mem;
     std::ifstream in("/proc/meminfo");
     for (std::string key; in >> key;) {
         unsigned long long kb = 0;
-        if (key == "MemAvailable:") { in >> kb; mem.available = kb << 10; }
-        else if (key == "SwapTotal:") { in >> kb; mem.swap_total = kb << 10; }
-        else if (key == "SwapFree:") { in >> kb; mem.swap_free = kb << 10; }
+        if (key == "MemAvailable:") {
+            in >> kb;
+            mem.available = kb << 10;
+        }
         in.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
     }
+    if (auto dir = cgroup_memory_dir(); !dir.empty()) {
+        // memory.max is "max" when the cgroup has no limit. A headroom of 0 is the limit itself.
+        if (auto max = read_u64_file(dir + "/memory.max")) {
+            if (auto current = read_u64_file(dir + "/memory.current")) {
+                auto headroom = *current >= *max ? std::uint64_t{0} : *max - *current;
+                if (!headroom) mem.pressured = true;
+                else if (!mem.available || headroom < mem.available) mem.available = headroom;
+            }
+        }
+        if (pressure_stalled(dir + "/memory.pressure")) mem.pressured = true;
+    }
+    if (pressure_stalled("/proc/pressure/memory")) mem.pressured = true;
+    if (swap_ins_since_last_sample()) mem.pressured = true;
     return mem;
 }
 }
@@ -1039,13 +1122,13 @@ CachePressure cache_pressure_step(CachePressure state, HostMemory mem) {
     // 16 GiB still serves mainnet, slower (measured at an eighth of a 128 GiB host). A cache the
     // operator set below that is already the floor: pressure does not cut it further.
     auto floor = std::min(state.configured, std::uint64_t{16} << 30);
-    auto swap_used = mem.swap_total > mem.swap_free ? mem.swap_total - mem.swap_free : 0;
-    bool tight = swap_used >= (std::uint64_t{1} << 30) || (mem.available && mem.available < (std::uint64_t{6} << 30));
-    bool calm = swap_used < (std::uint64_t{256} << 20) && mem.available >= (std::uint64_t{16} << 30);
+    // `available` of 0 was not read. It is not treated as an empty host.
+    bool tight = mem.pressured || (mem.available && mem.available < (std::uint64_t{6} << 30));
+    bool calm = !mem.pressured && mem.available >= (std::uint64_t{16} << 30);
     if (tight && state.active > floor) {
         auto step = std::max<std::uint64_t>(std::uint64_t{1} << 30, state.active / 8);
         state.active = state.active < floor + step ? floor : state.active - step;
-        state.ceiling = state.active;  // do not grow straight back to the size that swapped
+        state.ceiling = state.active;  // do not grow straight back to the size that was under pressure
         state.calm = 0;
         return state;
     }
@@ -1077,27 +1160,27 @@ void apply_piece_cache_limit(std::size_t bytes) {
     }
     for (auto const& budget : open) budget->apply_limit(bytes);
 }
-void log_cache_pressure(CachePressure const& state) {
-    auto mem = host_memory();
-    auto swap_used = mem.swap_total > mem.swap_free ? mem.swap_total - mem.swap_free : 0;
+void log_cache_pressure(CachePressure const& state, HostMemory mem) {
     std::cerr << Json{{"event", "cache_pressure"}, {"cache_mb", state.active >> 20},
                       {"ceiling_mb", state.ceiling >> 20}, {"configured_mb", state.configured >> 20},
-                      {"available_mb", mem.available >> 20}, {"swap_used_mb", swap_used >> 20}}.dump()
+                      {"available_mb", mem.available >> 20}, {"pressured", mem.pressured}}.dump()
               << std::endl;
 }
-// One step. Returns the state to keep. Logs when the budget moves.
+// One step. Returns the state to keep. Logs when the budget moves. Reads the host once, so a
+// swap-in during the step is not consumed by the log line.
 CachePressure step_cache_pressure(CachePressure state) {
-    auto next = cache_pressure_step(state, host_memory());
+    auto mem = host_memory();
+    auto next = cache_pressure_step(state, mem);
     if (next.active != state.active) {
         apply_piece_cache_limit(static_cast<std::size_t>(next.active));
-        log_cache_pressure(next);
+        log_cache_pressure(next, mem);
     }
     return next;
 }
 void watch_piece_cache_pressure() {
     static std::once_flag once;
     std::call_once(once, [] {
-        // Before the history opens, so a restart on a swapping host does not fill the
+        // Before the history opens, so a restart on a pressured host does not fill the
         // configured cache and then shed it.
         CachePressure state;
         state.configured = std::uint64_t(cache_megabytes.load()) << 20;
