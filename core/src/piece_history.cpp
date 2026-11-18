@@ -8,12 +8,15 @@
 #include <xrpl/protocol/nft.h>
 #include <algorithm>
 #include <atomic>
+#include <charconv>
 #include <chrono>
 #include <condition_variable>
 #include <deque>
+#include <fstream>
 #include <functional>
 #include <future>
 #include <iostream>
+#include <limits>
 #include <list>
 #include <map>
 #include <mutex>
@@ -33,6 +36,12 @@
 namespace xrpla::core {
 namespace r = ::xrpl;
 using namespace pieces;
+
+std::size_t cache_share(std::size_t configured, std::size_t full, std::size_t tight) {
+    if (!full || !configured || tight >= full) return configured;
+    return static_cast<std::size_t>(static_cast<unsigned __int128>(configured) * tight / full);
+}
+
 namespace {
 // The threads a request's loads run on (segment pages, snapshot blocks, object reads), shared by
 // every request: one per core, at most 16. The asking thread takes tasks too, so a request never
@@ -142,6 +151,8 @@ struct Budget {
     // `used`: what the decoded values alive take, cached or `held` (evicted while a request still
     // holds them).
     std::atomic<std::size_t> total{0}, used{0}, held{0};
+    // Tighter than `total` while the host is short of memory (apply_piece_cache_limit). 0: `total`.
+    std::atomic<std::size_t> limit{0};
     // How many live and retired caches hold more than their share (a retired cache: anything),
     // read without `mutex`: none to shed is the common case.
     std::atomic<std::size_t> live_over{0}, retired_over{0};
@@ -149,10 +160,34 @@ struct Budget {
     std::vector<Cache*> live, retired;  // under `mutex`
     Json stats() const {
         auto u = used.load(), h = held.load();
-        return {{"total", total.load()}, {"used", u}, {"cached", u - std::min(u, h)}, {"held", h}};
+        return {{"total", total.load()}, {"limit", cap()}, {"used", u}, {"cached", u - std::min(u, h)}, {"held", h}};
+    }
+    // The budget the caches are held to: `limit` while the host has lowered it, else `total`.
+    std::size_t cap() const {
+        auto full = total.load(), tight = limit.load();
+        if (!full) return tight;
+        if (!tight || tight > full) return full;
+        return tight;
+    }
+    // `configured` is a cache's share of `total`. Under a lower cap it is the same fraction.
+    std::size_t share_of(std::size_t configured) const {
+        return cache_share(configured, total.load(), cap());
     }
     // Whether the total is over once `freed` is let go.
-    bool over(Freed const& freed) const { return used > total + freed.bytes; }
+    bool over(Freed const& freed) const { return used > cap() + freed.bytes; }
+    // `bytes` is at most the configured budget. Sheds what the open caches hold above it.
+    // The values are freed after the budget lock, as a cache's own trim does.
+    void apply_limit(std::size_t bytes) {
+        auto full = total.load();
+        if (full && bytes > full) bytes = full;
+        limit.store(bytes);
+        Freed freed;
+        {
+            std::lock_guard lock(mutex);
+            for (auto* cache : retired) cache->shed(freed);
+            for (auto* cache : live) cache->shed(freed);
+        }
+    }
     void enlist(Cache* cache) { std::lock_guard lock(mutex); live.push_back(cache); }
     void retire(Cache* cache) { std::lock_guard lock(mutex); std::erase(live, cache); retired.push_back(cache); }
     void leave(Cache* cache) { std::lock_guard lock(mutex); std::erase(live, cache); std::erase(retired, cache); }
@@ -225,7 +260,7 @@ public:
     };
     Slot take(Budget const& budget) {
         auto start = std::chrono::steady_clock::now();
-        auto pressed = [&] { return budget.used > budget.total + budget.total / 4; };
+        auto pressed = [&] { auto cap = budget.cap(); return budget.used > cap + cap / 4; };
         if (pressed()) {
             ++memory_waits;
             while (pressed() && std::chrono::steady_clock::now() - start < patience) std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -238,15 +273,19 @@ public:
 };
 // The budget of the histories open on `cache`, created by the first. Kept while one holds it:
 // the map's weak pointers to budgets no history holds any more are dropped on the next call.
+struct BudgetMap {
+    std::mutex mutex;
+    std::map<std::string, std::weak_ptr<Budget>> by_dir;
+};
+BudgetMap& budget_map() { static BudgetMap map; return map; }
 std::shared_ptr<Budget> shared_budget(fs::path const& cache) {
-    static std::mutex mutex;
-    static std::map<std::string, std::weak_ptr<Budget>> budgets;
     std::error_code ec;
     auto canonical = fs::weakly_canonical(cache, ec);  // the same directory however it is named
     auto name = (ec ? cache : canonical).string();
-    std::lock_guard lock(mutex);
-    std::erase_if(budgets, [](auto const& item) { return item.second.expired(); });
-    auto& slot = budgets[name];
+    auto& map = budget_map();
+    std::lock_guard lock(map.mutex);
+    std::erase_if(map.by_dir, [](auto const& item) { return item.second.expired(); });
+    auto& slot = map.by_dir[name];
     auto budget = slot.lock();
     if (!budget) slot = budget = std::make_shared<Budget>();
     return budget;
@@ -268,8 +307,10 @@ template<class K, class T> class Lru final : Cache {
     bool retired_ = false;  // moved to budget_'s retired caches
     bool over_ = false;     // counted in budget_'s live_over or retired_over
     // Keeps the budget's count of caches over their share.
+    // The share this cache may keep: its configured one, or the same fraction of a lowered budget.
+    std::size_t share_now() const { return budget_ ? budget_->share_of(capacity_) : capacity_; }
     void tally() {
-        if (!budget_ || (bytes_ > capacity_) == over_) return;
+        if (!budget_ || (bytes_ > share_now()) == over_) return;
         over_ = !over_;
         auto& count = retired_ ? budget_->retired_over : budget_->live_over;
         if (over_) ++count; else --count;
@@ -306,8 +347,9 @@ template<class K, class T> class Lru final : Cache {
     // to its share (or, alone, its capacity), keeping the newest entry; then the other live caches
     // beyond theirs (a retired cache sheds no other: Budget's lock order). The caller holds mutex_.
     void trim(Freed& freed) {
+        tally();
         if (budget_ && !retired_) budget_->shed_retired(freed);
-        auto over = [&] { return bytes_ > capacity_ && (!budget_ || budget_->over(freed)); };
+        auto over = [&] { return bytes_ > share_now() && (!budget_ || budget_->over(freed)); };
         while (order_.size() > 1 && over()) evict_oldest(freed);
         if (budget_ && !retired_) budget_->shed_live(freed, this, over_);
     }
@@ -317,7 +359,8 @@ template<class K, class T> class Lru final : Cache {
     void shed(Freed& freed) override {
         std::unique_lock lock(mutex_, std::try_to_lock);
         if (!lock) return;  // in use: it trims itself meanwhile, and the next shed tries it again
-        while (!order_.empty() && bytes_ > capacity_ && budget_->over(freed)) evict_oldest(freed);
+        tally();
+        while (!order_.empty() && bytes_ > share_now() && budget_->over(freed)) evict_oldest(freed);
     }
 public:
     U hits = 0, misses = 0, adopted = 0;
@@ -971,11 +1014,188 @@ struct PieceHistory::Impl {
 
 namespace {
 std::atomic<std::size_t> cache_megabytes{3072};
+std::atomic<std::size_t> cache_limit_bytes{0};  // 0 until the host lowers it; histories opened later honor it
 std::atomic<unsigned> warm_count{0};  // only `serve` warms: a one-shot command would exit mid-warm
 }
 void configure_piece_caches(std::size_t megabytes, unsigned warm_segments) {
     if (megabytes < 256) throw Error("Piece cache budget must be at least 256 MB");
     cache_megabytes = megabytes; warm_count = warm_segments;
+}
+namespace {
+std::optional<std::uint64_t> read_u64_file(std::string const& path) {
+    std::ifstream in(path);
+    std::string text;
+    if (!(in >> text) || text == "max") return std::nullopt;
+    unsigned long long value = 0;
+    auto [end, ec] = std::from_chars(text.data(), text.data() + text.size(), value);
+    if (ec != std::errc{} || end != text.data() + text.size()) return std::nullopt;
+    return value;
+}
+// "some avg10=0.00 avg60=...": a non-zero avg10 is a stall during the last 10 seconds.
+bool pressure_stalled(std::string const& path) {
+    std::ifstream in(path);
+    std::string kind, word;
+    if (!(in >> kind) || kind != "some") return false;
+    while (in >> word) {
+        constexpr std::string_view key = "avg10=";
+        if (!word.starts_with(key)) continue;
+        auto value = std::string_view(word).substr(key.size());
+        return value.find_first_not_of("0.") != std::string_view::npos;
+    }
+    return false;
+}
+// cgroup v2 ("0::/path") or, failing that, the v1 memory controller. Empty when neither is listed.
+std::string cgroup_memory_dir() {
+    std::ifstream in("/proc/self/cgroup");
+    std::string line, v1;
+    while (std::getline(in, line)) {
+        if (line.starts_with("0::")) {
+            auto rel = line.substr(3);
+            if (rel.empty() || rel == "/") return "/sys/fs/cgroup";
+            if (!rel.starts_with('/')) rel.insert(rel.begin(), '/');
+            return "/sys/fs/cgroup" + rel;
+        }
+        if (auto at = line.find(":memory:"); at != std::string::npos) v1 = line.substr(at + 8);
+    }
+    if (v1.empty()) return {};
+    if (v1 == "/") return "/sys/fs/cgroup/memory";
+    if (!v1.starts_with('/')) v1.insert(v1.begin(), '/');
+    return "/sys/fs/cgroup/memory" + v1;
+}
+// Pages swapped in since the previous call. The first call only records the counter: swap already
+// occupied is not pressure, and a process start must not treat the boot total as a new swap-in.
+bool swap_ins_since_last_sample() {
+    std::ifstream in("/proc/vmstat");
+    std::string key;
+    unsigned long long pages = 0;
+    bool found = false;
+    while (in >> key) {
+        if (key == "pswpin") {
+            in >> pages;
+            found = true;
+            break;
+        }
+        in.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    }
+    if (!found) return false;
+    static std::uint64_t last = 0;
+    static bool have = false;
+    auto now = static_cast<std::uint64_t>(pages);
+    bool rose = have && now > last;
+    last = now;
+    have = true;
+    return rose;
+}
+HostMemory host_memory() {
+    HostMemory mem;
+    std::ifstream in("/proc/meminfo");
+    for (std::string key; in >> key;) {
+        unsigned long long kb = 0;
+        if (key == "MemAvailable:") {
+            in >> kb;
+            mem.available = kb << 10;
+        }
+        in.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    }
+    if (auto dir = cgroup_memory_dir(); !dir.empty()) {
+        // memory.max is "max" when the cgroup has no limit. A headroom of 0 is the limit itself.
+        if (auto max = read_u64_file(dir + "/memory.max")) {
+            if (auto current = read_u64_file(dir + "/memory.current")) {
+                auto headroom = *current >= *max ? std::uint64_t{0} : *max - *current;
+                if (!headroom) mem.pressured = true;
+                else if (!mem.available || headroom < mem.available) mem.available = headroom;
+            }
+        }
+        if (pressure_stalled(dir + "/memory.pressure")) mem.pressured = true;
+    }
+    if (pressure_stalled("/proc/pressure/memory")) mem.pressured = true;
+    if (swap_ins_since_last_sample()) mem.pressured = true;
+    return mem;
+}
+}
+CachePressure cache_pressure_step(CachePressure state, HostMemory mem) {
+    if (!state.configured) return state;
+    if (!state.active) state.active = state.configured;
+    if (!state.ceiling) state.ceiling = state.configured;
+    state.active = std::min(state.active, state.configured);
+    state.ceiling = std::min(state.configured, std::max(state.ceiling, state.active));
+    // 16 GiB still serves mainnet, slower (measured at an eighth of a 128 GiB host). A cache the
+    // operator set below that is already the floor: pressure does not cut it further.
+    auto floor = std::min(state.configured, std::uint64_t{16} << 30);
+    // `available` of 0 was not read. It is not treated as an empty host.
+    bool tight = mem.pressured || (mem.available && mem.available < (std::uint64_t{6} << 30));
+    bool calm = !mem.pressured && mem.available >= (std::uint64_t{16} << 30);
+    if (tight && state.active > floor) {
+        auto step = std::max<std::uint64_t>(std::uint64_t{1} << 30, state.active / 8);
+        state.active = state.active < floor + step ? floor : state.active - step;
+        state.ceiling = state.active;  // do not grow straight back to the size that was under pressure
+        state.calm = 0;
+        return state;
+    }
+    if (calm) {
+        if (state.calm < 1000000) ++state.calm;
+        // 30 observations are 5 minutes at the watcher's 10 s interval.
+        if (state.calm >= 30 && state.ceiling < state.configured) {
+            auto room = state.configured - state.ceiling;
+            state.ceiling += std::min(room, std::uint64_t{1} << 30);
+            state.calm = 0;
+        }
+        if (state.active < state.ceiling) {
+            auto room = state.ceiling - state.active;
+            state.active += std::min(room, std::uint64_t{1} << 30);
+        }
+        return state;
+    }
+    state.calm = 0;
+    return state;
+}
+void apply_piece_cache_limit(std::size_t bytes) {
+    cache_limit_bytes.store(bytes);
+    std::vector<std::shared_ptr<Budget>> open;
+    {
+        auto& map = budget_map();
+        std::lock_guard lock(map.mutex);
+        for (auto const& item : map.by_dir)
+            if (auto budget = item.second.lock()) open.push_back(std::move(budget));
+    }
+    for (auto const& budget : open) budget->apply_limit(bytes);
+}
+void log_cache_pressure(CachePressure const& state, HostMemory mem) {
+    std::cerr << Json{{"event", "cache_pressure"}, {"cache_mb", state.active >> 20},
+                      {"ceiling_mb", state.ceiling >> 20}, {"configured_mb", state.configured >> 20},
+                      {"available_mb", mem.available >> 20}, {"pressured", mem.pressured}}.dump()
+              << std::endl;
+}
+// One step. Returns the state to keep. Logs when the budget moves. Reads the host once, so a
+// swap-in during the step is not consumed by the log line.
+CachePressure step_cache_pressure(CachePressure state) {
+    auto mem = host_memory();
+    auto next = cache_pressure_step(state, mem);
+    if (next.active != state.active) {
+        apply_piece_cache_limit(static_cast<std::size_t>(next.active));
+        log_cache_pressure(next, mem);
+    }
+    return next;
+}
+void watch_piece_cache_pressure() {
+    static std::once_flag once;
+    std::call_once(once, [] {
+        // Before the history opens, so a restart on a pressured host does not fill the
+        // configured cache and then shed it.
+        CachePressure state;
+        state.configured = std::uint64_t(cache_megabytes.load()) << 20;
+        state.active = state.ceiling = state.configured;
+        state = step_cache_pressure(state);
+        std::thread([state]() mutable {
+            for (;;) {
+                std::this_thread::sleep_for(std::chrono::seconds(10));
+                try { state = step_cache_pressure(state); }
+                catch (std::exception const& error) {
+                    std::cerr << Json{{"event", "cache_pressure_failed"}, {"error", error.what()}}.dump() << std::endl;
+                }
+            }
+        }).detach();
+    });
 }
 PieceHistory::PieceHistory(fs::path const& cache) : impl_(std::make_unique<Impl>()) {
     auto& m = *impl_;
@@ -985,6 +1205,12 @@ PieceHistory::PieceHistory(fs::path const& cache) : impl_(std::make_unique<Impl>
     std::size_t budget = cache_megabytes.load() << 20;
     m.budget = shared_budget(cache);
     m.budget->total = budget;
+    // A history opened while the host has already lowered the budget keeps that limit. One
+    // sharing the directory's budget does not raise a limit a previous history is under.
+    auto limit = cache_limit_bytes.load();
+    if (!limit || limit > budget) limit = budget;
+    auto had = m.budget->limit.load();
+    m.budget->limit = had && had < limit ? had : limit;
     m.pages.capacity(budget / 10 * 3);
     m.archives.capacity(budget / 10 * 6);
     m.blocks.capacity(budget / 10);
