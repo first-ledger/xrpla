@@ -56,6 +56,7 @@ constexpr char help[] = "xrpla " XRPLA_VERSION R"( — authenticated and verifie
                               [--peer-crawl] [--peer-reserved NODE_KEY,...]]
                   (with --peers: serve the newest ledgers to the peer network; docs/PEER-SERVING.md)
   xrpla serve --dir ./data [--http 127.0.0.1:5005] [--ws 127.0.0.1:6006]
+              [--admin HOST:PORT]  (same API; no connection cap, no local tooBusy; shares those threads; 256 MB and 1024 ledgers per WebSocket; forwarded and path_find stay limited; bind it to loopback or a private address)
               [--https IP:PORT] [--wss IP:PORT] [--tls-cert CHAIN.pem --tls-key KEY.pem]  (reloaded when renewed)
               [--forward RPC_URL] [--forward-ws WS_URL] [--threads 4] [--config FILE]
               [--cache-mb N (default: memory / 4, 3072-65536)] [--tail SPOOL|FOLLOWER_DIR --tail-key FILE] [--network-id mainnet] [--max-connections 1024] [--max-connections-per-ip 64]
@@ -194,7 +195,7 @@ int run(int argc, char** argv) {
                                                  "--peer-no-relay", "--peer-relay-validations", "--peer-relay-proposals", "--peer-no-squelch",
                                                  "--peer-squelch-sources", "--peer-ip-limit"}) allowed.insert(name);
     if (command == "keygen") allowed.insert("--out");
-    if (command == "serve") for (auto name : {"--http", "--ws", "--https", "--wss", "--tls-cert", "--tls-key", "--forward", "--forward-ws", "--threads", "--cache-mb", "--warm-segments", "--tail", "--tail-key", "--network-id", "--max-connections", "--max-connections-per-ip", "--no-loopback-trust"}) allowed.insert(name);
+    if (command == "serve") for (auto name : {"--http", "--ws", "--admin", "--https", "--wss", "--tls-cert", "--tls-key", "--forward", "--forward-ws", "--threads", "--cache-mb", "--warm-segments", "--tail", "--tail-key", "--network-id", "--max-connections", "--max-connections-per-ip", "--no-loopback-trust"}) allowed.insert(name);
     if (command == "rpc") for (auto name : {"--request", "--forward", "--tail", "--tail-key", "--network-id"}) allowed.insert(name);
     if (command == "prune") allowed.insert("--state-first");
     if (command == "compact") allowed.insert("--native");
@@ -231,7 +232,7 @@ int run(int argc, char** argv) {
     bool jobs_set = false;
     if (args.contains("--config")) {
         auto table = toml::parse_file(args.at("--config"));
-        std::set<std::string> fields{"archive", "range", "dir", "publisher_key", "jobs", "http", "ws", "forward", "forward_ws", "threads", "interval", "state_window"};
+        std::set<std::string> fields{"archive", "range", "dir", "publisher_key", "jobs", "http", "ws", "admin", "forward", "forward_ws", "threads", "interval", "state_window"};
         for (auto const& [key, value] : table) {
             auto name = std::string(key.str());
             if (!fields.contains(name)) throw xrpla::Error("Unknown config key: " + name);
@@ -247,7 +248,7 @@ int run(int argc, char** argv) {
                 if (name == "range") options.range = *text;
                 if (name == "dir") options.dir = *text;
                 if (name == "publisher_key") options.publisher_key = *text;
-                if (name == "http" || name == "ws" || name == "forward") args.try_emplace("--" + name, *text);
+                if (name == "http" || name == "ws" || name == "admin" || name == "forward") args.try_emplace("--" + name, *text);
                 if (name == "forward_ws") args.try_emplace("--forward-ws", *text);
             }
         }
@@ -426,6 +427,7 @@ int run(int argc, char** argv) {
             xrpla::core::ServeOptions server{options.dir};
             if (args.contains("--http")) server.http = args.at("--http");
             if (args.contains("--ws")) server.ws = args.at("--ws");
+            if (args.contains("--admin")) server.admin = args.at("--admin");
             if (args.contains("--https")) server.https = args.at("--https");
             if (args.contains("--wss")) server.wss = args.at("--wss");
             if (args.contains("--tls-cert")) server.tls_cert = args.at("--tls-cert");

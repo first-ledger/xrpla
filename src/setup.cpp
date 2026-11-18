@@ -136,6 +136,7 @@ core::ServeOptions serve_options(toml::table const& config, fs::path const& dir,
     core::ServeOptions serve{dir};
     serve.http = text(config, "serve.http", http); serve.ws = text(config, "serve.ws", ws);
     serve.https = text(config, "serve.https"); serve.wss = text(config, "serve.wss");
+    serve.admin = text(config, "serve.admin");
     serve.tls_cert = text(config, "serve.tls_cert"); serve.tls_key = text(config, "serve.tls_key");
     if (auto threads = bounded(config, "serve.threads", 1, 32)) serve.threads = static_cast<unsigned>(*threads);
     serve.forward = text(config, "serve.forward");
@@ -514,6 +515,7 @@ int run_mirrored(toml::table const& config, std::string const& profile) {
     std::vector<std::string> interim_args{exe.string(), "serve", "--dir", cache.string(), "--threads", std::to_string(serve.threads),
                                           "--network-id", std::to_string(serve.network_id)};
     for (auto const& [flag, value] : {std::pair{"--http", serve.http}, {"--ws", serve.ws}, {"--https", serve.https}, {"--wss", serve.wss},
+                                      {"--admin", serve.admin},
                                       {"--tls-cert", serve.tls_cert.string()}, {"--tls-key", serve.tls_key.string()},
                                       {"--forward", serve.forward}, {"--forward-ws", serve.forward_ws}})
         if (!value.empty()) { interim_args.push_back(flag); interim_args.push_back(value); }

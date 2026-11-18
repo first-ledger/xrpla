@@ -194,7 +194,11 @@ The defaults listen on 127.0.0.1 only. To answer other machines:
   `tls_cert` and `tls_key`; renewed certificates are picked up within a minute);
 - put a reverse proxy or rate limiter in front of public listeners. Behind a proxy on the same
   machine set `[serve] loopback_trusted = false` and limit clients at the proxy;
-- `max_connections` (1,024) and `max_connections_per_ip` (64) cap open connections.
+- `max_connections` (1,024) and `max_connections_per_ip` (64) cap open connections;
+- `[serve] admin = "HOST:PORT"` listens without the connection caps and without `tooBusy` on
+  the local lanes, for clients inside this organisation. It shares those lanes, keeps the
+  forwarded and `path_find` limits, and caps a WebSocket session at 256 MB queued and 1,024
+  ledgers. Bind it to loopback or a private address.
 
 See [Security model](../reference/security.md).
 

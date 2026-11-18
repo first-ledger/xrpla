@@ -622,6 +622,62 @@ class Operations(unittest.TestCase):
         self.assertEqual(events.count('forward_unverifiable'), 1)
         self.assertNotIn('forward_checked', events)
 
+    def test_admin_port_is_outside_the_connection_cap(self):
+        # One public connection fills max_connections. Another public connection is closed.
+        # The admin listener is not counted and still answers, including a second connection.
+        def free():
+            with socket.socket() as sock:
+                sock.bind(('127.0.0.1', 0)); return sock.getsockname()[1]
+        public, admin = free(), free()
+        server = subprocess.Popen([BINARY, 'serve', '--dir', str(self.data), '--http', f'127.0.0.1:{public}', '--ws', f'127.0.0.1:{public}',
+                                   '--admin', f'127.0.0.1:{admin}', '--max-connections', '1'],
+                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        def cleanup():
+            if server.poll() is None:
+                server.terminate()
+                try: server.communicate(timeout=15)
+                except subprocess.TimeoutExpired: server.kill(); server.communicate()
+        self.addCleanup(cleanup)
+        for _ in range(100):
+            try:
+                socket.create_connection(('127.0.0.1', admin), .1).close(); break
+            except OSError:
+                if server.poll() is not None: self.fail(server.communicate()[1].decode())
+                time.sleep(.05)
+        else:
+            self.fail('admin port did not start')
+        held = socket.create_connection(('127.0.0.1', public), 2)
+        self.addCleanup(held.close)
+        refused = False
+        for _ in range(20):
+            try:
+                extra = socket.create_connection(('127.0.0.1', public), 2)
+            except OSError:
+                refused = True; break
+            extra.settimeout(2)
+            try:
+                data = extra.recv(8)
+            except OSError:
+                data = b''
+            extra.close()
+            if data == b'':
+                refused = True; break
+            time.sleep(.05)
+        self.assertTrue(refused, 'a second public connection was accepted')
+        self.assertEqual(self.post(admin, 'ledger_range', {})['ledger_index_max'], 65538)
+        self.assertEqual(self.post(admin, 'server_info', {})['info']['server_state'], 'full')
+        ws = WebSocket(admin); self.addCleanup(ws.sock.close)
+        ws.send({'id': 1, 'command': 'ledger_range'})
+        self.assertEqual(ws.receive()['result']['ledger_index_max'], 65538)
+
+    def test_admin_listener_cannot_share_an_address(self):
+        with socket.socket() as sock:
+            sock.bind(('127.0.0.1', 0)); port = sock.getsockname()[1]
+        run = subprocess.run([BINARY, 'serve', '--dir', str(self.data), '--http', f'127.0.0.1:{port}', '--ws', f'127.0.0.1:{port}',
+                              '--admin', f'127.0.0.1:{port}'], capture_output=True, text=True, timeout=60)
+        self.assertNotEqual(run.returncode, 0)
+        self.assertIn('cannot be the same address', run.stdout + run.stderr)
+
     def test_forward_urls_must_name_their_protocol(self):
         with socket.socket() as sock:
             sock.bind(('127.0.0.1', 0)); port = sock.getsockname()[1]

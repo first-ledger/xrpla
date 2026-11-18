@@ -107,5 +107,5 @@ and run with `DynamicUser=yes`. Do not combine them with the unit `xrpla setup` 
 use an `xrpla` account and `/var/lib/xrpla` (see [SETUP.md](../SETUP.md#the-service-account-and-its-directories)).
 
 `xrpla serve --config FILE` and `fetch`/`tail --config FILE` read that flat file's keys:
-`archive`, `range`, `dir`, `publisher_key`, `jobs`, `http`, `ws`, `forward`, `forward_ws`,
+`archive`, `range`, `dir`, `publisher_key`, `jobs`, `http`, `ws`, `admin`, `forward`, `forward_ws`,
 `threads`, `interval`, `state_window`.

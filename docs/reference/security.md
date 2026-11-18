@@ -75,7 +75,12 @@ stream.
 - **Listeners.** The defaults listen on 127.0.0.1 only. XRPLA has no admin methods, but put
   public listeners behind a proxy or rate limiter. `max_connections` (1,024) and
   `max_connections_per_ip` (64) bound open connections; a WebSocket subscriber that falls 4,096
-  messages behind is disconnected.
+  messages behind is disconnected. `[serve] admin` is an optional listener for this organisation:
+  the same public methods, with no connection cap and no `tooBusy` on the local lanes. It shares
+  those thread pools, so its requests can wait behind public work. Forwarded requests and
+  `path_find` keep their limits. A WebSocket session holds at most 256 MB queued and 1,024
+  ledgers. There is no authentication: bind it to loopback or a private address (startup warns
+  otherwise). It does not grant an admin role.
 - **Loopback trust.** Clients on this machine's own addresses may call the internal `_` methods
   and are not held to `max_connections_per_ip`. Behind a reverse proxy on the same machine every
   client arrives from loopback: set `[serve] loopback_trusted = false` there.

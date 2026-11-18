@@ -392,6 +392,10 @@ The sections, by profile:
 `xrpla run` checks the serving settings before its first sync, to the bounds of the matching
 `xrpla serve` flags: `[serve] threads` 1-32, `max_connections` 1-1048576,
 `max_connections_per_ip` 0-1048576 (0: no limit), and `[storage] cache_mb` at most 1073741824.
+`[serve] admin` is an optional `HOST:PORT` with no connection cap and no `tooBusy` on the local
+lanes, for clients inside this organisation. It shares those lanes (requests can wait), keeps
+the forwarded and `path_find` limits, and caps a WebSocket session at 256 MB queued and 1,024
+ledgers. Bind it to loopback or a private address.
 
 ### Logs
 

@@ -68,6 +68,7 @@ Settings: [config/xrpla.example.toml](../../config/xrpla.example.toml).
 |---|---|---|
 | `--http HOST:PORT` | `127.0.0.1:5005` | JSON-RPC listener (also answers WebSocket upgrades) |
 | `--ws HOST:PORT` | `127.0.0.1:6006` | WebSocket listener |
+| `--admin HOST:PORT` | none | same API, with no connection cap and no `tooBusy` on the local lanes (those requests still share the lanes and can wait; forwarded requests and `path_find` keep their limits). A WebSocket session holds at most 256 MB queued and 1,024 ledgers. Bind it to loopback or a private address |
 | `--https`, `--wss HOST:PORT` with `--tls-cert CHAIN.pem --tls-key KEY.pem` | none | TLS listeners; renewed certificates are reloaded |
 | `--forward URL`, `--forward-ws URL` | none | upstream xrpld for current-ledger methods ([API reference](api.md#forwarded-methods)) |
 | `--threads N` | 4 | request threads (1-32) |

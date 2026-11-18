@@ -30,6 +30,12 @@ http = "127.0.0.1:5005"
 # serve: the WebSocket listener, HOST:PORT.
 ws = "127.0.0.1:6006"
 
+# serve: an optional listener, HOST:PORT. Same methods as http and ws, without the connection
+# cap or local tooBusy. It shares those worker threads. Forwarded requests and path_find keep
+# their limits. A WebSocket session holds at most 256 MB queued and 1024 ledgers. No
+# authentication: bind it to loopback or a private address. Empty: none.
+# admin = "127.0.0.1:5008"
+
 # serve: threads answering requests.
 threads = 4
 
